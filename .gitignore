@@ -1,0 +1,87 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+env/
+*.env
+*.venv
+
+# Django-related
+*.log
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+static/
+local_settings.py
+instance/
+
+# If using PostgreSQL, ignore database dumps
+*.dump
+*.sql
+
+# Ignore migrations compiled files
+**/migrations/*.pyc
+**/migrations/__pycache__/
+**/migrations/*.pyo
+**/migrations/*.pyd
+
+# Ignore Pytest and Coverage reports
+.coverage
+.coverage.*
+htmlcov/
+*.cover
+*.hypothesis/
+.cache
+nosetests.xml
+coverage.xml
+*.mo
+*.pot
+
+# Ignore IDE and editor-specific files
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+*.swp
+*.swo
+*.bak
+
+# Ignore Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Ignore Celery-related files
+celerybeat-schedule
+celerybeat.pid
+
+# Ignore Docker & Deployment-related files
+docker-compose.override.yml
+.envrc
+*.pem
+*.key
+
+# Ignore compiled and installed dependencies
+*.egg-info/
+dist/
+build/
+pip-wheel-metadata/
+*.egg
+*.whl
+
+# Ignore Node modules (if using frontend with Django)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Ignore pytest cache
+.pytest_cache/
+
+# Ignore mypy and Pylint caches
+.mypy_cache/
+.pylint.d/
+
+# Ignore compiled static files
+/static/
