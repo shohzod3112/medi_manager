@@ -135,14 +135,22 @@ class PlaylistAdminForm(forms.ModelForm):
 # Playlist Admin
 @admin.register(Playlist)
 class PlaylistAdmin(admin.ModelAdmin):
-    form = PlaylistAdminForm
-    list_display = ('playlist_id', 'name', 'owner', 'start_time', 'end_time')
-    search_fields = ('name', 'owner__username')
-    list_filter = ('owner', 'start_time', 'end_time')
-    readonly_fields = ('playlist_id', 'owner')
-    inlines = [PlaylistMediaInline, PlaylistDeviceInline]
+    list_display = ('name', 'owner',)
+    list_filter = ('owner',)
+    search_fields = ('name', 'owner__username',)
+    readonly_fields = ('owner',)
+    inlines = [PlaylistDeviceInline, PlaylistMediaInline]
+
+    def get_queryset(self, request):
+        """Ensure users only see their own playlists."""
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        return qs.filter(owner=request.user)
+
 
     def save_model(self, request, obj, form, change):
-        if not obj.owner_id:
-            obj.owner = request.user
+        """Automatically set playlist owner to logged-in user."""
+        # if not request.user.is_superuser:
+        obj.owner = request.user
         super().save_model(request, obj, form, change)

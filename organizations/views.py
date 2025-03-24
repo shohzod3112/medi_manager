@@ -5,19 +5,82 @@ from rest_framework import status, permissions
 from rest_framework import generics
 from rest_framework.views import APIView
 
+from core.models import User
 from .models import Device, Playlist
 from .serializers import DeviceSerializer, MediaSerializer, PlaylistSerializer
+
+
+class PlaylistsDetailAPIView(APIView):
+
+    def get(self, *args, **kwargs):
+        query_params = self.request.query_params
+        sn = query_params.get('sn', None)
+        username = query_params.get('username', None)
+        token = query_params.get('token', None)
+
+        if not sn and not username and not token:
+            return Response({"error": "Serial Number, Username and Token is Required"}, status=400)
+
+        if not sn:
+            return Response({"error": "Serial Number is Required"}, status=400)
+
+        if not username:
+            return Response({"error": "Username is Required"}, status=400)
+
+        if not token:
+            return Response({"error": "Token is Required"}, status=400)
+
+        user = User.objects.filter(username__iexact=username).first()
+        if not user:
+            return Response({"error": "User Not Found"}, status=404)
+
+        device = Device.objects.filter(serial_number=sn, owner=user, token=token).first()
+        if not device:
+            return Response({"error": "Device Not Found"}, status=404)
+
+        playlist = Playlist.objects.filter(devices=device).first()
+        if not playlist:
+            return Response({"error": "Playlist Not Found"}, status=404)
+
+        media_list = []
+        for media in playlist.media.all():
+            media_list.append({
+                'id': media.media_id,
+                'name': media.name,
+                'url': self.request.build_absolute_uri(media.file.url),
+                'type': media.type,
+                'duration': media.duration
+            })
+
+        response = {
+            'start_time': playlist.start_time,
+            'end_time': playlist.end_time,
+            'exit_password': device.exit_password,
+            'playlist': media_list
+        }
+
+        return Response(response, status=200)
 
 
 class GetDeviceToken(APIView):
     def get(self, *args, **kwargs):
         params = self.request.query_params
-        serial_number = params['serial_number']
-        username = params['username']
+        serial_number = params.get('serial_number', None)
+        username = params.get('username', None)
+
+        if not serial_number and not username:
+            return Response({"error": "Username and Serial Number is Not Given"}, status=400)
+
+        if not serial_number:
+            return Response({'error': "Serial Number is Not Given"}, status=400)
+
+        if not username:
+            return Response({'error': "Username is Not Given"}, status=400)
+
         device = Device.objects.filter(serial_number=serial_number, owner__username__iexact=username).first()
         if device and device.token:
             return Response({"token": f"{device.token}"}, status=200)
-        return Response({"token": "Token Not Found"}, status=404)
+        return Response({"error": "Token Not Found"}, status=404)
 
 
 class RegisterDeviceView(generics.CreateAPIView):
@@ -77,7 +140,8 @@ def create_playlist(request):
         if 'devices' in data:
             playlist.devices.set(data['devices'])
 
-        return Response({'message': 'Playlist created successfully', 'playlist_id': playlist.playlist_id}, status=status.HTTP_201_CREATED)
+        return Response(
+            {'message': 'Playlist created successfully', 'playlist_id': playlist.playlist_id}, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
