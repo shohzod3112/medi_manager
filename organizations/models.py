@@ -1,3 +1,4 @@
+import os
 from django.db import models
 from django.conf import settings
 
@@ -61,11 +62,30 @@ class Media(models.Model):
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
     type = models.CharField(max_length=10, choices=MEDIA_TYPES)
-    file = models.FileField(upload_to="media/")
+    file = models.FileField(upload_to="")
     duration = models.IntegerField(null=True, blank=True)
 
     def __str__(self):
         return self.name
+
+    def get_upload_path(self, filename):
+        """Generate upload path: user_uploads/username/filename"""
+        if not self.owner_id:
+            raise ValueError("Owner must be set before saving file")
+        return f"{self.owner.username}/{filename}"
+
+    def save(self, *args, **kwargs):
+        if not self.owner_id:
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            self.owner = User.objects.get(pk=1)
+
+
+        if self.file and not self.file.name.startswith(f'{self.owner.username}/'):
+            original_filename = os.path.basename(self.file.name)
+            self.file.name = self.get_upload_path(original_filename)
+
+        super().save(*args, **kwargs)
 
 class Playlist(models.Model):
     playlist_id = models.AutoField(primary_key=True)
@@ -73,16 +93,10 @@ class Playlist(models.Model):
     name = models.CharField(max_length=255)
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
-    media = models.ManyToManyField(Media, through='PlaylistMedia')
-    devices = models.ManyToManyField(Device, through='PlaylistDevice')
+    media = models.ManyToManyField(Media)
+    devices = models.ManyToManyField(Device)
+
 
     def __str__(self):
         return self.name or "-"
 
-class PlaylistMedia(models.Model):
-    playlist = models.ForeignKey(Playlist, on_delete=models.CASCADE)
-    media = models.ForeignKey(Media, on_delete=models.CASCADE)
-
-class PlaylistDevice(models.Model):
-    playlist = models.ForeignKey(Playlist, on_delete=models.CASCADE)
-    device = models.ForeignKey(Device, on_delete=models.CASCADE)

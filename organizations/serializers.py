@@ -5,25 +5,40 @@ from core.models import User
 
 
 class DeviceSerializer(serializers.ModelSerializer):
+    sn = serializers.CharField(source='serial_number', required=True)
+
     class Meta:
         model = Device
-        fields = ['device_id', 'serial_number']
+        fields = ['device_id', 'sn']
 
-    def validate(self, attrs):
+    def to_internal_value(self, data):
         request = self.context.get("request")
         if not request:
             raise serializers.ValidationError("Request context is missing")
 
-        username = request.data.get("username")
+        if "sn" not in data:
+            raise serializers.ValidationError({"sn": "This field is required."})
+
+        if Device.objects.filter(serial_number=data['sn']).exists():
+            raise serializers.ValidationError({"sn": "Device with this serial number already exists."})
+
+        username = data.get("username")
         if not username:
             raise serializers.ValidationError({"username": "This field is required"})
 
         user = User.objects.filter(username__iexact=username).first()
         if not user:
-            raise ValidationError({"username": "User not found"})
+            raise serializers.ValidationError({"username": "User not found"})
 
-        attrs['owner'] = user
-        return attrs
+        validated_data = super().to_internal_value(data)
+        validated_data['owner'] = user
+        return validated_data
+
+    def validate_serial_number(self, value):
+        if Device.objects.filter(serial_number=value).exists():
+            raise serializers.ValidationError("Device with this serial number already exists.")
+        return value
+
 
 class MediaSerializer(serializers.ModelSerializer):
     class Meta:

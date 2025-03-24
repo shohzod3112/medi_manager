@@ -3,8 +3,9 @@ from django.contrib.auth.admin import UserAdmin
 from django.utils.html import format_html
 from django import forms
 from .models import User, Organization
+from django.contrib.auth.forms import UserChangeForm
 
-class CustomUserChangeForm(forms.ModelForm):
+class CustomUserChangeForm(UserChangeForm):
     class Meta:
         model = User
         fields = '__all__'
@@ -36,14 +37,14 @@ class CustomUserAdmin(UserAdmin):
 
     fieldsets = (
         (None, {'fields': ('username', 'password')}),
-        ('Personal Info', {'fields': ('organization', 'device_limit', 'expiration_date')}),
-        ('Permissions', {'fields': ('is_active', 'is_superuser', 'groups', 'user_permissions')}),
+        ('Personal Info', {'fields': ('organization', 'email', 'device_limit', 'expiration_date')}),
+        ('Permissions', {'fields': ('is_active', 'is_superuser', 'is_staff', 'groups', 'user_permissions')}),
     )
 
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('username', 'password1', 'password2', 'organization', 'device_limit', 'expiration_date')
+            'fields': ('username', 'password1', 'password2', 'email', 'organization', 'device_limit', 'expiration_date')
         }),
     )
 
