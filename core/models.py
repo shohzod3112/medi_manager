@@ -15,6 +15,7 @@ class Organization(models.Model):
 
 class User(AbstractUser):
     username = models.CharField(max_length=255, unique=True, db_index=True)
+    email = models.EmailField(blank=False, unique=True)
     is_superuser = models.BooleanField(default=False)
     organization = models.ForeignKey(
         Organization,
@@ -27,6 +28,7 @@ class User(AbstractUser):
     expiration_date = models.DateField(null=True, blank=False)  # ✅ Fixed
 
     USERNAME_FIELD = 'username'
+    REQUIRED_FIELDS = ["email"]
 
     def __str__(self):
         return self.username

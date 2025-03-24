@@ -65,7 +65,7 @@ class PlaylistsDetailAPIView(APIView):
 class GetDeviceToken(APIView):
     def get(self, *args, **kwargs):
         params = self.request.query_params
-        serial_number = params.get('serial_number', None)
+        serial_number = params.get('sn', None)
         username = params.get('username', None)
 
         if not serial_number and not username:

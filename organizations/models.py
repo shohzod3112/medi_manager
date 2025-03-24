@@ -93,22 +93,10 @@ class Playlist(models.Model):
     name = models.CharField(max_length=255)
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
-    media = models.ManyToManyField(Media, through='PlaylistMedia')
-    devices = models.ManyToManyField(Device, through='PlaylistDevice')
+    media = models.ManyToManyField(Media)
+    devices = models.ManyToManyField(Device)
+
 
     def __str__(self):
         return self.name or "-"
 
-class PlaylistMedia(models.Model):
-    playlist = models.ForeignKey(Playlist, on_delete=models.CASCADE)
-    media = models.ForeignKey(Media, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return f"{self.playlist.name} - {self.media.name}"
-
-class PlaylistDevice(models.Model):
-    playlist = models.ForeignKey(Playlist, on_delete=models.CASCADE)
-    device = models.ForeignKey(Device, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return f"{self.playlist.name} - {self.device.name}"

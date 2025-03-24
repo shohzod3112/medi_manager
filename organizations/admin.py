@@ -3,7 +3,8 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
 from django.db import models
-from .models import Device, Media, Playlist, DeviceType, PlaylistMedia, PlaylistDevice
+
+from .models import Device, Media, Playlist, DeviceType
 
 User = get_user_model()
 
@@ -67,7 +68,6 @@ class DeviceAdmin(admin.ModelAdmin):
     readonly_fields = ('serial_number', 'last_seen', 'owner')
     # exclude = ("token",)
 
-
     def save_model(self, request, obj, form, change):
         if not obj.owner_id:
             obj.owner = request.user
@@ -103,18 +103,6 @@ class MediaAdmin(admin.ModelAdmin):
         return obj.owner.username
     owner_display.short_description = 'Owner'
 
-# PlaylistMedia Inline
-class PlaylistMediaInline(admin.TabularInline):
-    model = PlaylistMedia
-    extra = 0
-    min_num = 1
-
-# PlaylistDevice Inline
-class PlaylistDeviceInline(admin.TabularInline):
-    model = PlaylistDevice
-    extra = 0
-    min_num = 1
-    # raw_id_fields = ('device',)
 
 # Playlist Admin Form
 class PlaylistAdminForm(forms.ModelForm):
@@ -135,11 +123,24 @@ class PlaylistAdminForm(forms.ModelForm):
 # Playlist Admin
 @admin.register(Playlist)
 class PlaylistAdmin(admin.ModelAdmin):
-    list_display = ('name', 'owner',)
+    list_display = ('name', 'start_time', 'end_time', 'owner', 'display_media', 'display_devices')
     list_filter = ('owner',)
     search_fields = ('name', 'owner__username',)
     readonly_fields = ('owner',)
-    inlines = [PlaylistDeviceInline, PlaylistMediaInline]
+
+    def display_media(self, obj):
+        if obj.media.count() > 0:
+            return ", ".join([media.name for media in obj.media.all() if media and media.name])
+        return "-"
+
+    display_media.short_description = "Media"
+
+    def display_devices(self, obj):
+        if obj.devices.count() > 0:
+            return ", ".join([device.name for device in obj.devices.all() if device and device.name])
+        return "-"
+
+    display_devices.short_description = "Devices"
 
     def get_queryset(self, request):
         """Ensure users only see their own playlists."""
