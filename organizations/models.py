@@ -40,7 +40,7 @@ class Device(models.Model):
     serial_number = models.CharField(max_length=255, unique=True)
     device_type = models.ForeignKey(DeviceType, on_delete=models.SET_NULL, null=True)
     exit_password = models.CharField(max_length=255, default="1111")
-    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='devices')
     last_seen = models.DateTimeField(auto_now=True)
     token = models.CharField(max_length=512, null=True, blank=True)
 

@@ -9,7 +9,10 @@ class DeviceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Device
-        fields = ['device_id', 'sn']
+        fields = ['device_id', 'sn', 'owner']
+        extra_kwargs = {
+            'owner': {'read_only': True}
+        }
 
     def to_internal_value(self, data):
         request = self.context.get("request")

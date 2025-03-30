@@ -61,17 +61,30 @@ class DeviceTypeAdmin(admin.ModelAdmin):
     display_owners.short_description = 'Owners'
 
 
+class DeviceAdminForm(forms.ModelForm):
+    class Meta:
+        model = Device
+        fields = '__all__'
+
+    def clean(self):
+        cleaned_data = super().clean()
+        owner = self.instance.owner
+
+        if owner:
+            user = User.objects.get(pk=owner.pk)
+            if user.device_limit <= user.devices.count():
+                raise ValidationError('Device limit exceeded.')
+
+        return cleaned_data
+
+
 @admin.register(Device)
 class DeviceAdmin(admin.ModelAdmin):
+    form = DeviceAdminForm
     list_display = ('device_id', 'name', 'device_type', 'owner', 'serial_number', 'exit_password', 'last_seen')
     search_fields = ('name', 'serial_number', 'device_type__name', 'owner__username')
     readonly_fields = ('serial_number', 'last_seen', 'owner', 'token')
     ordering = ('device_id',)
-
-    def save_model(self, request, obj, form, change):
-        if not obj.owner_id:
-            obj.owner = request.user
-        super().save_model(request, obj, form, change)
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)

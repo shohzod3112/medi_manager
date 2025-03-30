@@ -103,9 +103,6 @@ class RegisterDeviceView(generics.CreateAPIView):
                 status=201)
         return Response(serializer.errors, status=404)
 
-    def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
-
 
 class Upload_media(generics.CreateAPIView):
     """
