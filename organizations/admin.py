@@ -2,13 +2,12 @@ from django.contrib import admin
 from django import forms
 from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
-from django.db import models
+from django.utils import timezone
 
 from .models import Device, Media, Playlist, DeviceType
 
 User = get_user_model()
 
-# DeviceType Admin form with multiple selectable owners
 class DeviceTypeAdminForm(forms.ModelForm):
     owners = forms.ModelMultipleChoiceField(
         queryset=User.objects.all(),
@@ -36,9 +35,11 @@ class DeviceTypeAdminForm(forms.ModelForm):
             self.save_m2m()
         return instance
 
-# DeviceType Admin with multiple owners
+
+@admin.register(DeviceType)
 class DeviceTypeAdmin(admin.ModelAdmin):
-    list_display = ('name', 'display_owners')
+    list_display = ('id', 'name', 'display_owners')
+    ordering = ('id',)
     form = DeviceTypeAdminForm
 
     def get_form(self, request, obj=None, **kwargs):
@@ -59,19 +60,31 @@ class DeviceTypeAdmin(admin.ModelAdmin):
         return ", ".join(user.username for user in obj.owners.all())
     display_owners.short_description = 'Owners'
 
-admin.site.register(DeviceType, DeviceTypeAdmin)
 
-# Device Admin
+class DeviceAdminForm(forms.ModelForm):
+    class Meta:
+        model = Device
+        fields = '__all__'
+
+    def clean(self):
+        cleaned_data = super().clean()
+        owner = self.instance.owner
+
+        if owner:
+            user = User.objects.get(pk=owner.pk)
+            if user.device_limit <= user.devices.count():
+                raise ValidationError('Device limit exceeded.')
+
+        return cleaned_data
+
+
+@admin.register(Device)
 class DeviceAdmin(admin.ModelAdmin):
+    form = DeviceAdminForm
     list_display = ('device_id', 'name', 'device_type', 'owner', 'serial_number', 'exit_password', 'last_seen')
     search_fields = ('name', 'serial_number', 'device_type__name', 'owner__username')
-    readonly_fields = ('serial_number', 'last_seen', 'owner')
-    # exclude = ("token",)
-
-    def save_model(self, request, obj, form, change):
-        if not obj.owner_id:
-            obj.owner = request.user
-        super().save_model(request, obj, form, change)
+    readonly_fields = ('serial_number', 'last_seen', 'owner', 'token')
+    ordering = ('device_id',)
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
@@ -84,15 +97,14 @@ class DeviceAdmin(admin.ModelAdmin):
             kwargs["queryset"] = DeviceType.objects.filter(owners=request.user)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
-admin.site.register(Device, DeviceAdmin)
 
-# Media Admin
 @admin.register(Media)
 class MediaAdmin(admin.ModelAdmin):
     list_display = ('media_id', 'name', 'type', 'owner_display', 'duration')
     search_fields = ('name', 'owner__username')
     list_filter = ('type', 'owner')
     readonly_fields = ('owner',)
+    ordering = ('media_id',)
 
     def save_model(self, request, obj, form, change):
         if not obj.owner_id:
@@ -123,10 +135,26 @@ class PlaylistAdminForm(forms.ModelForm):
 # Playlist Admin
 @admin.register(Playlist)
 class PlaylistAdmin(admin.ModelAdmin):
-    list_display = ('name', 'start_time', 'end_time', 'owner', 'display_media', 'display_devices')
+    list_display = ('playlist_id', 'name', 'formatted_start_time', 'formatted_end_time', 'owner', 'display_media', 'display_devices')
     list_filter = ('owner',)
     search_fields = ('name', 'owner__username',)
     readonly_fields = ('owner',)
+    ordering = ('playlist_id',)
+
+    def formfield_for_manytomany(self, db_field, request, **kwargs):
+        if db_field.name == "devices":
+            kwargs["queryset"] = Device.objects.exclude(name__isnull=True).exclude(name__exact='')
+        return super().formfield_for_manytomany(db_field, request, **kwargs)
+
+    def formatted_start_time(self, obj):
+        return timezone.localtime(obj.start_time).strftime('%Y-%m-%d %H:%M:%S')
+
+    formatted_start_time.short_description = 'Start Time'
+
+    def formatted_end_time(self, obj):
+        return timezone.localtime(obj.end_time).strftime('%Y-%m-%d %H:%M:%S')
+
+    formatted_end_time.short_description = 'End Time'
 
     def display_media(self, obj):
         if obj.media.count() > 0:

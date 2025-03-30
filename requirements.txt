@@ -9,3 +9,5 @@ PyJWT==2.9.0
 python-dotenv==1.0.1
 sqlparse==0.5.3
 typing_extensions==4.12.2
+django-jazzmin==3.0.1
+drf-yasg==1.21.10

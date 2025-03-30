@@ -27,12 +27,13 @@ class UserAdminForm(forms.ModelForm):
         self.fields['organization'].required = True
 
 
+@admin.register(User)
 class CustomUserAdmin(UserAdmin):
     form = UserAdminForm
     list_display = ('id', 'clickable_username', 'is_superuser', 'get_organization_db_name', 'get_organization_name', 'device_limit', 'expiration_date')
     search_fields = ('username',)
     list_filter = ('is_superuser', 'organization')
-    ordering = ('username',)
+    ordering = ('id',)
     readonly_fields = ('date_joined',)
 
     fieldsets = (
@@ -61,12 +62,12 @@ class CustomUserAdmin(UserAdmin):
         return obj.organization.name if obj.organization else "-"
     get_organization_name.short_description = "Organization Name"
 
-admin.site.register(User, CustomUserAdmin)
 
 @admin.register(Organization)
 class OrganizationAdmin(admin.ModelAdmin):
     list_display = ('id', 'clickable_name', 'db_name')
     search_fields = ('name', 'db_name')
+    ordering = ('id',)
 
     def clickable_name(self, obj):
         return format_html('<a href="{}">{}</a>', f"/admin/core/organization/{obj.id}/change/", obj.name)
