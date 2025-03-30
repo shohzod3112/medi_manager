@@ -5,7 +5,8 @@ from rest_framework import status, permissions
 
 from rest_framework import generics
 from rest_framework.views import APIView
-
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 from django.utils import timezone
 
 from core.models import User
@@ -15,6 +16,41 @@ from .serializers import DeviceSerializer, MediaSerializer, PlaylistSerializer
 
 class PlaylistsDetailAPIView(APIView):
 
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter(
+                name="sn",
+                in_=openapi.IN_QUERY,
+                type=openapi.TYPE_STRING,
+                description="Serial number of the device",
+                required=True
+            ),
+            openapi.Parameter(
+                name="username",
+                in_=openapi.IN_QUERY,
+                type=openapi.TYPE_STRING,
+                description="Username of the device owner",
+                required=True
+            ),
+            openapi.Parameter(
+                name="token",
+                in_=openapi.IN_QUERY,
+                type=openapi.TYPE_STRING,
+                description="Device token",
+                required=True,
+            )
+        ],
+        responses={
+            200: openapi.Response("Successful Response", openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "token": openapi.Schema(type=openapi.TYPE_STRING, description="Device token")
+                }
+            )),
+            400: openapi.Response("Bad Request"),
+            404: openapi.Response("Token Not Found"),
+        }
+    )
     def get(self, *args, **kwargs):
         query_params = self.request.query_params
         sn = query_params.get('sn', None)
@@ -67,6 +103,25 @@ class PlaylistsDetailAPIView(APIView):
 
 
 class GetDeviceToken(APIView):
+
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter(
+                name="sn",
+                in_=openapi.IN_QUERY,
+                type=openapi.TYPE_STRING,
+                description="Serial number of the device",
+                required=True
+            ),
+            openapi.Parameter(
+                name="username",
+                in_=openapi.IN_QUERY,
+                type=openapi.TYPE_STRING,
+                description="Username of the device owner",
+                required=True
+            ),
+        ],
+    )
     def get(self, *args, **kwargs):
         params = self.request.query_params
         serial_number = params.get('sn', None)

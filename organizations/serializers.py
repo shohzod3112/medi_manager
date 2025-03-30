@@ -1,3 +1,5 @@
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from organizations.models import Device, Media, Playlist
@@ -8,16 +10,22 @@ from django.utils import timezone
 
 class DeviceSerializer(serializers.ModelSerializer):
     sn = serializers.CharField(source='serial_number', required=True)
+    username = serializers.CharField(write_only=True, required=True)
+
 
     class Meta:
         model = Device
-        fields = ['device_id', 'sn', 'owner']
+        fields = ['device_id', 'sn', 'owner', 'username']
         extra_kwargs = {
             'owner': {'read_only': True}
         }
 
+    def create(self, validated_data):
+        validated_data.pop('username', None)
+        return Device.objects.create(**validated_data)
+
     def validate(self, attrs):
-        username = self.initial_data.get("username")  # Get username from request data
+        username = self.initial_data.get("username")
         if not username:
             raise ValidationError(
                 {"error": {"code": "MISSING_USERNAME", "message": "Username is required"}}
@@ -38,6 +46,9 @@ class DeviceSerializer(serializers.ModelSerializer):
         return attrs
 
     def to_internal_value(self, data):
+        if 'username' in data:
+            data['owner'] = data.get('username', None)
+
         request = self.context.get("request")
         if not request:
             raise serializers.ValidationError(
@@ -62,6 +73,13 @@ class DeviceSerializer(serializers.ModelSerializer):
                 {"error": {"code": "DUPLICATE_SN", "message": "Device with this serial number already exists"}}
             )
         return value
+
+    @swagger_serializer_method(serializer_or_field=openapi.Schema(
+        type=openapi.TYPE_STRING,
+        description="Username of the owner of the device"
+    ))
+    def get_username(self, obj):
+        return obj.owner.username if obj.owner else None
 
 
 
