@@ -32,7 +32,7 @@ class CustomUserAdmin(UserAdmin):
     list_display = ('id', 'clickable_username', 'is_superuser', 'get_organization_db_name', 'get_organization_name', 'device_limit', 'expiration_date')
     search_fields = ('username',)
     list_filter = ('is_superuser', 'organization')
-    ordering = ('username',)
+    ordering = ('id',)
     readonly_fields = ('date_joined',)
 
     fieldsets = (
@@ -67,6 +67,7 @@ admin.site.register(User, CustomUserAdmin)
 class OrganizationAdmin(admin.ModelAdmin):
     list_display = ('id', 'clickable_name', 'db_name')
     search_fields = ('name', 'db_name')
+    ordering = ('id',)
 
     def clickable_name(self, obj):
         return format_html('<a href="{}">{}</a>', f"/admin/core/organization/{obj.id}/change/", obj.name)

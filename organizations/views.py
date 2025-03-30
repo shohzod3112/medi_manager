@@ -5,6 +5,8 @@ from rest_framework import status, permissions
 from rest_framework import generics
 from rest_framework.views import APIView
 
+from django.utils import timezone
+
 from core.models import User
 from .models import Device, Playlist
 from .serializers import DeviceSerializer, MediaSerializer, PlaylistSerializer
@@ -53,8 +55,9 @@ class PlaylistsDetailAPIView(APIView):
             })
 
         response = {
-            'start_time': playlist.start_time,
-            'end_time': playlist.end_time,
+            'server_time': timezone.localtime(timezone.now()).strftime('%Y-%m-%d %H:%M:%S'),
+            'start_time': timezone.localtime(playlist.start_time).strftime('%Y-%m-%d %H:%M:%S'),
+            'end_time': timezone.localtime(playlist.end_time).strftime('%Y-%m-%d %H:%M:%S'),
             'exit_password': device.exit_password,
             'playlist': media_list
         }
