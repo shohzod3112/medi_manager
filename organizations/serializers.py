@@ -3,6 +3,8 @@ from rest_framework.exceptions import ValidationError
 from organizations.models import Device, Media, Playlist
 from core.models import User
 
+from django.utils import timezone
+
 
 class DeviceSerializer(serializers.ModelSerializer):
     sn = serializers.CharField(source='serial_number', required=True)
@@ -14,33 +16,53 @@ class DeviceSerializer(serializers.ModelSerializer):
             'owner': {'read_only': True}
         }
 
-    def to_internal_value(self, data):
-        request = self.context.get("request")
-        if not request:
-            raise serializers.ValidationError("Request context is missing")
-
-        if "sn" not in data:
-            raise serializers.ValidationError({"sn": "This field is required."})
-
-        if Device.objects.filter(serial_number=data['sn']).exists():
-            raise serializers.ValidationError({"sn": "Device with this serial number already exists."})
-
-        username = data.get("username")
+    def validate(self, attrs):
+        username = self.initial_data.get("username")  # Get username from request data
         if not username:
-            raise serializers.ValidationError({"username": "This field is required"})
+            raise ValidationError(
+                {"error": {"code": "MISSING_USERNAME", "message": "Username is required"}}
+            )
 
         user = User.objects.filter(username__iexact=username).first()
         if not user:
-            raise serializers.ValidationError({"username": "User not found"})
+            raise ValidationError(
+                {"error": {"code": "USER_NOT_FOUND", "message": "User not found"}}
+            )
 
-        validated_data = super().to_internal_value(data)
-        validated_data['owner'] = user
-        return validated_data
+        if user.expiration_date and user.expiration_date < timezone.localtime(timezone.now()).date():
+            raise ValidationError(
+                {"error": {"code": "EXPIRED_ACCOUNT", "message": "User's account has expired"}}
+            )
+
+        attrs['owner'] = user  # Assign user to owner field
+        return attrs
+
+    def to_internal_value(self, data):
+        request = self.context.get("request")
+        if not request:
+            raise serializers.ValidationError(
+                {"error": {"code": "MISSING_CONTEXT", "message": "Request context is missing"}}
+            )
+
+        if "sn" not in data:
+            raise serializers.ValidationError(
+                {"error": {"code": "MISSING_SN", "message": "Serial number is required"}}
+            )
+
+        if Device.objects.filter(serial_number=data['sn']).exists():
+            raise serializers.ValidationError(
+                {"error": {"code": "DUPLICATE_SN", "message": "Device with this serial number already exists"}}
+            )
+
+        return super().to_internal_value(data)
 
     def validate_serial_number(self, value):
         if Device.objects.filter(serial_number=value).exists():
-            raise serializers.ValidationError("Device with this serial number already exists.")
+            raise serializers.ValidationError(
+                {"error": {"code": "DUPLICATE_SN", "message": "Device with this serial number already exists"}}
+            )
         return value
+
 
 
 class MediaSerializer(serializers.ModelSerializer):

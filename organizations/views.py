@@ -1,4 +1,5 @@
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.exceptions import ValidationError, APIException
 from rest_framework.response import Response
 from rest_framework import status, permissions
 
@@ -90,18 +91,45 @@ class RegisterDeviceView(generics.CreateAPIView):
     serializer_class = DeviceSerializer
 
     def post(self, request, *args, **kwargs):
-        data = request.data
+        serializer = self.serializer_class(data=request.data, context={'request': request})
 
-        serializer = self.serializer_class(data=data, context={'request': request})
-        if serializer.is_valid():
-            serializer.save()
+        try:
+            serializer.is_valid(raise_exception=True)
+            device = serializer.save()
             return Response(
                 {
+                    'success': True,
                     'message': 'Device registered successfully',
-                    'device_id': serializer.data['device_id']
-                 },
-                status=201)
-        return Response(serializer.errors, status=404)
+                    'device_id': device.device_id
+                },
+                status=status.HTTP_201_CREATED
+            )
+
+        except ValidationError as e:
+            error_detail = e.detail
+            first_error_key = list(error_detail.keys())[0]
+            error_message = error_detail[first_error_key]
+
+            if isinstance(error_message, list):
+                error_message = error_message[0]
+
+            if error_message in ["User not found"]:
+                return Response({'success': False, 'error': {'code': 'USER_NOT_FOUND', 'message': error_message}},
+                                status=status.HTTP_404_NOT_FOUND)
+
+            if error_message in ["User's account has expired"]:
+                return Response({'success': False, 'error': {'code': 'EXPIRED_ACCOUNT', 'message': error_message}},
+                                status=status.HTTP_403_FORBIDDEN)
+
+            if error_message in ["Device with this serial number already exists"]:
+                return Response({'success': False, 'error': {'code': 'DUPLICATE_SN', 'message': error_message}},
+                                status=status.HTTP_409_CONFLICT)
+
+            return Response({'success': False, 'error': error_detail}, status=status.HTTP_400_BAD_REQUEST)
+
+        except APIException as e:
+            return Response({'success': False, 'error': {'code': 'SERVER_ERROR', 'message': str(e)}},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class Upload_media(generics.CreateAPIView):
