@@ -91,12 +91,20 @@ class PlaylistsDetailAPIView(APIView):
                 'duration': media.duration
             })
 
+        playlists = []
+        for playlist in Playlist.objects.filter(devices=device):
+            playlists.append({
+                'id': playlist.playlist_id,
+                'name': playlist.name,
+                'start_time': timezone.localtime(playlist.start_time).strftime('%Y-%m-%d %H:%M:%S'),
+                'end_time': timezone.localtime(playlist.end_time).strftime('%Y-%m-%d %H:%M:%S'),
+                'medias': media_list
+            })
+
         response = {
             'server_time': timezone.localtime(timezone.now()).strftime('%Y-%m-%d %H:%M:%S'),
-            'start_time': timezone.localtime(playlist.start_time).strftime('%Y-%m-%d %H:%M:%S'),
-            'end_time': timezone.localtime(playlist.end_time).strftime('%Y-%m-%d %H:%M:%S'),
             'exit_password': device.exit_password,
-            'playlist': media_list
+            'playlists': playlists
         }
 
         return Response(response, status=200)

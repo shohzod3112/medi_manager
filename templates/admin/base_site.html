@@ -1,8 +1,0 @@
-{% extends 'jazzmin/base.html' %}
-
-{% load static %}
-
-{% block extrajs %}
-    {{ block.super }}
-    <script src="{% static 'admin_m2m_fix.js' %}"></script>
-{% endblock %}
