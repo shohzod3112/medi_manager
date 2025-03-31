@@ -82,6 +82,7 @@ class DeviceAdminForm(forms.ModelForm):
 class DeviceAdmin(admin.ModelAdmin):
     form = DeviceAdminForm
     list_display = ('device_id', 'name', 'device_type', 'owner', 'serial_number', 'exit_password', 'last_seen')
+    list_display_links = ('device_id', 'name')
     search_fields = ('name', 'serial_number', 'device_type__name', 'owner__username')
     readonly_fields = ('serial_number', 'last_seen', 'owner', 'token')
     ordering = ('device_id',)
