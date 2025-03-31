@@ -39,6 +39,7 @@ class DeviceTypeAdminForm(forms.ModelForm):
 @admin.register(DeviceType)
 class DeviceTypeAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'display_owners')
+    list_display_links = ("id", "name")
     ordering = ('id',)
     form = DeviceTypeAdminForm
 
@@ -102,6 +103,7 @@ class DeviceAdmin(admin.ModelAdmin):
 @admin.register(Media)
 class MediaAdmin(admin.ModelAdmin):
     list_display = ('media_id', 'name', 'type', 'owner_display', 'duration')
+    list_display_links = ("media_id", "name")
     search_fields = ('name', 'owner__username')
     list_filter = ('type', 'owner')
     readonly_fields = ('owner',)
@@ -137,6 +139,7 @@ class PlaylistAdminForm(forms.ModelForm):
 @admin.register(Playlist)
 class PlaylistAdmin(admin.ModelAdmin):
     list_display = ('playlist_id', 'name', 'formatted_start_time', 'formatted_end_time', 'owner', 'display_media', 'display_devices')
+    list_display_links = ("playlist_id", "name")
     list_filter = ('owner',)
     search_fields = ('name', 'owner__username',)
     readonly_fields = ('owner',)
