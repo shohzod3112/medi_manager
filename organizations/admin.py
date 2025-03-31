@@ -39,6 +39,7 @@ class DeviceTypeAdminForm(forms.ModelForm):
 @admin.register(DeviceType)
 class DeviceTypeAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'display_owners')
+    list_display_links = ("id", "name")
     ordering = ('id',)
     form = DeviceTypeAdminForm
 
@@ -82,6 +83,7 @@ class DeviceAdminForm(forms.ModelForm):
 class DeviceAdmin(admin.ModelAdmin):
     form = DeviceAdminForm
     list_display = ('device_id', 'name', 'device_type', 'owner', 'serial_number', 'exit_password', 'last_seen')
+    list_display_links = ('device_id', 'name')
     search_fields = ('name', 'serial_number', 'device_type__name', 'owner__username')
     readonly_fields = ('serial_number', 'last_seen', 'owner', 'token')
     ordering = ('device_id',)
@@ -101,6 +103,7 @@ class DeviceAdmin(admin.ModelAdmin):
 @admin.register(Media)
 class MediaAdmin(admin.ModelAdmin):
     list_display = ('media_id', 'name', 'type', 'owner_display', 'duration')
+    list_display_links = ("media_id", "name")
     search_fields = ('name', 'owner__username')
     list_filter = ('type', 'owner')
     readonly_fields = ('owner',)
@@ -136,6 +139,7 @@ class PlaylistAdminForm(forms.ModelForm):
 @admin.register(Playlist)
 class PlaylistAdmin(admin.ModelAdmin):
     list_display = ('playlist_id', 'name', 'formatted_start_time', 'formatted_end_time', 'owner', 'display_media', 'display_devices')
+    list_display_links = ("playlist_id", "name")
     list_filter = ('owner',)
     search_fields = ('name', 'owner__username',)
     readonly_fields = ('owner',)
