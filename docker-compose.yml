@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres
+    env_file:
+      - .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=${SUPERUSER_DB_USER}
+      - POSTGRES_PASSWORD=${SUPERUSER_DB_PASSWORD}
+      - POSTGRES_HOST=${SUPERUSER_DB_HOST}
+      - POSTGRES_DB=${SUPERUSER_DB_NAME}
+      - POSTGRES_PORT=${SUPERUSER_DB_PORT}
+    restart: always
+
+  web_django: &web_django
+    restart: always
+    build:
+      context: ./
+      dockerfile: Dockerfile
+#    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers=2 --threads=4 --worker-class=gthread --timeout 30 --access-logfile -
+    command: python3 manage.py runserver 0.0.0.0:8000
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - ./:/app
+      - ./static:/app/static
+      - ./media:/app/media
+      - ./locale:/app/locale
+    env_file:
+      - .env
+    environment:
+      - TZ=Asia/Tashkent
+    ports:
+      - 8000:8000
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
+  static_volume:
