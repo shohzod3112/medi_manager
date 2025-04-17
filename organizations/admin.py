@@ -119,11 +119,44 @@ class MediaAdmin(admin.ModelAdmin):
     owner_display.short_description = 'Owner'
 
 
-# Playlist Admin Form
+# Playlist Admin
 class PlaylistAdminForm(forms.ModelForm):
+    media = forms.ModelMultipleChoiceField(
+        queryset=Media.objects.all(),
+        widget=admin.widgets.FilteredSelectMultiple('Media', is_stacked=False),
+        required=False
+    )
+    devices = forms.ModelMultipleChoiceField(
+        queryset=Device.objects.all(),
+        widget=admin.widgets.FilteredSelectMultiple('Devices', is_stacked=False),
+        required=False
+    )
+
     class Meta:
         model = Playlist
         fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        self.current_user = kwargs.pop('current_user', None)
+        super().__init__(*args, **kwargs)
+
+        if self.current_user and not self.current_user.is_superuser:
+            # Restrict choices for regular users
+            self.fields['media'].queryset = Media.objects.filter(owner=self.current_user)
+            self.fields['devices'].queryset = Device.objects.filter(owner=self.current_user)
+        else:
+            # Superusers see all
+            self.fields['media'].queryset = Media.objects.all()
+            self.fields['devices'].queryset = Device.objects.all()
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if commit:
+            instance.save()
+            instance.media.set(self.cleaned_data['media'])
+            instance.devices.set(self.cleaned_data['devices'])
+            self.save_m2m()
+        return instance
 
     def clean(self):
         cleaned_data = super().clean()
@@ -135,7 +168,7 @@ class PlaylistAdminForm(forms.ModelForm):
             raise ValidationError({'devices': 'At least one device is required.'})
         return cleaned_data
 
-# Playlist Admin
+
 @admin.register(Playlist)
 class PlaylistAdmin(admin.ModelAdmin):
     list_display = ('playlist_id', 'name', 'formatted_start_time', 'formatted_end_time', 'owner', 'display_media', 'display_devices')
@@ -144,6 +177,7 @@ class PlaylistAdmin(admin.ModelAdmin):
     search_fields = ('name', 'owner__username',)
     readonly_fields = ('owner',)
     ordering = ('playlist_id',)
+    form = PlaylistAdminForm
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
         if db_field.name == "devices":
