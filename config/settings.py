@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     'core',
     'organizations',
     'rest_framework_simplejwt',
+    'sslserver',
 ]
 
 MIDDLEWARE = [
@@ -146,10 +147,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 JAZZMIN_SETTINGS = {
-    "site_title": "My Admin",
-    "site_header": "My Admin",
-    "welcome_sign": "Welcome to My Admin Panel",
-    "copyright": "My Company",
+    "site_title": "Media Manager",
+    "site_header": "Media Manager",
+    "site_brand": "Media Manager",
+    "welcome_sign": "Welcome to Media Manager",
+    "copyright": "Shahzod MCHJ",
     "show_ui_builder": True,  # Enables UI customization
 
     "custom_js": [
