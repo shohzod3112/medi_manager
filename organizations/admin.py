@@ -3,6 +3,8 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+from django.utils.html import format_html
+from django.conf import settings
 
 from .models import Device, Media, Playlist, DeviceType
 
@@ -82,11 +84,34 @@ class DeviceAdminForm(forms.ModelForm):
 @admin.register(Device)
 class DeviceAdmin(admin.ModelAdmin):
     form = DeviceAdminForm
-    list_display = ('device_id', 'name', 'device_type', 'owner', 'serial_number', 'exit_password', 'last_seen')
+    list_display = (
+        'device_id', 'name', 'device_type', 'owner', 'serial_number',
+        'exit_password', 'last_seen', 'media_preview'
+    )
     list_display_links = ('device_id', 'name')
     search_fields = ('name', 'serial_number', 'device_type__name', 'owner__username')
     readonly_fields = ('serial_number', 'last_seen', 'owner', 'token')
     ordering = ('device_id',)
+
+    def media_preview(self, obj):
+        media_qs = Media.objects.filter(playlist__devices=obj).distinct().order_by('media_id')
+        if not media_qs.exists():
+            return "-"
+
+        media = media_qs.first()
+        if media.type == "image":
+            return format_html(
+                '<img src="{}" style="width: 100px; height: 100px;" />',
+                media.file.url)
+        elif media.type == "video":
+            preview_url = f"{settings.MEDIA_URL}/previews/media_{media.media_id}.jpg"
+            return format_html(
+                '<img src="{}" style="width: 100px; height: 100px;" />',
+                preview_url
+            )
+        return "-"
+
+    media_preview.short_description = 'Media Preview'
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
@@ -162,9 +187,9 @@ class PlaylistAdminForm(forms.ModelForm):
         cleaned_data = super().clean()
         if not self.instance.pk:
             return cleaned_data
-        if not self.instance.media.exists():
+        if not cleaned_data.get('media'):
             raise ValidationError({'media': 'At least one media file is required.'})
-        if not self.instance.devices.exists():
+        if not cleaned_data.get('devices'):
             raise ValidationError({'devices': 'At least one device is required.'})
         return cleaned_data
 

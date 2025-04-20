@@ -14,4 +14,8 @@ drf-yasg==1.21.10
 gunicorn
 moviepy>=1.0.0
 django-sslserver==0.22
+ffmpeg-python==0.2.0
+celery==5.5.1
+redis==5.2.1
+
 

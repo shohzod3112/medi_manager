@@ -88,6 +88,14 @@ class Media(models.Model):
             self.file.name = self.get_upload_path(original_filename)
 
         super().save(*args, **kwargs)
+        if self.type == "image" and self.file:
+            media = self.file.url.split("/")[-1]
+            if media == "mp4":
+                self.type = "video"
+                super().save(update_fields=["type"])
+            elif self.duration is not None:
+                self.duration = None
+                super().save(update_fields=["duration"])
 
         if self.type == "video" and self.file:
             file_path = self.file.path
@@ -98,7 +106,8 @@ class Media(models.Model):
 
                 if self.duration != duration_seconds:
                     self.duration = duration_seconds
-                    super().save(update_fields=["duration"])
+                    self.type = "video"
+                    super().save(update_fields=["duration", "type"])
             except Exception as e:
                 print(f"Error getting video duration: {e}")
 
