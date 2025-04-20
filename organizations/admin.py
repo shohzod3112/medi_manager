@@ -131,7 +131,7 @@ class MediaAdmin(admin.ModelAdmin):
     list_display_links = ("media_id", "name")
     search_fields = ('name', 'owner__username')
     list_filter = ('type', 'owner')
-    readonly_fields = ('owner',)
+    readonly_fields = ('owner', 'duration')
     ordering = ('media_id',)
 
     def save_model(self, request, obj, form, change):
