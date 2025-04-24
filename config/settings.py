@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     'core',
     'organizations',
     'rest_framework_simplejwt',
+    'sslserver',
 ]
 
 MIDDLEWARE = [
@@ -105,51 +106,15 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# SIMPLE_JWT = {
-#     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
-#     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
-#     "ROTATE_REFRESH_TOKENS": False,
-#     "BLACKLIST_AFTER_ROTATION": False,
-#     "UPDATE_LAST_LOGIN": False,
-#
-#     "ALGORITHM": "HS256",
-#     "VERIFYING_KEY": "",
-#     "AUDIENCE": None,
-#     "ISSUER": None,
-#     "JSON_ENCODER": None,
-#     "JWK_URL": None,
-#     "LEEWAY": 0,
-#
-#     "AUTH_HEADER_TYPES": ("Bearer",),
-#     "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",
-#     "USER_ID_FIELD": "id",
-#     "USER_ID_CLAIM": "user_id",
-#     "USER_AUTHENTICATION_RULE": "rest_framework_simplejwt.authentication.default_user_authentication_rule",
-#
-#     "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
-#     "TOKEN_TYPE_CLAIM": "token_type",
-#     "TOKEN_USER_CLASS": "rest_framework_simplejwt.models.TokenUser",
-#
-#     "JTI_CLAIM": "jti",
-#
-#     "SLIDING_TOKEN_REFRESH_EXP_CLAIM": "refresh_exp",
-#     "SLIDING_TOKEN_LIFETIME": timedelta(minutes=5),
-#     "SLIDING_TOKEN_REFRESH_LIFETIME": timedelta(days=1),
-#
-#     "TOKEN_OBTAIN_SERIALIZER": "rest_framework_simplejwt.serializers.TokenObtainPairSerializer",
-#     "TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.serializers.TokenRefreshSerializer",
-#     "TOKEN_VERIFY_SERIALIZER": "rest_framework_simplejwt.serializers.TokenVerifySerializer",
-#     "TOKEN_BLACKLIST_SERIALIZER": "rest_framework_simplejwt.serializers.TokenBlacklistSerializer",
-#     "SLIDING_TOKEN_OBTAIN_SERIALIZER": "rest_framework_simplejwt.serializers.TokenObtainSlidingSerializer",
-#     "SLIDING_TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.serializers.TokenRefreshSlidingSerializer",
-# }
-
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/1'
 
 JAZZMIN_SETTINGS = {
-    "site_title": "My Admin",
-    "site_header": "My Admin",
-    "welcome_sign": "Welcome to My Admin Panel",
-    "copyright": "My Company",
+    "site_title": "Media Manager",
+    "site_header": "Media Manager",
+    "site_brand": "Media Manager",
+    "welcome_sign": "Welcome to Media Manager",
+    "copyright": "Shahzod MCHJ",
     "show_ui_builder": True,  # Enables UI customization
 
     "custom_js": [

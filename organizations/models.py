@@ -3,6 +3,8 @@ from django.db import models
 from django.conf import settings
 
 import hashlib
+from moviepy import VideoFileClip
+
 
 class Organization(models.Model):
     name = models.CharField(max_length=255, unique=True)
@@ -86,6 +88,29 @@ class Media(models.Model):
             self.file.name = self.get_upload_path(original_filename)
 
         super().save(*args, **kwargs)
+        if self.type == "image" and self.file:
+            media = self.file.url.split("/")[-1]
+            if media == "mp4":
+                self.type = "video"
+                super().save(update_fields=["type"])
+            elif self.duration is not None:
+                self.duration = None
+                super().save(update_fields=["duration"])
+
+        if self.type == "video" and self.file:
+            file_path = self.file.path
+            try:
+                clip = VideoFileClip(file_path)
+                duration_seconds = int(clip.duration)
+                clip.close()
+
+                if self.duration != duration_seconds:
+                    self.duration = duration_seconds
+                    self.type = "video"
+                    super().save(update_fields=["duration", "type"])
+            except Exception as e:
+                print(f"Error getting video duration: {e}")
+
 
 class Playlist(models.Model):
     playlist_id = models.AutoField(primary_key=True)
