@@ -1,4 +1,4 @@
-!/bin/sh
+#!/bin/sh
 
 if [ "$DATABASE" = "postgres" ]
 then
@@ -11,6 +11,6 @@ then
    echo "PostgreSQL started"
 fi
 
-python manage.py collectstatic --noinput
-#python manage.py. migrate
+python3 manage.py collectstatic --noinput
+python3 manage.py. migrate
 exec "$@"
