@@ -15,11 +15,9 @@ services:
 
   web_django: &web_django
     restart: always
-    build:
-      context: ./
-      dockerfile: Dockerfile
-#    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers=2 --threads=4 --worker-class=gthread --timeout 30 --access-logfile -
-    command: python3 manage.py runsslserver --certificate ./localhost+2.pem --key ./localhost ./localhost+2-key.pem 0.0.0.0:8000
+    build: .
+    entrypoint: ["/app/entrypoint.sh"]
+    command: python3 manage.py runsslserver --certificate ./localhost+2.pem --key  ./localhost+2-key.pem 0.0.0.0:8000
     security_opt:
       - seccomp:unconfined
     volumes:

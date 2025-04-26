@@ -12,21 +12,12 @@ ENV CRYPTOGRAPHY_DONT_BUILD_RUST=1
 
 # Install required system dependencies
 RUN apk --no-cache add \
-    gcc \
-    musl-dev \
-    linux-headers \
-    python3-dev \
-    libffi-dev \
-    postgresql-dev \
-    icu-dev \
-    gettext \
-    libpq-dev \
-    glib-dev \
-    poppler-glib \
-    vips-dev \
-    vips-tools \
-    poppler-utils \
-    ffmpeg
+      gcc \
+      musl-dev \
+      python3-dev \
+      libffi-dev \
+      postgresql-dev \
+      ffmpeg
 
 # Copy requirements file
 COPY requirements.txt .
