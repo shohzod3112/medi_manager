@@ -94,7 +94,11 @@ class DeviceAdmin(admin.ModelAdmin):
     ordering = ('device_id',)
 
     def media_preview(self, obj):
-        media_qs = Media.objects.filter(playlist__devices=obj).distinct().order_by('media_id')
+        media_qs = Media.objects.filter(
+            playlist__devices=obj,
+            playlist__owner=obj.owner
+        ).distinct().order_by('media_id')
+
         if not media_qs.exists():
             return "-"
 
@@ -104,7 +108,7 @@ class DeviceAdmin(admin.ModelAdmin):
                 '<img src="{}" style="width: 100px; height: 100px;" />',
                 media.file.url)
         elif media.type == "video":
-            preview_url = f"{settings.MEDIA_URL}/previews/media_{media.media_id}.jpg"
+            preview_url = f"{settings.MEDIA_URL}previews/media_{media.media_id}.jpg"
             return format_html(
                 '<img src="{}" style="width: 100px; height: 100px;" />',
                 preview_url
@@ -119,18 +123,13 @@ class DeviceAdmin(admin.ModelAdmin):
             return qs
         return qs.filter(owner=request.user)
 
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == 'device_type':
-            kwargs["queryset"] = DeviceType.objects.filter(owners=request.user)
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
-
 
 @admin.register(Media)
 class MediaAdmin(admin.ModelAdmin):
     list_display = ('media_id', 'name', 'type', 'owner_display', 'duration')
     list_display_links = ("media_id", "name")
     search_fields = ('name', 'owner__username')
-    list_filter = ('type', 'owner')
+    list_filter = ('type', 'name')
     readonly_fields = ('owner', 'duration')
     ordering = ('media_id',)
 
@@ -143,16 +142,22 @@ class MediaAdmin(admin.ModelAdmin):
         return obj.owner.username
     owner_display.short_description = 'Owner'
 
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        return qs.filter(owner=request.user)
+
 
 # Playlist Admin
 class PlaylistAdminForm(forms.ModelForm):
     media = forms.ModelMultipleChoiceField(
-        queryset=Media.objects.all(),
+        queryset=Media.objects.none(),
         widget=admin.widgets.FilteredSelectMultiple('Media', is_stacked=False),
         required=False
     )
     devices = forms.ModelMultipleChoiceField(
-        queryset=Device.objects.all(),
+        queryset=Device.objects.none(),
         widget=admin.widgets.FilteredSelectMultiple('Devices', is_stacked=False),
         required=False
     )
@@ -161,18 +166,21 @@ class PlaylistAdminForm(forms.ModelForm):
         model = Playlist
         fields = '__all__'
 
-    def __init__(self, *args, **kwargs):
-        self.current_user = kwargs.pop('current_user', None)
+    def __init__(self, *args, current_user=None, **kwargs):
+        self.current_user = current_user
         super().__init__(*args, **kwargs)
 
+        # Filter choices based on ownership and device naming
         if self.current_user and not self.current_user.is_superuser:
-            # Restrict choices for regular users
             self.fields['media'].queryset = Media.objects.filter(owner=self.current_user)
-            self.fields['devices'].queryset = Device.objects.filter(owner=self.current_user)
+            self.fields['devices'].queryset = (
+                Device.objects.filter(owner=self.current_user)
+                         .exclude(name__isnull=True)
+                         .exclude(name__exact='')
+            )
         else:
-            # Superusers see all
             self.fields['media'].queryset = Media.objects.all()
-            self.fields['devices'].queryset = Device.objects.all()
+            self.fields['devices'].queryset = Device.objects.exclude(name__isnull=True).exclude(name__exact='')
 
     def save(self, commit=True):
         instance = super().save(commit=False)
@@ -185,64 +193,68 @@ class PlaylistAdminForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        if not self.instance.pk:
-            return cleaned_data
-        if not cleaned_data.get('media'):
-            raise ValidationError({'media': 'At least one media file is required.'})
-        if not cleaned_data.get('devices'):
-            raise ValidationError({'devices': 'At least one device is required.'})
+        # Only enforce on existing records
+        if self.instance.pk:
+            if not cleaned_data.get('media'):
+                raise ValidationError({'media': 'At least one media file is required.'})
+            if not cleaned_data.get('devices'):
+                raise ValidationError({'devices': 'At least one device is required.'})
         return cleaned_data
-
 
 @admin.register(Playlist)
 class PlaylistAdmin(admin.ModelAdmin):
-    list_display = ('playlist_id', 'name', 'formatted_start_time', 'formatted_end_time', 'owner', 'display_media', 'display_devices')
-    list_display_links = ("playlist_id", "name")
-    list_filter = ('owner',)
+    form = PlaylistAdminForm
+    list_display = (
+        'playlist_id', 'name', 'formatted_start_time', 'formatted_end_time',
+        'owner', 'display_media', 'display_devices'
+    )
+    list_display_links = ('playlist_id', 'name')
+    list_filter = ('name',)
     search_fields = ('name', 'owner__username',)
     readonly_fields = ('owner',)
     ordering = ('playlist_id',)
-    form = PlaylistAdminForm
+
+    def get_form(self, request, obj=None, **kwargs):
+        FormClass = super().get_form(request, obj, **kwargs)
+        class WrappedForm(FormClass):
+            def __init__(self, *args, **inner_kwargs):
+                inner_kwargs['current_user'] = request.user
+                super().__init__(*args, **inner_kwargs)
+        return WrappedForm
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
-        if db_field.name == "devices":
-            kwargs["queryset"] = Device.objects.exclude(name__isnull=True).exclude(name__exact='')
+        if db_field.name == 'media':
+            kwargs['queryset'] = Media.objects.filter(owner=request.user)
+        if db_field.name == 'devices':
+            kwargs['queryset'] = (
+                Device.objects.filter(owner=request.user)
+                      .exclude(name__isnull=True)
+                      .exclude(name__exact='')
+            )
         return super().formfield_for_manytomany(db_field, request, **kwargs)
 
     def formatted_start_time(self, obj):
         return timezone.localtime(obj.start_time).strftime('%Y-%m-%d %H:%M:%S')
-
     formatted_start_time.short_description = 'Start Time'
 
     def formatted_end_time(self, obj):
         return timezone.localtime(obj.end_time).strftime('%Y-%m-%d %H:%M:%S')
-
     formatted_end_time.short_description = 'End Time'
 
     def display_media(self, obj):
-        if obj.media.count() > 0:
-            return ", ".join([media.name for media in obj.media.all() if media and media.name])
-        return "-"
-
-    display_media.short_description = "Media"
+        names = [m.name for m in obj.media.all() if m.name]
+        return ", ".join(names) if names else '-'
+    display_media.short_description = 'Media'
 
     def display_devices(self, obj):
-        if obj.devices.count() > 0:
-            return ", ".join([device.name for device in obj.devices.all() if device and device.name])
-        return "-"
-
-    display_devices.short_description = "Devices"
+        names = [d.name for d in obj.devices.all() if d.name]
+        return ", ".join(names) if names else '-'
+    display_devices.short_description = 'Devices'
 
     def get_queryset(self, request):
-        """Ensure users only see their own playlists."""
         qs = super().get_queryset(request)
-        if request.user.is_superuser:
-            return qs
-        return qs.filter(owner=request.user)
-
+        return qs if request.user.is_superuser else qs.filter(owner=request.user)
 
     def save_model(self, request, obj, form, change):
-        """Automatically set playlist owner to logged-in user."""
-        # if not request.user.is_superuser:
         obj.owner = request.user
         super().save_model(request, obj, form, change)
