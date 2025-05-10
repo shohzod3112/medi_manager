@@ -77,23 +77,23 @@ class PlaylistsDetailAPIView(APIView):
         if not device:
             return Response({"error": "Device Not Found"}, status=404)
 
-        playlist = Playlist.objects.filter(devices=device).first()
-        if not playlist:
+        playlists = Playlist.objects.filter(devices=device)
+        if not playlists:
             return Response({"error": "Playlist Not Found"}, status=404)
 
-        media_list = []
-        for media in playlist.media.all():
-            media_list.append({
-                'id': media.media_id,
-                'name': media.name,
-                'url': self.request.build_absolute_uri(media.file.url),
-                'type': media.type,
-                'duration': media.duration
-            })
+        playlists_data = []
+        for playlist in playlists.order_by("start_time"):
+            media_list = []
+            for media in playlist.media.all():
+                media_list.append({
+                    'id': media.media_id,
+                    'name': media.name,
+                    'url': self.request.build_absolute_uri(media.file.url),
+                    'type': media.type,
+                    'duration': media.duration
+                })
 
-        playlists = []
-        for playlist in Playlist.objects.filter(devices=device).order_by("start_time"):
-            playlists.append({
+            playlists_data.append({
                 'id': playlist.playlist_id,
                 'name': playlist.name,
                 'start_time': timezone.localtime(playlist.start_time).strftime('%Y-%m-%d %H:%M:%S'),
@@ -106,7 +106,7 @@ class PlaylistsDetailAPIView(APIView):
             "exit_password": device.exit_password,
             "id": device.device_id,
             "name": device.name,
-            "playlists": playlists,
+            "playlists": playlists_data,
         }
 
         return Response(response, status=200)
