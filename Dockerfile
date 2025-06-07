@@ -1,4 +1,4 @@
-FROM python:3.11-alpine
+FROM python:3.9-alpine
 
 RUN mkdir /app
 
@@ -11,13 +11,23 @@ ENV PYTHONUNBUFFERED 1
 ENV CRYPTOGRAPHY_DONT_BUILD_RUST=1
 
 # Install required system dependencies
+
 RUN apk --no-cache add \
-      gcc \
-      musl-dev \
-      python3-dev \
-      libffi-dev \
-      postgresql-dev \
-      ffmpeg
+    gcc \
+    musl-dev \
+    linux-headers \
+    python3-dev \
+    libffi-dev \
+    postgresql-dev \
+    icu-dev \
+    gettext \
+    libpq-dev \
+    glib-dev \
+    poppler-glib \
+    vips-dev \
+    vips-tools \
+    poppler-utils \
+    ffmpeg
 
 # Copy requirements file
 COPY requirements.txt .
