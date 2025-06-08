@@ -37,7 +37,7 @@ services:
   redis:
     image: redis:6-alpine
     restart: always
-    container_name: media_manager_redis
+    container_name: medi_manager_redis
 
   celery_worker:
     build: .
@@ -50,7 +50,7 @@ services:
       - db
       - redis
     restart: always
-    container_name: media_manager_celery_worker
+    container_name: medi_manager_celery_worker
 
   celery_beat:
     build: .
@@ -63,7 +63,7 @@ services:
       - db
       - redis
     restart: always
-    container_name: media_manager_celery_beat
+    container_name: medi_manager_celery_beat
 
 volumes:
   postgres_data:
