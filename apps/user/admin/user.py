@@ -2,8 +2,10 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.utils.html import format_html
 from django import forms
-from .models import User, Organization
 from django.contrib.auth.forms import UserChangeForm
+
+from user.models import User
+
 
 class CustomUserChangeForm(UserChangeForm):
     class Meta:
@@ -63,21 +65,21 @@ class CustomUserAdmin(UserAdmin):
     get_organization_name.short_description = "Organization Name"
 
 
-@admin.register(Organization)
-class OrganizationAdmin(admin.ModelAdmin):
-    list_display = ('id', 'clickable_name', 'db_name')
-    search_fields = ('name', 'db_name')
-    ordering = ('id',)
-
-    def clickable_name(self, obj):
-        return format_html('<a href="{}">{}</a>', f"/admin/core/organization/{obj.id}/change/", obj.name)
-    clickable_name.allow_tags = True
-    clickable_name.short_description = "Organization Name"
-
-    list_display = ('id', 'clickable_name', 'db_name')
-    search_fields = ('name', 'db_name')
-
-    def clickable_name(self, obj):
-        return format_html('<a href="{}">{}</a>', f"/admin/core/organization/{obj.id}/change/", obj.name)
-    clickable_name.allow_tags = True
-    clickable_name.short_description = "Organization Name"
+# @admin.register(Organization)
+# class OrganizationAdmin(admin.ModelAdmin):
+#     list_display = ('id', 'clickable_name', 'db_name')
+#     search_fields = ('name', 'db_name')
+#     ordering = ('id',)
+#
+#     def clickable_name(self, obj):
+#         return format_html('<a href="{}">{}</a>', f"/admin/core/organization/{obj.id}/change/", obj.name)
+#     clickable_name.allow_tags = True
+#     clickable_name.short_description = "Organization Name"
+#
+#     list_display = ('id', 'clickable_name', 'db_name')
+#     search_fields = ('name', 'db_name')
+#
+#     def clickable_name(self, obj):
+#         return format_html('<a href="{}">{}</a>', f"/admin/core/organization/{obj.id}/change/", obj.name)
+#     clickable_name.allow_tags = True
+#     clickable_name.short_description = "Organization Name"

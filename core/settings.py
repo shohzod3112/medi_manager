@@ -33,7 +33,7 @@ INSTALLED_APPS = [
     # APPS
     # "mediaa",
     'user',
-    'organizations',
+    # 'organizations',
 ]
 
 MIDDLEWARE = [
