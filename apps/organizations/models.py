@@ -1,4 +1,6 @@
 import os
+import uuid
+
 from django.db import models
 from django.conf import settings
 
@@ -6,8 +8,20 @@ import hashlib
 from moviepy import VideoFileClip
 
 
+# class BaseModel(models.Model):
+#     created_at = models.DateTimeField(auto_now_add=True)
+#     updated_at = models.DateTimeField(auto_now=True)
+#     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+#
+#     class Meta:
+#         abstract = True
+
+
 class Organization(models.Model):
     name = models.CharField(max_length=255, unique=True)
+    # devices = models.IntegerField(default=0) # counter for device_id like unique for each organization
+    # device_limit = models.PositiveIntegerField(default=5)
+    # expiration_date = models.DateField()
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -19,14 +33,16 @@ class Organization(models.Model):
     def __str__(self):
         return self.db_name
 
+
 class CustomUser(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     organization = models.ForeignKey(Organization, on_delete=models.SET_NULL, null=True, blank=True)
-    device_limit = models.PositiveIntegerField(default=5)
-    expiration_date = models.DateField()
+    device_limit = models.PositiveIntegerField(default=5)  # device_limit should be bound to organizations.
+    expiration_date = models.DateField()  # expiration subscription should be bound to organizations.
 
     def __str__(self):
         return self.user.username
+
 
 class DeviceType(models.Model):
     name = models.CharField(max_length=100)
@@ -51,12 +67,13 @@ class Device(models.Model):
             if self.owner and self.serial_number:
                 raw_token = f"{self.owner.username}-{self.serial_number}"
                 self.token = hashlib.sha256(raw_token.encode()).hexdigest()
-
+        # self.owner.organization.devices += 1
+        # self.owner.organization.save()
         super().save(*args, **kwargs)
-
 
     def __str__(self):
         return self.name or "-"
+
 
 class Media(models.Model):
     MEDIA_TYPES = (('video', 'Video'), ('image', 'Image'))
@@ -81,7 +98,6 @@ class Media(models.Model):
             from django.contrib.auth import get_user_model
             User = get_user_model()
             self.owner = User.objects.get(pk=1)
-
 
         if self.file and not self.file.name.startswith(f'{self.owner.username}/'):
             original_filename = os.path.basename(self.file.name)
@@ -121,7 +137,5 @@ class Playlist(models.Model):
     media = models.ManyToManyField(Media)
     devices = models.ManyToManyField(Device)
 
-
     def __str__(self):
         return self.name or "-"
-

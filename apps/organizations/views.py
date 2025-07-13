@@ -9,7 +9,7 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from django.utils import timezone
 
-from core.models import User
+from user.models import User
 from .models import Device, Playlist
 from .serializers import DeviceSerializer, MediaSerializer, PlaylistSerializer
 
@@ -204,7 +204,6 @@ class Upload_media(generics.CreateAPIView):
     serializer_class = MediaSerializer
     permission_classes = (permissions.IsAuthenticated,)
 
-
     def post(self, request, *args, **kwargs):
         data = request.data.copy()
         data['owner'] = request.user.id
@@ -234,8 +233,10 @@ def create_playlist(request):
             playlist.devices.set(data['devices'])
 
         return Response(
-            {'message': 'Playlist created successfully', 'playlist_id': playlist.playlist_id}, status=status.HTTP_201_CREATED)
+            {'message': 'Playlist created successfully', 'playlist_id': playlist.playlist_id},
+            status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])

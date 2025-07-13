@@ -3,7 +3,7 @@ from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from organizations.models import Device, Media, Playlist
-from core.models import User
+from user.models import User
 
 from django.utils import timezone
 

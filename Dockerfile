@@ -39,5 +39,14 @@ RUN pip install -r requirements.txt
 # Copy the rest of the project
 COPY . .
 
+# Install netcat
+RUN apk add --no-cache netcat-openbsd
+
+# Make entrypoint.sh executable
+COPY entrypoint.sh .
+RUN chmod +x /app/entrypoint.sh
+
+# Set the entrypoint
+ENTRYPOINT ["/app/entrypoint.sh"]
 # Expose the port the application runs on
 EXPOSE 8000

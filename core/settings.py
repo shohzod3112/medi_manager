@@ -1,4 +1,6 @@
 import os
+import sys
+
 from dotenv import load_dotenv
 from pathlib import Path
 
@@ -6,6 +8,7 @@ load_dotenv()
 from datetime import timedelta
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+sys.path.append(os.path.join(BASE_DIR, "apps"))
 
 SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
@@ -20,12 +23,17 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    # installed apps
     'drf_yasg',
     'rest_framework',
-    'core',
-    'organizations',
     'rest_framework_simplejwt',
     'sslserver',
+
+    # APPS
+    # "mediaa",
+    'user',
+    'organizations',
 ]
 
 MIDDLEWARE = [
@@ -38,7 +46,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'config.urls'
+ROOT_URLCONF = 'core.urls'
 
 TEMPLATES = [
     {
@@ -56,7 +64,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'config.wsgi.application'
+WSGI_APPLICATION = 'core.wsgi.application'
 
 # Database Configuration
 DATABASES = {
@@ -73,7 +81,7 @@ DATABASES = {
 # Dynamic Organization DB Routing
 DATABASE_ROUTERS = ['db_router.DatabaseRouter']
 
-AUTH_USER_MODEL = 'core.User'
+AUTH_USER_MODEL = 'user.User'
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},

@@ -109,7 +109,7 @@ class Migration(migrations.Migration):
                         null=True,
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="users",
-                        to="core.organization",
+                        to="user.organization",
                     ),
                 ),
                 (

@@ -22,9 +22,10 @@ services:
       - seccomp:unconfined
     volumes:
       - ./:/app
-      - ./static:/app/static
-      - ./media:/app/media
-      - ./locale:/app/locale
+      - ./static:/apps/static
+      - ./staticfiles:/apps/staticfiles
+      - ./media:/apps/media
+      - ./locale:/apps/locale
     env_file:
       - .env
     environment:
@@ -41,7 +42,7 @@ services:
 
   celery_worker:
     build: .
-    command: celery -A config worker --loglevel=info
+    command: celery -A user worker --loglevel=info
     volumes:
       - .:/app
     env_file:
@@ -54,7 +55,7 @@ services:
 
   celery_beat:
     build: .
-    command: celery -A config beat --loglevel=info
+    command: celery -A user beat --loglevel=info
     volumes:
       - .:/app
     env_file:
