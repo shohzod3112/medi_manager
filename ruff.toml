@@ -1,0 +1,153 @@
+# Ruff configuration file
+target-version = "py311"
+line-length = 88
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
+    "N",  # pep8-naming
+    "Q",  # flake8-quotes
+    "SIM", # flake8-simplify
+    "TCH", # flake8-type-checking
+    "TID", # flake8-tidy-imports
+    "ARG", # flake8-unused-arguments
+    "PIE", # flake8-pie
+    "LOG", # flake8-logging-format
+    "RET", # flake8-return
+    "SLF", # flake8-self
+    "SLOT", # flake8-slots
+    "FBT", # flake8-boolean-trap
+    "COM", # flake8-commas
+    "DTZ", # flake8-datetimez
+    "T20", # flake8-print
+    "PYI", # flake8-pyi
+    "AIR", # flake8-airflow
+    "BLE", # flake8-blind-except
+    "FURB", # flake8-furb
+    "ICN", # flake8-import-conventions
+    "ISC", # flake8-implicit-str-concat
+    "G",   # flake8-logging
+    "INP", # flake8-no-pep420
+    "PTH", # flake8-use-pathlib
+    "ERA", # eradicate
+    "PD",  # pandas-vet
+    "PGH", # pygrep-hooks
+    "PL",  # pylint
+    "TRY", # tryceratops
+    "NPY", # numpy-vet
+    "A",   # flake8-builtins
+    "C90", # mccabe
+    "DJ",  # flake8-django
+    "S",   # bandit
+    "BLE", # flake8-blind-except
+    "FURB", # flake8-furb
+    "ICN", # flake8-import-conventions
+    "ISC", # flake8-implicit-str-concat
+    "G",   # flake8-logging
+    "INP", # flake8-no-pep420
+    "PTH", # flake8-use-pathlib
+    "ERA", # eradicate
+    "PD",  # pandas-vet
+    "PGH", # pygrep-hooks
+    "PL",  # pylint
+    "TRY", # tryceratops
+    "NPY", # numpy-vet
+    "A",   # flake8-builtins
+    "C90", # mccabe
+    "DJ",  # flake8-django
+    "S",   # bandit
+]
+
+ignore = [
+    "E501",  # line too long, handled by black
+    "B008",  # do not perform function calls in argument defaults
+    "C901",  # too complex
+    "PLR0913", # too many arguments
+    "PLR0912", # too many branches
+    "PLR0915", # too many statements
+    "D100", # missing docstring in public module
+    "D101", # missing docstring in public class
+    "D102", # missing docstring in public method
+    "D103", # missing docstring in public function
+    "D104", # missing docstring in public package
+    "D105", # missing docstring in magic method
+    "D106", # missing docstring in public nested class
+    "D107", # missing docstring in __init__
+    "D200", # one-line docstring should fit on one line
+    "D201", # no blank lines allowed before function docstring
+    "D202", # no blank lines allowed after function docstring
+    "D203", # 1 blank line required before class docstring
+    "D204", # 1 blank line required after class docstring
+    "D205", # 1 blank line required between summary line and description
+    "D206", # docstring should be indented with spaces, not tabs
+    "D207", # docstring is under-indented
+    "D208", # docstring is over-indented
+    "D209", # multi-line docstring closing quotes should be on a separate line
+    "D210", # no whitespaces allowed surrounding docstring text
+    "D211", # no blank lines allowed before class docstring
+    "D212", # multi-line docstring summary should start at the first line
+    "D213", # multi-line docstring summary should start at the second line
+    "D214", # section is over-indented
+    "D215", # section underline is over-indented
+    "D300", # use """triple double quotes"""
+    "D301", # use r""" if any backslashes in a docstring
+    "D400", # first line should end with a period
+    "D401", # first line should be in imperative mood
+    "D402", # first line should not be the function's "signature"
+    "D403", # first word of the first line should be properly capitalized
+    "D404", # first word of the docstring should not be "This"
+    "D405", # section name should be properly capitalized
+    "D406", # section name should end with a newline
+    "D407", # missing dashed underline after section
+    "D408", # section underline should be in the line following the section's name
+    "D409", # section underline should match the length of its name
+    "D410", # missing blank line after section
+    "D411", # missing blank line before section
+    "D412", # no blank lines allowed between a section header and its content
+    "D413", # missing blank line after last section
+    "D414", # section has no content
+    "D415", # first line should end with a period, question mark, or exclamation point
+    "D416", # section name should end with a colon
+    "D417", # missing argument descriptions in the docstring
+    "D418", # found docstring that should be an attribute
+    "D419", # docstring is empty
+]
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F401"]
+"migrations/*" = ["E501", "F401", "DJ001"]
+"*/migrations/*" = ["E501", "F401", "DJ001"]
+"manage.py" = ["E501", "F401"]
+"*/settings.py" = ["E501", "F401", "DJ001"]
+"*/urls.py" = ["E501", "F401", "DJ001"]
+"*/admin.py" = ["E501", "F401", "DJ001"]
+"*/models.py" = ["E501", "F401", "DJ001"]
+"*/views.py" = ["E501", "F401", "DJ001"]
+"*/serializers.py" = ["E501", "F401", "DJ001"]
+"*/tasks.py" = ["E501", "F401", "DJ001"]
+"*/signals.py" = ["E501", "F401", "DJ001"]
+"*/apps.py" = ["E501", "F401", "DJ001"]
+"*/test.py" = ["E501", "F401", "DJ001"]
+"*/test_*.py" = ["E501", "F401", "DJ001"]
+"*_test.py" = ["E501", "F401", "DJ001"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.ruff.lint.isort]
+known-first-party = ["core", "apps"]
+known-django = ["django"]
+known-third-party = ["rest_framework", "celery", "redis", "psycopg2", "moviepy", "PIL"]
+
+[tool.ruff.lint.flake8-django]
+django-settings-module = "core.settings"
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all" 

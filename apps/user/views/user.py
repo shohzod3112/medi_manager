@@ -1,11 +1,14 @@
 # user/views.py
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import AllowAny
 from django.contrib.auth import authenticate
-from rest_framework.authtoken.models import Token
 from django.http import JsonResponse
 from django.contrib.admin.views.decorators import staff_member_required
+from rest_framework_simplejwt.tokens import RefreshToken
+from organizations.models import Organization
+from user.serializers import UserSerializer
 
 
 @staff_member_required
@@ -19,11 +22,16 @@ def get_org_db_name(request):
 
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def login(request):
     username = request.data.get('username')
     password = request.data.get('password')
     user = authenticate(username=username, password=password)
     if user:
-        token, created = Token.objects.get_or_create(user=user)
-        return Response({'token': token.key, 'user': UserSerializer(user).data})
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            'access_token': str(refresh.access_token),
+            'refresh_token': str(refresh),
+            'user': UserSerializer(user).data
+        })
     return Response({'error': 'Invalid Credentials'}, status=status.HTTP_400_BAD_REQUEST)

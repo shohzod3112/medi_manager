@@ -5,63 +5,93 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.utils.html import format_html
 from django.conf import settings
+from django.db.models import Count, Sum
 
-from .models import Device, Media, Playlist, DeviceType
+from .models import Organization, Device, Media, Playlist, DeviceType
+from user.models import UserProfile
 
 User = get_user_model()
 
-class DeviceTypeAdminForm(forms.ModelForm):
-    owners = forms.ModelMultipleChoiceField(
-        queryset=User.objects.all(),
-        widget=admin.widgets.FilteredSelectMultiple('owners', is_stacked=False),
-        required=False
-    )
 
+class OrganizationAdminForm(forms.ModelForm):
     class Meta:
-        model = DeviceType
+        model = Organization
         fields = '__all__'
 
-    def __init__(self, *args, **kwargs):
-        self.current_user = kwargs.pop('current_user', None)
-        super().__init__(*args, **kwargs)
-        if self.current_user and not self.current_user.is_superuser:
-            self.fields['owners'].queryset = User.objects.filter(pk=self.current_user.pk)
+    def clean(self):
+        cleaned_data = super().clean()
+        device_limit = cleaned_data.get('device_limit')
+        
+        if device_limit and self.instance.pk:
+            # Check if reducing device limit would affect existing users
+            total_used = self.instance.get_total_used_devices()
+            if device_limit < total_used:
+                raise ValidationError(
+                    f'Cannot reduce device limit to {device_limit}. '
+                    f'Organization currently has {total_used} devices in use.'
+                )
+        
+        return cleaned_data
+
+
+@admin.register(Organization)
+class OrganizationAdmin(admin.ModelAdmin):
+    form = OrganizationAdminForm
+    list_display = (
+        'id', 'name', 'slug', 'device_limit', 'used_devices', 'available_slots', 
+        'user_count', 'is_active', 'expiration_status'
+    )
+    list_filter = ('is_active', 'expiration_date', 'created_at')
+    search_fields = ('name', 'slug', 'db_name')
+    ordering = ('name',)
+    readonly_fields = ('used_devices', 'available_slots', 'user_count', 'created_at', 'updated_at')
+    
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('name', 'slug', 'description')
+        }),
+        ('Device Management', {
+            'fields': ('device_limit', 'used_devices', 'available_slots', 'next_device_id')
+        }),
+        ('Organization Settings', {
+            'fields': ('is_active', 'expiration_date')
+        }),
+        ('Database Configuration', {
+            'fields': ('db_name',),
+            'classes': ('collapse',)
+        }),
+        ('Metadata', {
+            'fields': ('created_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def used_devices(self, obj):
+        return obj.get_total_used_devices()
+    used_devices.short_description = "Used Devices"
+
+    def available_slots(self, obj):
+        return obj.get_available_device_slots()
+    available_slots.short_description = "Available Slots"
+
+    def user_count(self, obj):
+        return obj.get_user_count()
+    user_count.short_description = "Users"
+
+    def expiration_status(self, obj):
+        if obj.is_expired():
+            return format_html('<span style="color: red;">Expired</span>')
+        elif obj.expiration_date:
+            return format_html('<span style="color: orange;">Active</span>')
         else:
-            self.fields['owners'].queryset = User.objects.all()
-
-    def save(self, commit=True):
-        instance = super().save(commit=False)
-        if commit:
-            instance.save()
-            instance.owners.set(self.cleaned_data['owners'])
-            self.save_m2m()
-        return instance
-
-
-@admin.register(DeviceType)
-class DeviceTypeAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'display_owners')
-    list_display_links = ("id", "name")
-    ordering = ('id',)
-    form = DeviceTypeAdminForm
-
-    def get_form(self, request, obj=None, **kwargs):
-        form = super().get_form(request, obj, **kwargs)
-        class FormWithRequest(form):
-            def __new__(cls, *args, **kwargs):
-                kwargs['current_user'] = request.user
-                return form(*args, **kwargs)
-        return FormWithRequest
+            return format_html('<span style="color: green;">No Expiration</span>')
+    expiration_status.short_description = "Status"
 
     def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        if request.user.is_superuser:
-            return qs
-        return qs.filter(owners=request.user)
-
-    def display_owners(self, obj):
-        return ", ".join(user.username for user in obj.owners.all())
-    display_owners.short_description = 'Owners'
+        return super().get_queryset(request).annotate(
+            user_count=Count('user_profiles'),
+            used_devices=Sum('user_profiles__current_device_count')
+        )
 
 
 class DeviceAdminForm(forms.ModelForm):
@@ -71,13 +101,15 @@ class DeviceAdminForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        owner = self.instance.owner
-
-        if owner:
-            user = User.objects.get(pk=owner.pk)
-            if user.device_limit <= user.devices.count():
-                raise ValidationError('Device limit exceeded.')
-
+        user_profile = cleaned_data.get('user_profile')
+        organization = cleaned_data.get('organization')
+        
+        if user_profile and organization:
+            if user_profile.organization != organization:
+                raise ValidationError(
+                    'User profile must belong to the same organization as the device.'
+                )
+        
         return cleaned_data
 
 
@@ -85,176 +117,145 @@ class DeviceAdminForm(forms.ModelForm):
 class DeviceAdmin(admin.ModelAdmin):
     form = DeviceAdminForm
     list_display = (
-        'device_id', 'name', 'device_type', 'owner', 'serial_number',
-        'exit_password', 'last_seen', 'media_preview'
+        'organization_device_id', 'full_device_id', 'name', 'serial_number', 
+        'organization', 'user_profile', 'device_type', 'is_active', 'last_seen'
     )
-    list_display_links = ('device_id', 'name')
-    search_fields = ('name', 'serial_number', 'device_type__name', 'owner__username')
-    readonly_fields = ('serial_number', 'last_seen', 'owner', 'token')
-    ordering = ('device_id',)
+    list_filter = ('is_active', 'device_type', 'organization', 'created_at')
+    search_fields = ('name', 'serial_number', 'organization__name', 'user_profile__user__username')
+    readonly_fields = ('organization_device_id', 'token', 'last_seen', 'created_at', 'updated_at')
+    ordering = ('organization', 'organization_device_id')
+    
+    fieldsets = (
+        ('Device Information', {
+            'fields': ('organization_device_id', 'name', 'serial_number', 'device_type')
+        }),
+        ('Organization & User', {
+            'fields': ('organization', 'user_profile')
+        }),
+        ('Security', {
+            'fields': ('exit_password', 'token')
+        }),
+        ('Status', {
+            'fields': ('is_active', 'last_seen')
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
 
-    def media_preview(self, obj):
-        media_qs = Media.objects.filter(
-            playlist__devices=obj,
-            playlist__owner=obj.owner
-        ).distinct().order_by('media_id')
-
-        if not media_qs.exists():
-            return "-"
-
-        media = media_qs.first()
-        if media.type == "image":
-            return format_html(
-                '<img src="{}" style="width: 100px; height: 100px;" />',
-                media.file.url)
-        elif media.type == "video":
-            preview_url = f"{settings.MEDIA_URL}previews/media_{media.media_id}.jpg"
-            return format_html(
-                '<img src="{}" style="width: 100px; height: 100px;" />',
-                preview_url
-            )
-        return "-"
-
-    media_preview.short_description = 'Media Preview'
+    def full_device_id(self, obj):
+        return obj.get_full_device_id()
+    full_device_id.short_description = "Full Device ID"
 
     def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        if request.user.is_superuser:
-            return qs
-        return qs.filter(owner=request.user)
+        return super().get_queryset(request).select_related(
+            'organization', 'user_profile__user', 'device_type'
+        )
+
+
+@admin.register(DeviceType)
+class DeviceTypeAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'description', 'device_count', 'is_active', 'created_at')
+    list_filter = ('is_active', 'created_at')
+    search_fields = ('name', 'description')
+    ordering = ('name',)
+    readonly_fields = ('device_count', 'created_at')
+
+    def device_count(self, obj):
+        return obj.devices.count()
+    device_count.short_description = "Devices"
 
 
 @admin.register(Media)
 class MediaAdmin(admin.ModelAdmin):
-    list_display = ('media_id', 'name', 'type', 'owner_display', 'duration')
-    list_display_links = ("media_id", "name")
-    search_fields = ('name', 'owner__username')
-    list_filter = ('type', 'name')
-    readonly_fields = ('owner', 'duration')
-    ordering = ('media_id',)
+    list_display = ('media_id', 'name', 'type', 'organization', 'owner', 'duration', 'created_at')
+    list_filter = ('type', 'organization', 'created_at')
+    search_fields = ('name', 'organization__name', 'owner__username')
+    readonly_fields = ('media_id', 'duration', 'created_at', 'updated_at')
+    ordering = ('-created_at',)
+
+    fieldsets = (
+        ('Media Information', {
+            'fields': ('name', 'type', 'file', 'duration')
+        }),
+        ('Organization & Owner', {
+            'fields': ('organization', 'owner')
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
 
     def save_model(self, request, obj, form, change):
         if not obj.owner_id:
             obj.owner = request.user
         super().save_model(request, obj, form, change)
 
-    def owner_display(self, obj):
-        return obj.owner.username
-    owner_display.short_description = 'Owner'
-
     def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        if request.user.is_superuser:
-            return qs
-        return qs.filter(owner=request.user)
+        return super().get_queryset(request).select_related('organization', 'owner')
 
-
-# Playlist Admin
-class PlaylistAdminForm(forms.ModelForm):
-    media = forms.ModelMultipleChoiceField(
-        queryset=Media.objects.none(),
-        widget=admin.widgets.FilteredSelectMultiple('Media', is_stacked=False),
-        required=False
-    )
-    devices = forms.ModelMultipleChoiceField(
-        queryset=Device.objects.none(),
-        widget=admin.widgets.FilteredSelectMultiple('Devices', is_stacked=False),
-        required=False
-    )
-
-    class Meta:
-        model = Playlist
-        fields = '__all__'
-
-    def __init__(self, *args, current_user=None, **kwargs):
-        self.current_user = current_user
-        super().__init__(*args, **kwargs)
-
-        # Filter choices based on ownership and device naming
-        if self.current_user and not self.current_user.is_superuser:
-            self.fields['media'].queryset = Media.objects.filter(owner=self.current_user)
-            self.fields['devices'].queryset = (
-                Device.objects.filter(owner=self.current_user)
-                         .exclude(name__isnull=True)
-                         .exclude(name__exact='')
-            )
-        else:
-            self.fields['media'].queryset = Media.objects.all()
-            self.fields['devices'].queryset = Device.objects.exclude(name__isnull=True).exclude(name__exact='')
-
-    def save(self, commit=True):
-        instance = super().save(commit=False)
-        if commit:
-            instance.save()
-            instance.media.set(self.cleaned_data['media'])
-            instance.devices.set(self.cleaned_data['devices'])
-            self.save_m2m()
-        return instance
-
-    def clean(self):
-        cleaned_data = super().clean()
-        # Only enforce on existing records
-        if self.instance.pk:
-            if not cleaned_data.get('media'):
-                raise ValidationError({'media': 'At least one media file is required.'})
-            if not cleaned_data.get('devices'):
-                raise ValidationError({'devices': 'At least one device is required.'})
-        return cleaned_data
 
 @admin.register(Playlist)
 class PlaylistAdmin(admin.ModelAdmin):
-    form = PlaylistAdminForm
     list_display = (
-        'playlist_id', 'name', 'formatted_start_time', 'formatted_end_time',
-        'owner', 'display_media', 'display_devices'
+        'playlist_id', 'name', 'organization', 'owner', 'start_time', 'end_time', 
+        'is_active', 'media_count', 'device_count'
     )
-    list_display_links = ('playlist_id', 'name')
-    list_filter = ('name',)
-    search_fields = ('name', 'owner__username',)
-    readonly_fields = ('owner',)
-    ordering = ('playlist_id',)
+    list_filter = ('is_active', 'organization', 'created_at')
+    search_fields = ('name', 'organization__name', 'owner__username')
+    readonly_fields = ('playlist_id', 'created_at', 'updated_at')
+    ordering = ('-created_at',)
 
-    def get_form(self, request, obj=None, **kwargs):
-        FormClass = super().get_form(request, obj, **kwargs)
-        class WrappedForm(FormClass):
-            def __init__(self, *args, **inner_kwargs):
-                inner_kwargs['current_user'] = request.user
-                super().__init__(*args, **inner_kwargs)
-        return WrappedForm
+    fieldsets = (
+        ('Playlist Information', {
+            'fields': ('name', 'description')
+        }),
+        ('Organization & Owner', {
+            'fields': ('organization', 'owner')
+        }),
+        ('Timing', {
+            'fields': ('start_time', 'end_time')
+        }),
+        ('Content', {
+            'fields': ('media', 'devices')
+        }),
+        ('Status', {
+            'fields': ('is_active',)
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
 
-    def formfield_for_manytomany(self, db_field, request, **kwargs):
-        if db_field.name == 'media':
-            kwargs['queryset'] = Media.objects.filter(owner=request.user)
-        if db_field.name == 'devices':
-            kwargs['queryset'] = (
-                Device.objects.filter(owner=request.user)
-                      .exclude(name__isnull=True)
-                      .exclude(name__exact='')
-            )
-        return super().formfield_for_manytomany(db_field, request, **kwargs)
+    def media_count(self, obj):
+        return obj.media.count()
+    media_count.short_description = "Media"
 
-    def formatted_start_time(self, obj):
-        return timezone.localtime(obj.start_time).strftime('%Y-%m-%d %H:%M:%S')
-    formatted_start_time.short_description = 'Start Time'
-
-    def formatted_end_time(self, obj):
-        return timezone.localtime(obj.end_time).strftime('%Y-%m-%d %H:%M:%S')
-    formatted_end_time.short_description = 'End Time'
-
-    def display_media(self, obj):
-        names = [m.name for m in obj.media.all() if m.name]
-        return ", ".join(names) if names else '-'
-    display_media.short_description = 'Media'
-
-    def display_devices(self, obj):
-        names = [d.name for d in obj.devices.all() if d.name]
-        return ", ".join(names) if names else '-'
-    display_devices.short_description = 'Devices'
+    def device_count(self, obj):
+        return obj.devices.count()
+    device_count.short_description = "Devices"
 
     def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        return qs if request.user.is_superuser else qs.filter(owner=request.user)
+        return super().get_queryset(request).select_related('organization', 'owner')
 
-    def save_model(self, request, obj, form, change):
-        obj.owner = request.user
-        super().save_model(request, obj, form, change)
+
+# Inline admin for better organization management
+class UserProfileInline(admin.TabularInline):
+    model = UserProfile
+    extra = 0
+    readonly_fields = ('current_device_count', 'created_at')
+    fields = ('user', 'device_limit', 'current_device_count', 'is_active', 'expiration_date')
+
+
+class DeviceInline(admin.TabularInline):
+    model = Device
+    extra = 0
+    readonly_fields = ('organization_device_id', 'token', 'last_seen')
+    fields = ('organization_device_id', 'name', 'serial_number', 'user_profile', 'is_active')
+
+
+# Add inlines to Organization admin
+OrganizationAdmin.inlines = [UserProfileInline, DeviceInline]

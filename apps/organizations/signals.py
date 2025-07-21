@@ -1,6 +1,5 @@
 import os
 import shutil
-import ffmpeg
 
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
@@ -41,13 +40,13 @@ def generate_video_preview(sender, instance, **kwargs):
 
     os.makedirs(os.path.dirname(preview_path), exist_ok=True)
 
-    try:
-        (
-            ffmpeg
-            .input(instance.file.path, ss=1)
-            .output(preview_path, vframes=1)
-            .run(capture_stdout=True, capture_stderr=True)
-        )
-    except ffmpeg.Error as e:
-        print("FFmpeg error:", e.stderr.decode())
+    # try:
+    #     (
+    #         ffmpeg
+    #         .input(instance.file.path, ss=1)
+    #         .output(preview_path, vframes=1)
+    #         .run(capture_stdout=True, capture_stderr=True)
+    #     )
+    # except ffmpeg.Error as e:
+    #     print("FFmpeg error:", e.stderr.decode())
 

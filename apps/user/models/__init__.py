@@ -1,3 +1,4 @@
-from ..models.user import User
+from .user import User
+from .user_profile import UserProfile
 
-__all__ = ['User']
+__all__ = ['User', 'UserProfile']

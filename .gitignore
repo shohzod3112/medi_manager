@@ -9,6 +9,10 @@ env/
 *.env
 *.venv
 
+# Poetry
+poetry.lock
+dist/
+
 # Django-related
 *.log
 db.sqlite3

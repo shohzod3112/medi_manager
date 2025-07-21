@@ -1,52 +1,80 @@
-FROM python:3.9-alpine
+FROM python:3.11-slim
 
-RUN mkdir /app
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    DEBIAN_FRONTEND=noninteractive
 
 # Set work directory
 WORKDIR /app
 
-# Environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
-ENV CRYPTOGRAPHY_DONT_BUILD_RUST=1
-
-# Install required system dependencies
-
-RUN apk --no-cache add \
+# Install only essential system dependencies
+RUN apt-get update && apt-get install -y \
     gcc \
-    musl-dev \
-    linux-headers \
-    python3-dev \
-    libffi-dev \
-    postgresql-dev \
-    icu-dev \
-    gettext \
+    g++ \
     libpq-dev \
-    glib-dev \
-    poppler-glib \
-    vips-dev \
-    vips-tools \
-    poppler-utils \
-    ffmpeg
-
-# Copy requirements file
-COPY requirements.txt .
+    libffi-dev \
+    libssl-dev \
+    libjpeg-dev \
+    libpng-dev \
+    libgif-dev \
+    libwebp-dev \
+    libtiff-dev \
+    libopenjp2-7-dev \
+    liblcms2-dev \
+    libharfbuzz-dev \
+    libfribidi-dev \
+    libavcodec-dev \
+    libavformat-dev \
+    libswscale-dev \
+    libavutil-dev \
+    libavfilter-dev \
+    libavdevice-dev \
+    libpostproc-dev \
+    libswresample-dev \
+    libx264-dev \
+    libx265-dev \
+    libvpx-dev \
+    libmp3lame-dev \
+    libopus-dev \
+    libvorbis-dev \
+    libtheora-dev \
+    libass-dev \
+    libfreetype6-dev \
+    libfontconfig1-dev \
+    netcat-openbsd \
+    curl \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
-RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
+COPY pyproject.toml poetry.lock ./
+RUN pip install --no-cache-dir poetry && \
+    poetry config virtualenvs.create false && \
+    poetry install --only main --no-root && \
+    pip uninstall -y poetry
 
-# Copy the rest of the project
+# Copy the project
 COPY . .
 
-# Install netcat
-RUN apk add --no-cache netcat-openbsd
+# Create non-root user
+RUN useradd --create-home --shell /bin/bash app && \
+    chown -R app:app /app && \
+    chmod +x /app/entrypoint.sh
 
-# Make entrypoint.sh executable
-COPY entrypoint.sh .
-RUN chmod +x /app/entrypoint.sh
+# Create necessary directories with proper permissions
+RUN mkdir -p /app/static /app/media /tmp && \
+    chown -R app:app /app/static /app/media /tmp && \
+    chmod -R 755 /app/static /app/media
 
-# Set the entrypoint
-ENTRYPOINT ["/app/entrypoint.sh"]
-# Expose the port the application runs on
+USER app
+
+# Expose port
 EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:8000/health/ || exit 1
+
+# Set entrypoint
+ENTRYPOINT ["/app/entrypoint.sh"]
