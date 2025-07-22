@@ -75,11 +75,19 @@ DATABASES = {
         'PASSWORD': os.getenv('SUPERUSER_DB_PASSWORD'),
         'HOST': os.getenv('SUPERUSER_DB_HOST'),
         'PORT': os.getenv('SUPERUSER_DB_PORT'),
-    }
+    },
+    # 'replica': {
+    #     'ENGINE': 'django.db.backends.postgresql',
+    #     'NAME': os.getenv('SUPERUSER_DB_NAME'),
+    #     'USER': os.getenv('SUPERUSER_DB_USER'),
+    #     'PASSWORD': os.getenv('SUPERUSER_DB_PASSWORD'),
+    #     'HOST': os.getenv('SUPERUSER_DB_HOST'),
+    #     'PORT': os.getenv('SUPERUSER_DB_PORT'),
+    #     'OPTIONS': {'readonly': True},
+    # }
 }
 
-# Dynamic Organization DB Routing
-DATABASE_ROUTERS = ['db_router.DatabaseRouter']
+# DATABASE_ROUTERS = ['db_routers.ReadWriteRouter']
 
 AUTH_USER_MODEL = 'user.User'
 

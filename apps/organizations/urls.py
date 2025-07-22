@@ -1,13 +1,8 @@
 # organizations/urls.py
 from django.urls import path
-from organizations.views import (
-    create_playlist,
-    sync_device,
-    RegisterDeviceView,
-    Upload_media,
-    GetDeviceToken,
-    PlaylistsDetailAPIView
-)
+
+from apps.organizations.views import PlaylistsDetailAPIView, GetDeviceToken, RegisterDeviceView, Upload_media, \
+    create_playlist, sync_device
 
 urlpatterns = [
     path('playlist_detail/', PlaylistsDetailAPIView.as_view(), name='playlist_detail'),

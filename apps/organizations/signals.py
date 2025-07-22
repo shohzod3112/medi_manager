@@ -5,7 +5,7 @@ from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 from django.conf import settings
 
-from organizations.models import Media
+from apps.organizations.models import Media
 
 
 @receiver(post_delete, sender=Media)

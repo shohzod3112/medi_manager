@@ -21,14 +21,10 @@ class BaseModel(models.Model):
 
 
 class Organization(models.Model):
-    """
-    Organization model that manages device limits and user relationships.
-    Each organization has its own device limit and maintains device counters.
-    """
     name = models.CharField(max_length=255, unique=True)
     slug = models.SlugField(max_length=255, unique=True, blank=True)
     description = models.TextField(blank=True)
-    
+
     # Device management
     device_limit = models.PositiveIntegerField(
         default=10,
@@ -43,7 +39,7 @@ class Organization(models.Model):
         default=1,
         help_text="Next available device ID for this organization"
     )
-    
+
     # Organization settings
     expiration_date = models.DateField(
         null=True,
@@ -54,10 +50,7 @@ class Organization(models.Model):
         default=True,
         help_text="Whether this organization is active"
     )
-    
-    # Database configuration
-    db_name = models.CharField(max_length=255, unique=True)
-    
+
     # Metadata
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -137,16 +130,10 @@ class DeviceType(models.Model):
 
 
 class Device(models.Model):
-    """
-    Device model with organization-specific device IDs and user relationships.
-    Each device belongs to a user within an organization.
-    """
-    # Organization-specific device ID
     organization_device_id = models.PositiveIntegerField(
         help_text="Device ID within the organization (starts from 1)"
     )
-    
-    # Device information
+
     name = models.CharField(max_length=255, blank=True)
     serial_number = models.CharField(max_length=255, unique=True)
     device_type = models.ForeignKey(
@@ -156,11 +143,11 @@ class Device(models.Model):
         blank=True,
         related_name='devices'
     )
-    
+
     # Security
     exit_password = models.CharField(max_length=255, default="1111")
     token = models.CharField(max_length=512, blank=True, null=True)
-    
+
     # Relationships
     organization = models.ForeignKey(
         Organization,
@@ -172,7 +159,7 @@ class Device(models.Model):
         on_delete=models.CASCADE,
         related_name='devices'
     )
-    
+
     # Status and tracking
     is_active = models.BooleanField(default=True)
     last_seen = models.DateTimeField(auto_now=True)
@@ -197,7 +184,7 @@ class Device(models.Model):
                 raise ValidationError(
                     f'User {self.user_profile.user.username} has reached their device limit of {self.user_profile.device_limit}'
                 )
-            
+
             # Check if organization can add more devices
             if not self.organization.can_add_device():
                 raise ValidationError(
@@ -210,15 +197,15 @@ class Device(models.Model):
             # Assign organization-specific device ID
             if not self.organization_device_id:
                 self.organization_device_id = self.organization.get_next_device_id()
-            
+
             # Generate token if not provided
             if not self.token:
                 raw_token = f"{self.user_profile.user.username}-{self.serial_number}"
                 self.token = hashlib.sha256(raw_token.encode()).hexdigest()
-            
+
             # Increment user's device count
             self.user_profile.add_device()
-        
+
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
@@ -234,13 +221,13 @@ class Device(models.Model):
 class Media(models.Model):
     """Media model for storing video and image files"""
     MEDIA_TYPES = (('video', 'Video'), ('image', 'Image'))
-    
+
     media_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255)
     type = models.CharField(max_length=10, choices=MEDIA_TYPES)
     file = models.FileField(upload_to="")
     duration = models.IntegerField(null=True, blank=True)
-    
+
     # Relationships
     organization = models.ForeignKey(
         Organization,
@@ -252,7 +239,7 @@ class Media(models.Model):
         on_delete=models.CASCADE,
         related_name='media'
     )
-    
+
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -281,7 +268,7 @@ class Media(models.Model):
             self.file.name = self.get_upload_path(original_filename)
 
         super().save(*args, **kwargs)
-        
+
         # Process media file
         if self.type == "image" and self.file:
             media = self.file.url.split("/")[-1]
@@ -312,11 +299,11 @@ class Playlist(models.Model):
     playlist_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
-    
+
     # Timing
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
-    
+
     # Relationships
     organization = models.ForeignKey(
         Organization,
@@ -330,7 +317,7 @@ class Playlist(models.Model):
     )
     media = models.ManyToManyField(Media, related_name='playlists')
     devices = models.ManyToManyField(Device, related_name='playlists')
-    
+
     # Status
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)

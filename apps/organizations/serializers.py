@@ -2,23 +2,19 @@ from drf_yasg import openapi
 from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-from organizations.models import Device, Media, Playlist
-from user.models import User
 
 from django.utils import timezone
+
+from apps.organizations.models import Device, Media, Playlist
 
 
 class DeviceSerializer(serializers.ModelSerializer):
     sn = serializers.CharField(source='serial_number', required=True)
     username = serializers.CharField(write_only=True, required=True)
 
-
     class Meta:
         model = Device
-        fields = ['device_id', 'sn', 'owner', 'username']
-        extra_kwargs = {
-            'owner': {'read_only': True}
-        }
+        fields = ['organization_device_id', 'sn', 'username']
 
     def create(self, validated_data):
         validated_data.pop('username', None)
@@ -31,18 +27,18 @@ class DeviceSerializer(serializers.ModelSerializer):
                 {"error": {"code": "MISSING_USERNAME", "message": "Username is required"}}
             )
 
-        user = User.objects.filter(username__iexact=username).first()
-        if not user:
-            raise ValidationError(
-                {"error": {"code": "USER_NOT_FOUND", "message": "User not found"}}
-            )
-
-        if user.expiration_date and user.expiration_date < timezone.localtime(timezone.now()).date():
-            raise ValidationError(
-                {"error": {"code": "EXPIRED_ACCOUNT", "message": "User's account has expired"}}
-            )
-
-        attrs['owner'] = user  # Assign user to owner field
+        # user = User.objects.filter(username__iexact=username).first()
+        # if not user:
+        #     raise ValidationError(
+        #         {"error": {"code": "USER_NOT_FOUND", "message": "User not found"}}
+        #     )
+        #
+        # if user.expiration_date and user.expiration_date < timezone.localtime(timezone.now()).date():
+        #     raise ValidationError(
+        #         {"error": {"code": "EXPIRED_ACCOUNT", "message": "User's account has expired"}}
+        #     )
+        #
+        # attrs['owner'] = user  # Assign user to owner field
         return attrs
 
     def to_internal_value(self, data):
@@ -80,7 +76,6 @@ class DeviceSerializer(serializers.ModelSerializer):
     ))
     def get_username(self, obj):
         return obj.owner.username if obj.owner else None
-
 
 
 class MediaSerializer(serializers.ModelSerializer):

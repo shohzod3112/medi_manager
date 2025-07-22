@@ -9,18 +9,13 @@ def get_default_expiration_date():
 
 
 class User(AbstractUser):
-    """
-    Custom User model extending Django's AbstractUser.
-    This is the base user model without organization-specific fields.
-    """
     username = models.CharField(max_length=255, unique=True, db_index=True)
     email = models.EmailField(unique=True)
     first_name = models.CharField(max_length=150, blank=True)
     last_name = models.CharField(max_length=150, blank=True)
     is_active = models.BooleanField(default=True)
     date_joined = models.DateTimeField(auto_now_add=True)
-    
-    # User profile fields
+
     phone_number = models.CharField(max_length=20, blank=True, null=True)
     avatar = models.ImageField(upload_to='user_avatars/', blank=True, null=True)
     

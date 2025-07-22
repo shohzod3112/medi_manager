@@ -9,7 +9,6 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from django.utils import timezone
 
-from user.models import User
 from .models import Device, Playlist
 from .serializers import DeviceSerializer, MediaSerializer, PlaylistSerializer
 
@@ -69,44 +68,44 @@ class PlaylistsDetailAPIView(APIView):
         if not token:
             return Response({"error": "Token is Required"}, status=400)
 
-        user = User.objects.filter(username__iexact=username).first()
-        if not user:
-            return Response({"error": "User Not Found"}, status=404)
+        # user = User.objects.filter(username__iexact=username).first()
+        # if not user:
+        #     return Response({"error": "User Not Found"}, status=404)
 
-        device = Device.objects.filter(serial_number=sn, owner=user, token=token).first()
-        if not device:
-            return Response({"error": "Device Not Found"}, status=404)
+        # device = Device.objects.filter(serial_number=sn, owner=user, token=token).first()
+        # if not device:
+        #     return Response({"error": "Device Not Found"}, status=404)
+        #
+        # playlists = Playlist.objects.filter(devices=device)
+        # if not playlists:
+        #     return Response({"error": "Playlist Not Found"}, status=404)
+        #
+        # playlists_data = []
+        # for playlist in playlists.order_by("start_time"):
+        #     media_list = []
+        #     for media in playlist.media.all():
+        #         media_list.append({
+        #             'id': media.media_id,
+        #             'name': media.name,
+        #             'url': self.request.build_absolute_uri(media.file.url),
+        #             'type': media.type,
+        #             'duration': media.duration
+        #         })
 
-        playlists = Playlist.objects.filter(devices=device)
-        if not playlists:
-            return Response({"error": "Playlist Not Found"}, status=404)
-
-        playlists_data = []
-        for playlist in playlists.order_by("start_time"):
-            media_list = []
-            for media in playlist.media.all():
-                media_list.append({
-                    'id': media.media_id,
-                    'name': media.name,
-                    'url': self.request.build_absolute_uri(media.file.url),
-                    'type': media.type,
-                    'duration': media.duration
-                })
-
-            playlists_data.append({
-                'id': playlist.playlist_id,
-                'name': playlist.name,
-                'start_time': timezone.localtime(playlist.start_time).strftime('%Y-%m-%d %H:%M:%S'),
-                'end_time': timezone.localtime(playlist.end_time).strftime('%Y-%m-%d %H:%M:%S'),
-                'medias': media_list
-            })
-
+        #     playlists_data.append({
+        #         'id': playlist.playlist_id,
+        #         'name': playlist.name,
+        #         'start_time': timezone.localtime(playlist.start_time).strftime('%Y-%m-%d %H:%M:%S'),
+        #         'end_time': timezone.localtime(playlist.end_time).strftime('%Y-%m-%d %H:%M:%S'),
+        #         'medias': media_list
+        #     })
+        #
         response = {
             "server_time": timezone.localtime(timezone.now()).strftime('%Y-%m-%d %H:%M:%S'),
-            "exit_password": device.exit_password,
-            "id": device.device_id,
-            "name": device.name,
-            "playlists": playlists_data,
+            # "exit_password": device.exit_password,
+            # "id": device.device_id,
+            # "name": device.name,
+            # "playlists": playlists_data,
         }
 
         return Response(response, status=200)
