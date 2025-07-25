@@ -1,5 +1,5 @@
 """
-ASGI user for user project.
+ASGI users for users project.
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 

@@ -23,11 +23,11 @@ class UserProfile(models.Model):
     device_limit = models.PositiveIntegerField(
         default=1,
         validators=[MinValueValidator(1)],
-        help_text="Maximum number of devices this user can have"
+        help_text="Maximum number of devices this users can have"
     )
     current_device_count = models.PositiveIntegerField(
         default=0,
-        help_text="Current number of devices assigned to this user"
+        help_text="Current number of devices assigned to this users"
     )
     expiration_date = models.DateField(
         null=True,
@@ -36,12 +36,13 @@ class UserProfile(models.Model):
     )
     is_active = models.BooleanField(
         default=True,
-        help_text="Whether this user profile is active"
+        help_text="Whether this users profile is active"
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        app_label = 'users'
         db_table = 'user_profiles'
         verbose_name_plural = 'User Profiles'
         verbose_name = 'User Profile'
@@ -51,9 +52,8 @@ class UserProfile(models.Model):
         return f"{self.user.username} - {self.organization.name}"
 
     def clean(self):
-        """Validate that user device limit doesn't exceed organization limit"""
+        """Validate that users device limit doesn't exceed organization limit"""
         if self.organization and self.device_limit:
-            # Check if this user's device limit would exceed organization's remaining capacity
             if self.pk:  # Existing instance
                 old_instance = UserProfile.objects.get(pk=self.pk)
                 old_limit = old_instance.device_limit
@@ -64,15 +64,15 @@ class UserProfile(models.Model):
 
             # Calculate the change in device limit
             limit_change = self.device_limit - old_limit
-            
+
             # Check if organization has enough capacity
             org_used_devices = self.organization.get_total_used_devices()
             org_available = self.organization.device_limit - org_used_devices + old_limit
-            
+
             if limit_change > org_available:
                 raise ValidationError({
                     'device_limit': f'Organization "{self.organization.name}" only has {org_available} device slots available. '
-                                  f'Cannot assign {self.device_limit} devices to this user.'
+                                    f'Cannot assign {self.device_limit} devices to this users.'
                 })
 
     def save(self, *args, **kwargs):
@@ -80,7 +80,7 @@ class UserProfile(models.Model):
         super().save(*args, **kwargs)
 
     def can_add_device(self):
-        """Check if user can add another device"""
+        """Check if users can add another device"""
         return self.current_device_count < self.device_limit
 
     def add_device(self):
@@ -104,7 +104,7 @@ class UserProfile(models.Model):
         return self.device_limit - self.current_device_count
 
     def is_expired(self):
-        """Check if user subscription is expired"""
+        """Check if users subscription is expired"""
         if self.expiration_date:
             return self.expiration_date < now().date()
-        return False 
+        return False

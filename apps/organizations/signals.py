@@ -10,7 +10,7 @@ from apps.organizations.models import Media
 
 @receiver(post_delete, sender=Media)
 def delete_empty_folder(sender, instance, **kwargs):
-    """Delete the file's folder if empty, then check and delete the user's folder."""
+    """Delete the file's folder if empty, then check and delete the users's folder."""
     if not instance.file:
         return
 

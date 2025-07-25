@@ -33,15 +33,12 @@ WORKDIR /app
 
 # Install only runtime dependencies (much smaller set)
 RUN apt-get update && apt-get install -y \
-    # Core libraries
     libpq5 \
     libffi8 \
     libssl3 \
-    # Image processing (if needed)
     libjpeg62-turbo \
     libpng16-16 \
     libwebp7 \
-    # Utilities
     netcat-openbsd \
     curl \
     && apt-get clean \
@@ -54,7 +51,7 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Copy the project
 COPY . .
 
-# Create non-root user
+# Create non-root users
 RUN useradd --create-home --shell /bin/bash app && \
     chown -R app:app /app && \
     chmod +x /app/entrypoint.sh

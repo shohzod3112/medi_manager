@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ("user", "0001_initial"),
+        ("users", "0001_initial"),
         ("organizations", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
@@ -78,7 +78,7 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(
                 on_delete=django.db.models.deletion.CASCADE,
                 related_name="devices",
-                to="user.userprofile",
+                to="users.userprofile",
             ),
         ),
         migrations.AlterUniqueTogether(

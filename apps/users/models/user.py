@@ -18,7 +18,7 @@ class User(AbstractUser):
 
     phone_number = models.CharField(max_length=20, blank=True, null=True)
     avatar = models.ImageField(upload_to='user_avatars/', blank=True, null=True)
-    
+
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = ["email"]
 
@@ -31,10 +31,11 @@ class User(AbstractUser):
         return full_name.strip()
 
     def get_short_name(self):
-        """Return the short name for the user."""
+        """Return the short name for the users."""
         return self.first_name
 
     class Meta:
+        app_label = 'users'
         ordering = ['username']
         db_table = 'users'
         verbose_name_plural = 'Users'

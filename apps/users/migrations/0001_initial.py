@@ -39,7 +39,7 @@ class Migration(migrations.Migration):
                     "is_superuser",
                     models.BooleanField(
                         default=False,
-                        help_text="Designates that this user has all permissions without explicitly assigning them.",
+                        help_text="Designates that this users has all permissions without explicitly assigning them.",
                         verbose_name="superuser status",
                     ),
                 ),
@@ -47,7 +47,7 @@ class Migration(migrations.Migration):
                     "is_staff",
                     models.BooleanField(
                         default=False,
-                        help_text="Designates whether the user can log into this admin site.",
+                        help_text="Designates whether the users can log into this admin site.",
                         verbose_name="staff status",
                     ),
                 ),
@@ -72,9 +72,9 @@ class Migration(migrations.Migration):
                     "groups",
                     models.ManyToManyField(
                         blank=True,
-                        help_text="The groups this user belongs to. A user will get all permissions granted to each of their groups.",
+                        help_text="The groups this users belongs to. A users will get all permissions granted to each of their groups.",
                         related_name="user_set",
-                        related_query_name="user",
+                        related_query_name="users",
                         to="auth.group",
                         verbose_name="groups",
                     ),
@@ -83,11 +83,11 @@ class Migration(migrations.Migration):
                     "user_permissions",
                     models.ManyToManyField(
                         blank=True,
-                        help_text="Specific permissions for this user.",
+                        help_text="Specific permissions for this users.",
                         related_name="user_set",
-                        related_query_name="user",
+                        related_query_name="users",
                         to="auth.permission",
-                        verbose_name="user permissions",
+                        verbose_name="users permissions",
                     ),
                 ),
             ],
@@ -117,7 +117,7 @@ class Migration(migrations.Migration):
                     "device_limit",
                     models.PositiveIntegerField(
                         default=1,
-                        help_text="Maximum number of devices this user can have",
+                        help_text="Maximum number of devices this users can have",
                         validators=[django.core.validators.MinValueValidator(1)],
                     ),
                 ),
@@ -125,7 +125,7 @@ class Migration(migrations.Migration):
                     "current_device_count",
                     models.PositiveIntegerField(
                         default=0,
-                        help_text="Current number of devices assigned to this user",
+                        help_text="Current number of devices assigned to this users",
                     ),
                 ),
                 (
@@ -139,7 +139,7 @@ class Migration(migrations.Migration):
                 (
                     "is_active",
                     models.BooleanField(
-                        default=True, help_text="Whether this user profile is active"
+                        default=True, help_text="Whether this users profile is active"
                     ),
                 ),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
@@ -153,7 +153,7 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 (
-                    "user",
+                    "users",
                     models.OneToOneField(
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="profile",

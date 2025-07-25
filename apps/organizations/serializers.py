@@ -6,6 +6,7 @@ from rest_framework.exceptions import ValidationError
 from django.utils import timezone
 
 from apps.organizations.models import Device, Media, Playlist
+from apps.users.models import User, UserProfile
 
 
 class DeviceSerializer(serializers.ModelSerializer):
@@ -14,7 +15,10 @@ class DeviceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Device
-        fields = ['organization_device_id', 'sn', 'username']
+        fields = ['organization_id', 'sn', 'username']
+        extra_kwargs = {
+            'organization_id': {'required': False}
+        }
 
     def create(self, validated_data):
         validated_data.pop('username', None)
@@ -22,52 +26,30 @@ class DeviceSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         username = self.initial_data.get("username")
-        if not username:
-            raise ValidationError(
-                {"error": {"code": "MISSING_USERNAME", "message": "Username is required"}}
-            )
 
-        # user = User.objects.filter(username__iexact=username).first()
-        # if not user:
-        #     raise ValidationError(
-        #         {"error": {"code": "USER_NOT_FOUND", "message": "User not found"}}
-        #     )
-        #
-        # if user.expiration_date and user.expiration_date < timezone.localtime(timezone.now()).date():
-        #     raise ValidationError(
-        #         {"error": {"code": "EXPIRED_ACCOUNT", "message": "User's account has expired"}}
-        #     )
-        #
-        # attrs['owner'] = user  # Assign user to owner field
+        try:
+            # Fetch user and their profile in one go to be efficient.
+            user = User.objects.select_related('profile__organization').get(username__iexact=username)
+            user_profile = user.profile
+        except (User.DoesNotExist, User.profile.RelatedObjectDoesNotExist):
+            # Raise an error that the view can handle.
+            raise ValidationError("User not found")
+
+        # Check if the user's account is expired via the profile.
+        if user_profile.is_expired():
+            raise ValidationError("User's account has expired")
+
+        # Add the related objects to the validated data.
+        # These will be passed to the `create` method.
+        attrs['user_profile'] = user_profile
+        attrs['organization'] = user_profile.organization
+
         return attrs
-
-    def to_internal_value(self, data):
-        if 'username' in data:
-            data['owner'] = data.get('username', None)
-
-        request = self.context.get("request")
-        if not request:
-            raise serializers.ValidationError(
-                {"error": {"code": "MISSING_CONTEXT", "message": "Request context is missing"}}
-            )
-
-        if "sn" not in data:
-            raise serializers.ValidationError(
-                {"error": {"code": "MISSING_SN", "message": "Serial number is required"}}
-            )
-
-        if Device.objects.filter(serial_number=data['sn']).exists():
-            raise serializers.ValidationError(
-                {"error": {"code": "DUPLICATE_SN", "message": "Device with this serial number already exists"}}
-            )
-
-        return super().to_internal_value(data)
 
     def validate_serial_number(self, value):
         if Device.objects.filter(serial_number=value).exists():
-            raise serializers.ValidationError(
-                {"error": {"code": "DUPLICATE_SN", "message": "Device with this serial number already exists"}}
-            )
+            # Raise error with a simple string to be compatible with the view's error handling.
+            raise serializers.ValidationError("Device with this serial number already exists")
         return value
 
     @swagger_serializer_method(serializer_or_field=openapi.Schema(
@@ -75,7 +57,10 @@ class DeviceSerializer(serializers.ModelSerializer):
         description="Username of the owner of the device"
     ))
     def get_username(self, obj):
-        return obj.owner.username if obj.owner else None
+        # This method is used for GET requests and was pointing to a non-existent 'owner' field.
+        if obj.user_profile and obj.user_profile.user:
+            return obj.user_profile.user.username
+        return None
 
 
 class MediaSerializer(serializers.ModelSerializer):

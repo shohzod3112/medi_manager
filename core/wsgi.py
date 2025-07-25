@@ -1,5 +1,5 @@
 """
-WSGI user for user project.
+WSGI users for users project.
 
 It exposes the WSGI callable as a module-level variable named ``application``.
 

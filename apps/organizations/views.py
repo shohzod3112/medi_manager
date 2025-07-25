@@ -11,6 +11,7 @@ from django.utils import timezone
 
 from .models import Device, Playlist
 from .serializers import DeviceSerializer, MediaSerializer, PlaylistSerializer
+from ..users.models import User
 
 
 class PlaylistsDetailAPIView(APIView):
@@ -68,44 +69,44 @@ class PlaylistsDetailAPIView(APIView):
         if not token:
             return Response({"error": "Token is Required"}, status=400)
 
-        # user = User.objects.filter(username__iexact=username).first()
-        # if not user:
-        #     return Response({"error": "User Not Found"}, status=404)
+        users = User.objects.filter(username__iexact=username).first()
+        if not users:
+            return Response({"error": "User Not Found"}, status=404)
 
-        # device = Device.objects.filter(serial_number=sn, owner=user, token=token).first()
-        # if not device:
-        #     return Response({"error": "Device Not Found"}, status=404)
-        #
-        # playlists = Playlist.objects.filter(devices=device)
-        # if not playlists:
-        #     return Response({"error": "Playlist Not Found"}, status=404)
-        #
-        # playlists_data = []
-        # for playlist in playlists.order_by("start_time"):
-        #     media_list = []
-        #     for media in playlist.media.all():
-        #         media_list.append({
-        #             'id': media.media_id,
-        #             'name': media.name,
-        #             'url': self.request.build_absolute_uri(media.file.url),
-        #             'type': media.type,
-        #             'duration': media.duration
-        #         })
+        device = Device.objects.filter(serial_number=sn, user_profile__user=users, token=token).first()
+        if not device:
+            return Response({"error": "Device Not Found"}, status=404)
 
-        #     playlists_data.append({
-        #         'id': playlist.playlist_id,
-        #         'name': playlist.name,
-        #         'start_time': timezone.localtime(playlist.start_time).strftime('%Y-%m-%d %H:%M:%S'),
-        #         'end_time': timezone.localtime(playlist.end_time).strftime('%Y-%m-%d %H:%M:%S'),
-        #         'medias': media_list
-        #     })
-        #
+        playlists = Playlist.objects.filter(devices=device)
+        if not playlists:
+            return Response({"error": "Playlist Not Found"}, status=404)
+
+        playlists_data = []
+        for playlist in playlists.order_by("start_time"):
+            media_list = []
+            for media in playlist.media.all():
+                media_list.append({
+                    'id': media.media_id,
+                    'name': media.name,
+                    'url': self.request.build_absolute_uri(media.file.url),
+                    'type': media.type,
+                    'duration': media.duration
+                })
+
+            playlists_data.append({
+                'id': playlist.playlist_id,
+                'name': playlist.name,
+                'start_time': timezone.localtime(playlist.start_time).strftime('%Y-%m-%d %H:%M:%S'),
+                'end_time': timezone.localtime(playlist.end_time).strftime('%Y-%m-%d %H:%M:%S'),
+                'medias': media_list
+            })
+
         response = {
             "server_time": timezone.localtime(timezone.now()).strftime('%Y-%m-%d %H:%M:%S'),
-            # "exit_password": device.exit_password,
-            # "id": device.device_id,
-            # "name": device.name,
-            # "playlists": playlists_data,
+            "exit_password": device.exit_password,
+            "id": device.organization_device_id,
+            "name": device.name,
+            "playlists": playlists_data,
         }
 
         return Response(response, status=200)
@@ -145,7 +146,7 @@ class GetDeviceToken(APIView):
         if not username:
             return Response({'error': "Username is Not Given"}, status=400)
 
-        device = Device.objects.filter(serial_number=serial_number, owner__username__iexact=username).first()
+        device = Device.objects.filter(serial_number=serial_number, user_profile__user__username__iexact=username).first()
         if device and device.token:
             return Response({"token": f"{device.token}"}, status=200)
         return Response({"error": "Token Not Found"}, status=404)
@@ -164,7 +165,7 @@ class RegisterDeviceView(generics.CreateAPIView):
                 {
                     'success': True,
                     'message': 'Device registered successfully',
-                    'device_id': device.device_id
+                    'device_id': device.id
                 },
                 status=status.HTTP_201_CREATED
             )
@@ -198,7 +199,7 @@ class RegisterDeviceView(generics.CreateAPIView):
 
 class Upload_media(generics.CreateAPIView):
     """
-    Upload a new media file. The authenticated user is automatically assigned as the owner.
+    Upload a new media file. The authenticated users is automatically assigned as the owner.
     """
     serializer_class = MediaSerializer
     permission_classes = (permissions.IsAuthenticated,)
@@ -252,4 +253,4 @@ def sync_device(request, serial_number):
             'playlists': playlist_data
         }, status=status.HTTP_200_OK)
     except Device.DoesNotExist:
-        return Response({'error': 'Device not found or not assigned to this user'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': 'Device not found or not assigned to this users'}, status=status.HTTP_400_BAD_REQUEST)

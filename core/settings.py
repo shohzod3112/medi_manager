@@ -32,7 +32,7 @@ INSTALLED_APPS = [
 
     # APPS
     # "mediaa",
-    'user',
+    'users',
     'organizations',
 ]
 
@@ -89,7 +89,7 @@ DATABASES = {
 
 # DATABASE_ROUTERS = ['db_routers.ReadWriteRouter']
 
-AUTH_USER_MODEL = 'user.User'
+AUTH_USER_MODEL = 'users.User'
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},

@@ -1,4 +1,4 @@
-# user/views.py
+# users/views.py
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
@@ -7,8 +7,8 @@ from django.contrib.auth import authenticate
 from django.http import JsonResponse
 from django.contrib.admin.views.decorators import staff_member_required
 from rest_framework_simplejwt.tokens import RefreshToken
-from organizations.models import Organization
-from user.serializers import UserSerializer
+from apps.organizations.models import Organization
+from apps.users.serializers import UserSerializer
 
 
 @staff_member_required
@@ -32,6 +32,6 @@ def login(request):
         return Response({
             'access_token': str(refresh.access_token),
             'refresh_token': str(refresh),
-            'user': UserSerializer(user).data
+            'users': UserSerializer(user).data
         })
     return Response({'error': 'Invalid Credentials'}, status=status.HTTP_400_BAD_REQUEST)

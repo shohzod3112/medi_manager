@@ -10,6 +10,10 @@ from django.core.exceptions import ValidationError
 
 import hashlib
 
+from moviepy import VideoFileClip
+
+from apps.organizations.exseptions.limit import DeviceLimitReached
+
 
 class BaseModel(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
@@ -62,6 +66,7 @@ class Organization(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        app_label = 'organizations'
         ordering = ['name']
         db_table = 'organizations'
         verbose_name_plural = 'Organizations'
@@ -155,7 +160,7 @@ class Device(models.Model):
         related_name='devices'
     )
     user_profile = models.ForeignKey(
-        'user.UserProfile',
+        'users.UserProfile',
         on_delete=models.CASCADE,
         related_name='devices'
     )
@@ -179,9 +184,9 @@ class Device(models.Model):
     def clean(self):
         """Validate device creation"""
         if not self.pk:  # New device
-            # Check if user can add more devices
+            # Check if users can add more devices
             if not self.user_profile.can_add_device():
-                raise ValidationError(
+                raise DeviceLimitReached(
                     f'User {self.user_profile.user.username} has reached their device limit of {self.user_profile.device_limit}'
                 )
 
@@ -203,13 +208,13 @@ class Device(models.Model):
                 raw_token = f"{self.user_profile.user.username}-{self.serial_number}"
                 self.token = hashlib.sha256(raw_token.encode()).hexdigest()
 
-            # Increment user's device count
+            # Increment users's device count
             self.user_profile.add_device()
 
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
-        # Decrement user's device count
+        # Decrement users's device count
         self.user_profile.remove_device()
         super().delete(*args, **kwargs)
 
@@ -228,9 +233,8 @@ class Media(models.Model):
     file = models.FileField(upload_to="")
     duration = models.IntegerField(null=True, blank=True)
 
-    # Relationships
     organization = models.ForeignKey(
-        Organization,
+        "Organization",
         on_delete=models.CASCADE,
         related_name='media'
     )
@@ -240,7 +244,6 @@ class Media(models.Model):
         related_name='media'
     )
 
-    # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -254,44 +257,43 @@ class Media(models.Model):
         return self.name
 
     def get_upload_path(self, filename):
-        """Generate upload path: organization/user/filename"""
         if not self.owner_id or not self.organization_id:
             raise ValueError("Owner and organization must be set before saving file")
         return f"{self.organization.slug}/{self.owner.username}/{filename}"
 
     def save(self, *args, **kwargs):
-        if not self.owner_id:
-            raise ValueError("Owner must be set before saving file")
+        if not self.owner_id or not self.organization_id:
+            raise ValueError("Owner and organization must be set before saving file")
 
+        # Fix file name path
         if self.file and not self.file.name.startswith(f'{self.organization.slug}/{self.owner.username}/'):
             original_filename = os.path.basename(self.file.name)
             self.file.name = self.get_upload_path(original_filename)
 
+        # Detect media type by file extension
+        ext = os.path.splitext(self.file.name)[1].lower()
+        if ext in ['.jpg', '.jpeg', '.png', '.gif']:
+            self.type = 'image'
+            self.duration = None  # Images don't have duration
+        elif ext in ['.mp4', '.mov', '.avi', '.mkv']:
+            self.type = 'video'
+        else:
+            raise ValidationError(f"Unsupported file type: {ext}")
+
         super().save(*args, **kwargs)
 
-        # Process media file
-        if self.type == "image" and self.file:
-            media = self.file.url.split("/")[-1]
-            if media == "mp4":
-                self.type = "video"
-                super().save(update_fields=["type"])
-            elif self.duration is not None:
-                self.duration = None
-                super().save(update_fields=["duration"])
+        # If video, extract duration
+        if self.type == 'video':
+            try:
+                clip = VideoFileClip(self.file.path)
+                duration_seconds = int(clip.duration)
+                clip.close()
 
-        # if self.type == "video" and self.file:
-        #     file_path = self.file.path
-        #     try:
-        #         clip = VideoFileClip(file_path)
-        #         duration_seconds = int(clip.duration)
-        #         clip.close()
-        #
-        #         if self.duration != duration_seconds:
-        #             self.duration = duration_seconds
-        #             self.type = "video"
-        #             super().save(update_fields=["duration", "type"])
-        #     except Exception as e:
-        #         print(f"Error getting video duration: {e}")
+                if self.duration != duration_seconds:
+                    self.duration = duration_seconds
+                    super().save(update_fields=["duration"])
+            except Exception as e:
+                print(f"Error getting video duration: {e}")
 
 
 class Playlist(models.Model):

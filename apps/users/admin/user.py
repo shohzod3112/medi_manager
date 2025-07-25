@@ -4,7 +4,7 @@ from django.utils.html import format_html
 from django import forms
 from django.contrib.auth.forms import UserChangeForm
 
-from user.models import User, UserProfile
+from apps.users.models import User, UserProfile
 
 
 class CustomUserChangeForm(UserChangeForm):
@@ -43,12 +43,14 @@ class CustomUserAdmin(UserAdmin):
     )
 
     def clickable_username(self, obj):
-        return format_html('<a href="{}">{}</a>', f"/admin/user/user/{obj.id}/change/", obj.username)
+        return format_html('<a href="{}">{}</a>', f"/admin/users/users/{obj.id}/change/", obj.username)
+
     clickable_username.allow_tags = True
     clickable_username.short_description = "Username"
 
     def full_name(self, obj):
         return obj.get_full_name()
+
     full_name.short_description = "Full Name"
 
     def organization_info(self, obj):
@@ -61,20 +63,20 @@ class CustomUserAdmin(UserAdmin):
             )
         except UserProfile.DoesNotExist:
             return format_html('<span style="color: red;">No Organization</span>')
+
     organization_info.short_description = "Organization"
 
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'organization', 'device_limit', 'current_device_count', 'remaining_devices', 'is_active', 'expiration_status')
+    list_display = ('id', 'user', 'organization', 'device_limit', 'current_device_count', 'remaining_devices',
+                    'is_active', 'expiration_status')
     list_filter = ('is_active', 'organization', 'expiration_date')
-    search_fields = ('user__username', 'user__email', 'organization__name')
-    ordering = ('organization', 'user__username')
     readonly_fields = ('current_device_count', 'created_at', 'updated_at')
 
     fieldsets = (
         ('User Information', {
-            'fields': ('user', 'organization')
+            'fields': ('organization', "user")
         }),
         ('Device Management', {
             'fields': ('device_limit', 'current_device_count')
@@ -90,6 +92,7 @@ class UserProfileAdmin(admin.ModelAdmin):
 
     def remaining_devices(self, obj):
         return obj.get_remaining_devices()
+
     remaining_devices.short_description = "Remaining Devices"
 
     def expiration_status(self, obj):
@@ -99,6 +102,7 @@ class UserProfileAdmin(admin.ModelAdmin):
             return format_html('<span style="color: orange;">Active</span>')
         else:
             return format_html('<span style="color: green;">No Expiration</span>')
+
     expiration_status.short_description = "Expiration Status"
 
     def get_queryset(self, request):

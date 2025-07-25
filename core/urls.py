@@ -1,5 +1,5 @@
 """
-URL configuration for user project.
+URL configuration for users project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/5.1/topics/http/urls/
@@ -15,7 +15,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
-# user/urls.py
+# users/urls.py
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
@@ -45,7 +45,6 @@ def health_check(request):
     return HttpResponse(b"healthy", content_type="text/plain")
 
 urlpatterns = [
-    path('swagger<format>/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
     path('admin/', admin.site.urls),
