@@ -9,6 +9,8 @@ from apps.organizations.views import (
     PlaylistViewSet,
 )
 
+app_name = "organizations"
+
 # User-facing API router
 router = DefaultRouter()
 router.register(r"devices", DeviceViewSet, basename="device")
@@ -26,7 +28,7 @@ admin_router.register(
 urlpatterns = [
     # Device/player endpoints (legacy paths now backed by ViewSet actions)
     path(
-        "playlist_detail/",
+        "playlists/details/",
         DeviceViewSet.as_view({"get": "playlist_detail"}),
         name="playlist_detail",
     ),

@@ -74,16 +74,14 @@ DATABASES = {
         "HOST": os.getenv("SUPERUSER_DB_HOST"),
         "PORT": os.getenv("SUPERUSER_DB_PORT"),
     },
-    # 'replica': {
-    #     'ENGINE': 'django.db.backends.postgresql',
-    #     'NAME': os.getenv('SUPERUSER_DB_NAME'),
-    #     'USER': os.getenv('SUPERUSER_DB_USER'),
-    #     'PASSWORD': os.getenv('SUPERUSER_DB_PASSWORD'),
-    #     'HOST': os.getenv('SUPERUSER_DB_HOST'),
-    #     'PORT': os.getenv('SUPERUSER_DB_PORT'),
-    #     'OPTIONS': {'readonly': True},
-    # }
 }
+
+# Use SQLite for Django test runs to avoid external DB dependency in local environments
+if "test" in sys.argv:
+    DATABASES["default"] = {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": str(BASE_DIR / "db.sqlite3"),
+    }
 
 # DATABASE_ROUTERS = ['db_routers.ReadWriteRouter']
 
