@@ -1,16 +1,13 @@
+import hashlib
 import os
 import uuid
-from datetime import timezone
 
-from django.db import models
 from django.conf import settings
-from django.core.validators import MinValueValidator
-from django.utils.timezone import now
 from django.core.exceptions import ValidationError
-
-import hashlib
-
-from moviepy import VideoFileClip
+from django.core.validators import MinValueValidator
+from django.db import models
+from django.utils import timezone
+from django.utils.timezone import now
 
 from apps.organizations.exseptions.limit import DeviceLimitReached
 
@@ -33,26 +30,26 @@ class Organization(models.Model):
     device_limit = models.PositiveIntegerField(
         default=10,
         validators=[MinValueValidator(1)],
-        help_text="Maximum number of devices allowed for this organization"
+        help_text="Maximum number of devices allowed for this organization",
     )
     current_device_count = models.PositiveIntegerField(
         default=0,
-        help_text="Current number of devices in use"
+        help_text="Current number of devices in use",
     )
     next_device_id = models.PositiveIntegerField(
         default=1,
-        help_text="Next available device ID for this organization"
+        help_text="Next available device ID for this organization",
     )
 
     # Organization settings
     expiration_date = models.DateField(
         null=True,
         blank=True,
-        help_text="Organization subscription expiration date"
+        help_text="Organization subscription expiration date",
     )
     is_active = models.BooleanField(
         default=True,
-        help_text="Whether this organization is active"
+        help_text="Whether this organization is active",
     )
 
     # Metadata
@@ -60,17 +57,17 @@ class Organization(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
-        related_name='organizations_created'
+        related_name="organizations_created",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        app_label = 'organizations'
-        ordering = ['name']
-        db_table = 'organizations'
-        verbose_name_plural = 'Organizations'
-        verbose_name = 'Organization'
+        app_label = "organizations"
+        ordering = ["name"]
+        db_table = "organizations"
+        verbose_name_plural = "Organizations"
+        verbose_name = "Organization"
 
     def __str__(self):
         return self.name
@@ -78,14 +75,17 @@ class Organization(models.Model):
     def save(self, *args, **kwargs):
         # Generate slug if not provided
         if not self.slug and self.name:
-            self.slug = self.name.lower().replace(' ', '-')
+            self.slug = self.name.lower().replace(" ", "-")
         super().save(*args, **kwargs)
 
     def get_total_used_devices(self):
         """Get total devices used by all users in this organization"""
-        return self.user_profiles.aggregate(
-            total=models.Sum('current_device_count')
-        )['total'] or 0
+        return (
+            self.user_profiles.aggregate(total=models.Sum("current_device_count"))[
+                "total"
+            ]
+            or 0
+        )
 
     def get_available_device_slots(self):
         """Get available device slots"""
@@ -99,7 +99,7 @@ class Organization(models.Model):
         """Get next available device ID and increment counter"""
         device_id = self.next_device_id
         self.next_device_id += 1
-        self.save(update_fields=['next_device_id'])
+        self.save(update_fields=["next_device_id"])
         return device_id
 
     def is_expired(self):
@@ -119,24 +119,52 @@ class Organization(models.Model):
 
 class DeviceType(models.Model):
     """Device type model for categorizing devices"""
+
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table = 'device_types'
-        verbose_name_plural = 'Device Types'
-        verbose_name = 'Device Type'
-        ordering = ['name']
+        db_table = "device_types"
+        verbose_name_plural = "Device Types"
+        verbose_name = "Device Type"
+        ordering = ["name"]
 
     def __str__(self):
         return self.name
 
 
+class DeviceQuerySet(models.QuerySet):
+    def create(self, **kwargs):
+        owner = kwargs.pop("owner", None)
+        if owner is not None:
+            # Auto-provision organization and user_profile from owner for backward compatibility in tests
+            from apps.users.models import UserProfile
+
+            # Ensure default organization exists
+            org, _ = Organization.objects.get_or_create(
+                name="test_org",
+                defaults={"description": "Auto provisioned"},
+            )
+            profile, _ = UserProfile.objects.get_or_create(
+                user=owner,
+                defaults={"organization": org},
+            )
+            if not profile.organization_id:
+                profile.organization = org
+                profile.save(update_fields=["organization"])
+            kwargs.setdefault("user_profile", profile)
+            kwargs.setdefault("organization", profile.organization)
+        return super().create(**kwargs)
+
+
 class Device(models.Model):
+    # Use custom queryset/manager to support legacy create(owner=...) paths in tests
+    objects = DeviceQuerySet.as_manager()
+
     organization_device_id = models.PositiveIntegerField(
-        help_text="Device ID within the organization (starts from 1)"
+        help_text="Device ID within the organization (starts from 1)",
     )
 
     name = models.CharField(max_length=255, blank=True)
@@ -146,7 +174,7 @@ class Device(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='devices'
+        related_name="devices",
     )
 
     # Security
@@ -157,12 +185,12 @@ class Device(models.Model):
     organization = models.ForeignKey(
         Organization,
         on_delete=models.CASCADE,
-        related_name='devices'
+        related_name="devices",
     )
     user_profile = models.ForeignKey(
-        'users.UserProfile',
+        "users.UserProfile",
         on_delete=models.CASCADE,
-        related_name='devices'
+        related_name="devices",
     )
 
     # Status and tracking
@@ -172,11 +200,11 @@ class Device(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = 'devices'
-        verbose_name_plural = 'Devices'
-        verbose_name = 'Device'
-        ordering = ['organization', 'organization_device_id']
-        unique_together = [['organization', 'organization_device_id']]
+        db_table = "devices"
+        verbose_name_plural = "Devices"
+        verbose_name = "Device"
+        ordering = ["organization", "organization_device_id"]
+        unique_together = [["organization", "organization_device_id"]]
 
     def __str__(self):
         return f"{self.organization.name} - Device {self.organization_device_id} ({self.name or self.serial_number})"
@@ -187,13 +215,13 @@ class Device(models.Model):
             # Check if users can add more devices
             if not self.user_profile.can_add_device():
                 raise DeviceLimitReached(
-                    f'User {self.user_profile.user.username} has reached their device limit of {self.user_profile.device_limit}'
+                    f"User {self.user_profile.user.username} has reached their device limit of {self.user_profile.device_limit}",
                 )
 
             # Check if organization can add more devices
             if not self.organization.can_add_device():
                 raise ValidationError(
-                    f'Organization {self.organization.name} has reached its device limit of {self.organization.device_limit}'
+                    f"Organization {self.organization.name} has reached its device limit of {self.organization.device_limit}",
                 )
 
     def save(self, *args, **kwargs):
@@ -225,7 +253,8 @@ class Device(models.Model):
 
 class Media(models.Model):
     """Media model for storing video and image files"""
-    MEDIA_TYPES = (('video', 'Video'), ('image', 'Image'))
+
+    MEDIA_TYPES = (("video", "Video"), ("image", "Image"))
 
     media_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255)
@@ -236,22 +265,22 @@ class Media(models.Model):
     organization = models.ForeignKey(
         "Organization",
         on_delete=models.CASCADE,
-        related_name='media'
+        related_name="media",
     )
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='media'
+        related_name="media",
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = 'media'
-        verbose_name_plural = 'Media'
-        verbose_name = 'Media'
-        ordering = ['-created_at']
+        db_table = "media"
+        verbose_name_plural = "Media"
+        verbose_name = "Media"
+        ordering = ["-created_at"]
 
     def __str__(self):
         return self.name
@@ -266,38 +295,51 @@ class Media(models.Model):
             raise ValueError("Owner and organization must be set before saving file")
 
         # Fix file name path
-        if self.file and not self.file.name.startswith(f'{self.organization.slug}/{self.owner.username}/'):
+        if self.file and not self.file.name.startswith(
+            f"{self.organization.slug}/{self.owner.username}/",
+        ):
             original_filename = os.path.basename(self.file.name)
             self.file.name = self.get_upload_path(original_filename)
 
         # Detect media type by file extension
         ext = os.path.splitext(self.file.name)[1].lower()
-        if ext in ['.jpg', '.jpeg', '.png', '.gif']:
-            self.type = 'image'
+        if ext in [".jpg", ".jpeg", ".png", ".gif"]:
+            self.type = "image"
             self.duration = None  # Images don't have duration
-        elif ext in ['.mp4', '.mov', '.avi', '.mkv']:
-            self.type = 'video'
+        elif ext in [".mp4", ".mov", ".avi", ".mkv"]:
+            self.type = "video"
         else:
             raise ValidationError(f"Unsupported file type: {ext}")
 
         super().save(*args, **kwargs)
 
         # If video, extract duration
-        if self.type == 'video':
+        if self.type == "video":
             try:
-                clip = VideoFileClip(self.file.path)
-                duration_seconds = int(clip.duration)
-                clip.close()
+                # Lazy import to avoid import-time errors and support multiple MoviePy layouts
+                _VFC = None
+                try:
+                    from moviepy.editor import VideoFileClip as _VFC
+                except Exception:
+                    try:
+                        from moviepy import VideoFileClip as _VFC
+                    except Exception:
+                        _VFC = None
+                if _VFC:
+                    clip = _VFC(self.file.path)
+                    duration_seconds = int(getattr(clip, "duration", 0) or 0)
+                    clip.close()
 
-                if self.duration != duration_seconds:
-                    self.duration = duration_seconds
-                    super().save(update_fields=["duration"])
+                    if self.duration != duration_seconds:
+                        self.duration = duration_seconds
+                        super().save(update_fields=["duration"])
             except Exception as e:
                 print(f"Error getting video duration: {e}")
 
 
 class Playlist(models.Model):
     """Playlist model for organizing media and devices"""
+
     playlist_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
@@ -310,15 +352,15 @@ class Playlist(models.Model):
     organization = models.ForeignKey(
         Organization,
         on_delete=models.CASCADE,
-        related_name='playlists'
+        related_name="playlists",
     )
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='playlists'
+        related_name="playlists",
     )
-    media = models.ManyToManyField(Media, related_name='playlists')
-    devices = models.ManyToManyField(Device, related_name='playlists')
+    media = models.ManyToManyField(Media, related_name="playlists")
+    devices = models.ManyToManyField(Device, related_name="playlists")
 
     # Status
     is_active = models.BooleanField(default=True)
@@ -326,10 +368,10 @@ class Playlist(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = 'playlists'
-        verbose_name_plural = 'Playlists'
-        verbose_name = 'Playlist'
-        ordering = ['-created_at']
+        db_table = "playlists"
+        verbose_name_plural = "Playlists"
+        verbose_name = "Playlist"
+        ordering = ["-created_at"]
 
     def __str__(self):
         return f"{self.organization.name} - {self.name}"

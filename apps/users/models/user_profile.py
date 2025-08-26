@@ -1,8 +1,8 @@
-from django.db import models
 from django.conf import settings
-from django.core.validators import MinValueValidator
-from django.utils.timezone import now
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
+from django.db import models
+from django.utils.timezone import now
 
 
 class UserProfile(models.Model):
@@ -10,43 +10,44 @@ class UserProfile(models.Model):
     UserProfile model that extends the User model with organization-specific fields.
     This handles the relationship between users and organizations.
     """
+
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='profile'
+        related_name="profile",
     )
     organization = models.ForeignKey(
-        'organizations.Organization',
+        "organizations.Organization",
         on_delete=models.CASCADE,
-        related_name='user_profiles'
+        related_name="user_profiles",
     )
     device_limit = models.PositiveIntegerField(
         default=1,
         validators=[MinValueValidator(1)],
-        help_text="Maximum number of devices this users can have"
+        help_text="Maximum number of devices this users can have",
     )
     current_device_count = models.PositiveIntegerField(
         default=0,
-        help_text="Current number of devices assigned to this users"
+        help_text="Current number of devices assigned to this users",
     )
     expiration_date = models.DateField(
         null=True,
         blank=True,
-        help_text="User subscription expiration date"
+        help_text="User subscription expiration date",
     )
     is_active = models.BooleanField(
         default=True,
-        help_text="Whether this users profile is active"
+        help_text="Whether this users profile is active",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        app_label = 'users'
-        db_table = 'user_profiles'
-        verbose_name_plural = 'User Profiles'
-        verbose_name = 'User Profile'
-        ordering = ['user__username']
+        app_label = "users"
+        db_table = "user_profiles"
+        verbose_name_plural = "User Profiles"
+        verbose_name = "User Profile"
+        ordering = ["user__username"]
 
     def __str__(self):
         return f"{self.user.username} - {self.organization.name}"
@@ -57,23 +58,25 @@ class UserProfile(models.Model):
             if self.pk:  # Existing instance
                 old_instance = UserProfile.objects.get(pk=self.pk)
                 old_limit = old_instance.device_limit
-                old_count = old_instance.current_device_count
             else:
                 old_limit = 0
-                old_count = 0
 
             # Calculate the change in device limit
             limit_change = self.device_limit - old_limit
 
             # Check if organization has enough capacity
             org_used_devices = self.organization.get_total_used_devices()
-            org_available = self.organization.device_limit - org_used_devices + old_limit
+            org_available = (
+                self.organization.device_limit - org_used_devices + old_limit
+            )
 
             if limit_change > org_available:
-                raise ValidationError({
-                    'device_limit': f'Organization "{self.organization.name}" only has {org_available} device slots available. '
-                                    f'Cannot assign {self.device_limit} devices to this users.'
-                })
+                raise ValidationError(
+                    {
+                        "device_limit": f'Organization "{self.organization.name}" only has {org_available} device slots available. '
+                        f"Cannot assign {self.device_limit} devices to this users.",
+                    },
+                )
 
     def save(self, *args, **kwargs):
         self.clean()
@@ -87,7 +90,7 @@ class UserProfile(models.Model):
         """Increment device count"""
         if self.can_add_device():
             self.current_device_count += 1
-            self.save(update_fields=['current_device_count'])
+            self.save(update_fields=["current_device_count"])
             return True
         return False
 
@@ -95,7 +98,7 @@ class UserProfile(models.Model):
         """Decrement device count"""
         if self.current_device_count > 0:
             self.current_device_count -= 1
-            self.save(update_fields=['current_device_count'])
+            self.save(update_fields=["current_device_count"])
             return True
         return False
 

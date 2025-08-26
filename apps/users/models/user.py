@@ -1,7 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils.timezone import now
-from django.core.validators import MinValueValidator
 
 
 def get_default_expiration_date():
@@ -17,9 +16,9 @@ class User(AbstractUser):
     date_joined = models.DateTimeField(auto_now_add=True)
 
     phone_number = models.CharField(max_length=20, blank=True, null=True)
-    avatar = models.ImageField(upload_to='user_avatars/', blank=True, null=True)
+    avatar = models.ImageField(upload_to="user_avatars/", blank=True, null=True)
 
-    USERNAME_FIELD = 'username'
+    USERNAME_FIELD = "username"
     REQUIRED_FIELDS = ["email"]
 
     def __str__(self):
@@ -27,7 +26,7 @@ class User(AbstractUser):
 
     def get_full_name(self):
         """Return the first_name plus the last_name, with a space in between."""
-        full_name = '%s %s' % (self.first_name, self.last_name)
+        full_name = f"{self.first_name} {self.last_name}"
         return full_name.strip()
 
     def get_short_name(self):
@@ -35,8 +34,8 @@ class User(AbstractUser):
         return self.first_name
 
     class Meta:
-        app_label = 'users'
-        ordering = ['username']
-        db_table = 'users'
-        verbose_name_plural = 'Users'
-        verbose_name = 'User'
+        app_label = "users"
+        ordering = ["username"]
+        db_table = "users"
+        verbose_name_plural = "Users"
+        verbose_name = "User"

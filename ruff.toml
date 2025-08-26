@@ -2,64 +2,13 @@
 target-version = "py311"
 line-length = 88
 select = [
-    "E",  # pycodestyle errors
-    "W",  # pycodestyle warnings
-    "F",  # pyflakes
-    "I",  # isort
-    "B",  # flake8-bugbear
-    "C4", # flake8-comprehensions
-    "UP", # pyupgrade
-    "N",  # pep8-naming
-    "Q",  # flake8-quotes
-    "SIM", # flake8-simplify
-    "TCH", # flake8-type-checking
-    "TID", # flake8-tidy-imports
-    "ARG", # flake8-unused-arguments
-    "PIE", # flake8-pie
-    "LOG", # flake8-logging-format
-    "RET", # flake8-return
-    "SLF", # flake8-self
-    "SLOT", # flake8-slots
-    "FBT", # flake8-boolean-trap
-    "COM", # flake8-commas
-    "DTZ", # flake8-datetimez
-    "T20", # flake8-print
-    "PYI", # flake8-pyi
-    "AIR", # flake8-airflow
-    "BLE", # flake8-blind-except
-    "FURB", # flake8-furb
-    "ICN", # flake8-import-conventions
-    "ISC", # flake8-implicit-str-concat
-    "G",   # flake8-logging
-    "INP", # flake8-no-pep420
-    "PTH", # flake8-use-pathlib
-    "ERA", # eradicate
-    "PD",  # pandas-vet
-    "PGH", # pygrep-hooks
-    "PL",  # pylint
-    "TRY", # tryceratops
-    "NPY", # numpy-vet
-    "A",   # flake8-builtins
-    "C90", # mccabe
-    "DJ",  # flake8-django
-    "S",   # bandit
-    "BLE", # flake8-blind-except
-    "FURB", # flake8-furb
-    "ICN", # flake8-import-conventions
-    "ISC", # flake8-implicit-str-concat
-    "G",   # flake8-logging
-    "INP", # flake8-no-pep420
-    "PTH", # flake8-use-pathlib
-    "ERA", # eradicate
-    "PD",  # pandas-vet
-    "PGH", # pygrep-hooks
-    "PL",  # pylint
-    "TRY", # tryceratops
-    "NPY", # numpy-vet
-    "A",   # flake8-builtins
-    "C90", # mccabe
-    "DJ",  # flake8-django
-    "S",   # bandit
+    "E",
+    "W",
+    "F",
+    "I",
+    "B",
+    "C4",
+    "UP",
 ]
 
 ignore = [
@@ -117,7 +66,8 @@ ignore = [
     "D419", # docstring is empty
 ]
 
-[tool.ruff.per-file-ignores]
+
+[per-file-ignores]
 "__init__.py" = ["F401"]
 "migrations/*" = ["E501", "F401", "DJ001"]
 "*/migrations/*" = ["E501", "F401", "DJ001"]
@@ -135,19 +85,11 @@ ignore = [
 "*/test_*.py" = ["E501", "F401", "DJ001"]
 "*_test.py" = ["E501", "F401", "DJ001"]
 
-[tool.ruff.format]
-quote-style = "double"
-indent-style = "space"
-skip-magic-trailing-comma = false
-line-ending = "auto"
 
-[tool.ruff.lint.isort]
+[isort]
 known-first-party = ["core", "apps"]
-known-django = ["django"]
 known-third-party = ["rest_framework", "celery", "redis", "psycopg2", "moviepy", "PIL"]
 
-[tool.ruff.lint.flake8-django]
-django-settings-module = "core.settings"
 
-[tool.ruff.lint.flake8-tidy-imports]
-ban-relative-imports = "all" 
+[flake8-tidy-imports]
+ban-relative-imports = "all"

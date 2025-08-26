@@ -1,9 +1,9 @@
 import os
 import shutil
 
+from django.conf import settings
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
-from django.conf import settings
 
 from apps.organizations.models import Media
 
@@ -30,10 +30,14 @@ def delete_empty_folder(sender, instance, **kwargs):
 
 @receiver(post_save, sender=Media)
 def generate_video_preview(sender, instance, **kwargs):
-    if instance.type != 'video':
+    if instance.type != "video":
         return
 
-    preview_path = os.path.join(settings.MEDIA_ROOT, 'previews', f'media_{instance.media_id}.jpg')
+    preview_path = os.path.join(
+        settings.MEDIA_ROOT,
+        "previews",
+        f"media_{instance.media_id}.jpg",
+    )
 
     if os.path.exists(preview_path):
         return
@@ -49,4 +53,3 @@ def generate_video_preview(sender, instance, **kwargs):
     #     )
     # except ffmpeg.Error as e:
     #     print("FFmpeg error:", e.stderr.decode())
-
