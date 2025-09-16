@@ -8,7 +8,7 @@ from django.utils.html import format_html
 
 from apps.users.models import UserProfile
 
-from .models import Device, DeviceType, Media, Organization, Playlist
+from .models import Device, DeviceType, File, Organization, Playlist
 
 User = get_user_model()
 
@@ -118,6 +118,7 @@ class DeviceAdminForm(forms.ModelForm):
 class DeviceAdmin(admin.ModelAdmin):
     form = DeviceAdminForm
     list_display = (
+        'id',
         "organization_device_id",
         "full_device_id",
         "name",
@@ -194,10 +195,10 @@ class DeviceTypeAdmin(admin.ModelAdmin):
     device_count.short_description = "Devices"
 
 
-@admin.register(Media)
-class MediaAdmin(admin.ModelAdmin):
+@admin.register(File)
+class FileAdmin(admin.ModelAdmin):
     list_display = (
-        "media_id",
+        "file_id",
         "name",
         "type",
         "organization",
@@ -207,11 +208,11 @@ class MediaAdmin(admin.ModelAdmin):
     )
     list_filter = ("type", "organization", "created_at")
     search_fields = ("name", "organization__name")
-    readonly_fields = ("media_id", "duration", "created_at", "updated_at")
+    readonly_fields = ("file_id", "duration", "created_at", "updated_at")
     ordering = ("-created_at",)
 
     fieldsets = (
-        ("Media Information", {"fields": ("name", "type", "file", "duration")}),
+        ("File Information", {"fields": ("name", "type", "file", "duration")}),
         ("Organization & Owner", {"fields": ("organization", "owner")}),
         (
             "Timestamps",
@@ -230,9 +231,9 @@ class MediaAdmin(admin.ModelAdmin):
 
 # Playlist Admin
 class PlaylistAdminForm(forms.ModelForm):
-    media = forms.ModelMultipleChoiceField(
-        queryset=Media.objects.none(),
-        widget=admin.widgets.FilteredSelectMultiple("Media", is_stacked=False),
+    file = forms.ModelMultipleChoiceField(
+        queryset=File.objects.none(),
+        widget=admin.widgets.FilteredSelectMultiple("File", is_stacked=False),
         required=False,
     )
     devices = forms.ModelMultipleChoiceField(
@@ -251,7 +252,7 @@ class PlaylistAdminForm(forms.ModelForm):
 
         # Filter choices based on ownership and device naming
         if self.current_user and not self.current_user.is_superuser:
-            self.fields["media"].queryset = Media.objects.filter(
+            self.fields["file"].queryset = File.objects.filter(
                 owner=self.current_user,
             )
             self.fields["devices"].queryset = (
@@ -260,7 +261,7 @@ class PlaylistAdminForm(forms.ModelForm):
                 .exclude(name__exact="")
             )
         else:
-            self.fields["media"].queryset = Media.objects.all()
+            self.fields["file"].queryset = File.objects.all()
             self.fields["devices"].queryset = Device.objects.exclude(
                 name__isnull=True,
             ).exclude(name__exact="")
@@ -269,7 +270,7 @@ class PlaylistAdminForm(forms.ModelForm):
         instance = super().save(commit=False)
         if commit:
             instance.save()
-            instance.media.set(self.cleaned_data["media"])
+            instance.file.set(self.cleaned_data["file"])
             instance.devices.set(self.cleaned_data["devices"])
             self.save_m2m()
         return instance
@@ -278,8 +279,8 @@ class PlaylistAdminForm(forms.ModelForm):
         cleaned_data = super().clean()
         # Only enforce on existing records
         if self.instance.pk:
-            if not cleaned_data.get("media"):
-                raise ValidationError({"media": "At least one media file is required."})
+            if not cleaned_data.get("file"):
+                raise ValidationError({"file": "At least one file is required."})
             if not cleaned_data.get("devices"):
                 raise ValidationError({"devices": "At least one device is required."})
         return cleaned_data
@@ -296,7 +297,7 @@ class PlaylistAdmin(admin.ModelAdmin):
         "start_time",
         "end_time",
         "is_active",
-        "media_count",
+        "file_count",
         "device_count",
     )
     list_filter = ("is_active", "organization", "created_at")
@@ -308,7 +309,7 @@ class PlaylistAdmin(admin.ModelAdmin):
         ("Playlist Information", {"fields": ("name", "description")}),
         ("Organization & Owner", {"fields": ("organization", "owner")}),
         ("Timing", {"fields": ("start_time", "end_time")}),
-        ("Content", {"fields": ("media", "devices")}),
+        ("Content", {"fields": ("file", "devices")}),
         ("Status", {"fields": ("is_active",)}),
         (
             "Timestamps",
@@ -316,10 +317,10 @@ class PlaylistAdmin(admin.ModelAdmin):
         ),
     )
 
-    def media_count(self, obj):
-        return obj.media.count()
+    def file_count(self, obj):
+        return obj.file.count()
 
-    media_count.short_description = "Media"
+    file_count.short_description = "File"
 
     def device_count(self, obj):
         return obj.devices.count()

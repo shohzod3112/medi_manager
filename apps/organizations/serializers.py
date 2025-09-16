@@ -1,8 +1,26 @@
 from django.core.files.base import ContentFile
 from rest_framework import serializers
 
-from apps.organizations.models import Device, Media, Organization, Playlist
+from apps.organizations.models import Device, File, Organization, Playlist, DeviceType
 from apps.users.models import UserProfile
+
+
+class DeviceTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DeviceType
+        fields = "__all__"
+
+
+class DeviceTypeListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DeviceType
+        fields = [
+            "id",
+            "name",
+            "description",
+            "is_active",
+            "created_at",
+        ]
 
 
 def ensure_default_org_profile(user):
@@ -62,8 +80,8 @@ class MediaSerializer(serializers.ModelSerializer):
     file = serializers.FileField(required=False, allow_empty_file=True)
 
     class Meta:
-        model = Media
-        fields = ["media_id", "name", "type", "file", "duration", "owner"]
+        model = File
+        fields = ["file_id", "name", "type", "file", "duration", "owner"]
         read_only_fields = ["owner", "duration", "type"]
 
     def create(self, validated_data):
@@ -86,9 +104,9 @@ class MediaSerializer(serializers.ModelSerializer):
 
 
 class PlaylistSerializer(serializers.ModelSerializer):
-    media = serializers.PrimaryKeyRelatedField(
+    file = serializers.PrimaryKeyRelatedField(
         many=True,
-        queryset=Media.objects.all(),
+        queryset=File.objects.all(),
         required=False,
     )
     devices = serializers.PrimaryKeyRelatedField(
@@ -105,7 +123,7 @@ class PlaylistSerializer(serializers.ModelSerializer):
             "owner",
             "start_time",
             "end_time",
-            "media",
+            "file",
             "devices",
         ]
         read_only_fields = ["owner"]
@@ -119,9 +137,9 @@ class PlaylistSerializer(serializers.ModelSerializer):
 
         org = profile.organization
         # Ensure all media and devices belong to the same organization
-        media_list = attrs.get("media", []) or []
+        files_list = attrs.get("file", []) or []
         devices_list = attrs.get("devices", []) or []
-        if any(m.organization_id != org.id for m in media_list):
+        if any(m.organization_id != org.id for m in files_list):
             raise serializers.ValidationError(
                 {"media": "All media must belong to your organization"},
             )
@@ -132,7 +150,7 @@ class PlaylistSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        media = validated_data.pop("media", [])
+        file = validated_data.pop("file", [])
         devices = validated_data.pop("devices", [])
         request = self.context.get("request")
         user = request.user

@@ -1,6 +1,7 @@
 # organizations/urls.py
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+from apps.organizations import views
 
 from apps.organizations.views import (
     DeviceViewSet,
@@ -55,4 +56,9 @@ urlpatterns = [
     # Routers
     path("", include(router.urls)),
     path("admin/", include(admin_router.urls)),
+]
+
+urlpatterns += [
+    path("organizations/device-types", views.DeviceTypeListCreateView.as_view()),
+    path("organizations/device-types/<int:pk>", views.DeviceTypeRetrieveUpdateDestroyAPIView.as_view()),
 ]

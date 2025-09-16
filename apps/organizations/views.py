@@ -3,12 +3,14 @@ from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import mixins, permissions, status
 from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
+from rest_framework import generics
 
+from core.paginations import CustomPagination
 from ..users.models import User, UserProfile
-from .models import Device, Media, Organization, Playlist
+from .models import Device, File, Organization, Playlist, DeviceType
 from .permissions import IsOrgAndProfileActive
 from .serializers import (
     DeviceSerializer,
@@ -16,6 +18,28 @@ from .serializers import (
     OrganizationSerializer,
     PlaylistSerializer,
 )
+from . import serializers
+
+
+class DeviceTypeListCreateView(generics.ListCreateAPIView):
+    permission_classes = [AllowAny]
+    pagination_class = CustomPagination
+    queryset = DeviceType.objects.all()
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return serializers.DeviceTypeSerializer
+        return serializers.DeviceTypeListSerializer
+
+
+class DeviceTypeRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAdminUser]
+    queryset = DeviceType.objects.all()
+
+    def get_serializer_class(self):
+        if self.request.method == 'PUT':
+            return serializers.DeviceTypeSerializer
+        return serializers.DeviceTypeListSerializer
 
 
 class OrganizationAdminViewSet(ModelViewSet):
@@ -206,8 +230,8 @@ class MediaViewSet(ModelViewSet):
         user = self.request.user
         profile = getattr(user, "profile", None)
         if not profile or not profile.organization_id:
-            return Media.objects.none()
-        return Media.objects.filter(
+            return File.objects.none()
+        return File.objects.filter(
             organization=profile.organization,
             owner=user,
         ).order_by("-created_at")

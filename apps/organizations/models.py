@@ -251,26 +251,26 @@ class Device(models.Model):
         return f"{self.organization.slug}-{self.organization_device_id}"
 
 
-class Media(models.Model):
+class File(models.Model):
     """Media model for storing video and image files"""
 
-    MEDIA_TYPES = (("video", "Video"), ("image", "Image"))
+    FILE_TYPES = (("video", "Video"), ("image", "Image"))
 
-    media_id = models.AutoField(primary_key=True)
+    file_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255)
-    type = models.CharField(max_length=10, choices=MEDIA_TYPES)
+    type = models.CharField(max_length=10, choices=FILE_TYPES)
     file = models.FileField(upload_to="")
     duration = models.IntegerField(null=True, blank=True)
 
     organization = models.ForeignKey(
         "Organization",
         on_delete=models.CASCADE,
-        related_name="media",
+        related_name="files",
     )
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="media",
+        related_name="files",
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -278,8 +278,8 @@ class Media(models.Model):
 
     class Meta:
         db_table = "media"
-        verbose_name_plural = "Media"
-        verbose_name = "Media"
+        verbose_name_plural = "Files"
+        verbose_name = "File"
         ordering = ["-created_at"]
 
     def __str__(self):
@@ -301,7 +301,7 @@ class Media(models.Model):
             original_filename = os.path.basename(self.file.name)
             self.file.name = self.get_upload_path(original_filename)
 
-        # Detect media type by file extension
+        # Detect file type by file extension
         ext = os.path.splitext(self.file.name)[1].lower()
         if ext in [".jpg", ".jpeg", ".png", ".gif"]:
             self.type = "image"
@@ -338,7 +338,7 @@ class Media(models.Model):
 
 
 class Playlist(models.Model):
-    """Playlist model for organizing media and devices"""
+    """Playlist model for organizing file and devices"""
 
     playlist_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255)
@@ -359,7 +359,7 @@ class Playlist(models.Model):
         on_delete=models.CASCADE,
         related_name="playlists",
     )
-    media = models.ManyToManyField(Media, related_name="playlists")
+    file = models.ManyToManyField(File, related_name="playlists")
     devices = models.ManyToManyField(Device, related_name="playlists")
 
     # Status

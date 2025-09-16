@@ -5,10 +5,10 @@ from django.conf import settings
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 
-from apps.organizations.models import Media
+from apps.organizations.models import File
 
 
-@receiver(post_delete, sender=Media)
+@receiver(post_delete, sender=File)
 def delete_empty_folder(sender, instance, **kwargs):
     """Delete the file's folder if empty, then check and delete the users's folder."""
     if not instance.file:
@@ -28,7 +28,7 @@ def delete_empty_folder(sender, instance, **kwargs):
         shutil.rmtree(user_folder)
 
 
-@receiver(post_save, sender=Media)
+@receiver(post_save, sender=File)
 def generate_video_preview(sender, instance, **kwargs):
     if instance.type != "video":
         return
