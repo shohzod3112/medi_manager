@@ -3,16 +3,23 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import authenticate
 from django.http import JsonResponse
 from django.utils.text import slugify
-from rest_framework import status
+from rest_framework import status, generics
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework.viewsets import ViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from apps.users.models import UserProfile
+from apps.users.models.user import User
 from apps.organizations.models import Organization
 from apps.organizations.serializers import ensure_default_org_profile
 from apps.users.serializers import ProfileSerializer, UserSerializer
+from apps.users.serializers import user as user_serializer
+from core.paginations import CustomPagination
+
+# permission dagi barchasini IsAdminUser ga o'girish kerak
 
 
 @staff_member_required
@@ -50,10 +57,54 @@ class AuthViewSet(ViewSet):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated])
-    def me(self, request):
+
+class WhoAmIAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
         user = request.user
         # Ensure profile and organization exist for consistent responses
         ensure_default_org_profile(user)
         data = ProfileSerializer(user).data
         return Response(data)
+
+class UserListCreateAPIView(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
+    pagination_class = CustomPagination
+    queryset = User.objects.all()
+
+    def get_serializer_class(self):
+        if self.request.method == "POST":
+            return user_serializer.UserCreateSerializer
+        return user_serializer.UserListSerializer
+
+
+class UserRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated]
+    queryset = User.objects.all()
+
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return user_serializer.UserRetrieveSerializer
+        return user_serializer.UserUpdateSerializer
+
+
+class UserProfileListCreateAPIView(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
+    pagination_class = CustomPagination
+    queryset = UserProfile.objects.select_related("user", "organization")
+
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return user_serializer.UserProfileListSerializer
+        return user_serializer.UserProfileCreateSerializer
+
+
+class UserProfileRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated]
+    pagination_class = CustomPagination
+    queryset = UserProfile.objects.select_related("user", "organization")
+
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return user_serializer.UserProfileRetrieveSerializer
+        return user_serializer.UserProfileUpdateSerializer

@@ -199,6 +199,7 @@ class DeviceTypeAdmin(admin.ModelAdmin):
 class FileAdmin(admin.ModelAdmin):
     list_display = (
         "file_id",
+        "local_id",
         "name",
         "type",
         "organization",

@@ -45,7 +45,7 @@ def ensure_default_org_profile(user):
 class DeviceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Device
-        fields = ["serial_number", "name", "exit_password", "token"]
+        fields = ["serial_number", "name", "exit_password", "token", "device_type"]
         extra_kwargs = {
             "token": {"read_only": True},
             "serial_number": {
@@ -55,6 +55,7 @@ class DeviceSerializer(serializers.ModelSerializer):
             },
             "name": {"required": False},
             "exit_password": {"required": False},
+            "device_type": {"required": True},
         }
 
     def validate_serial_number(self, value):
@@ -164,8 +165,8 @@ class PlaylistSerializer(serializers.ModelSerializer):
             organization=org,
             **validated_data,
         )
-        if media:
-            playlist.media.set(media)
+        if file:
+            playlist.file.set(file)
         if devices:
             playlist.devices.set(devices)
         return playlist

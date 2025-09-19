@@ -251,6 +251,7 @@ class DeviceViewSet(
     serializer_class = DeviceSerializer
     queryset = Device.objects.all()
     permission_classes = (permissions.IsAuthenticated,)
+    pagination_class = CustomPagination
     lookup_field = "serial_number"
 
     def get_queryset(self):

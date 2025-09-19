@@ -5,7 +5,7 @@ import uuid
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 from django.utils.timezone import now
 
@@ -117,6 +117,47 @@ class Organization(models.Model):
         return self.user_profiles.filter(is_active=True).count()
 
 
+class OrgCounter(models.Model):
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='counters')
+    key = models.CharField(max_length=50)  # model nomi: device, file, playlist
+    last = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        unique_together = ('organization', 'key')
+
+    def __str__(self):
+        return f"{self.organization_id}:{self.key} -> {self.last}"
+
+
+class PerOrgSequential(models.Model):
+    """
+    Abstract mixin for sequential local_id inside organization.
+    """
+    local_id = models.PositiveIntegerField(null=True, blank=True)
+
+    class Meta:
+        abstract = True
+        unique_together = ('organization', 'local_id')
+
+    def get_counter_key(self):
+        # default: model nomi
+        return self._meta.model_name
+
+    def save(self, *args, **kwargs):
+        if self.local_id:  # agar allaqachon local_id bo‘lsa
+            return super().save(*args, **kwargs)
+
+        with transaction.atomic():
+            counter, _ = OrgCounter.objects.select_for_update().get_or_create(
+                organization=self.organization,
+                key=self.get_counter_key()
+            )
+            counter.last += 1
+            self.local_id = counter.last
+            super().save(*args, **kwargs)
+            counter.save(update_fields=['last'])
+
+
 class DeviceType(models.Model):
     """Device type model for categorizing devices"""
 
@@ -159,7 +200,7 @@ class DeviceQuerySet(models.QuerySet):
         return super().create(**kwargs)
 
 
-class Device(models.Model):
+class Device(PerOrgSequential):
     # Use custom queryset/manager to support legacy create(owner=...) paths in tests
     objects = DeviceQuerySet.as_manager()
 
@@ -251,7 +292,7 @@ class Device(models.Model):
         return f"{self.organization.slug}-{self.organization_device_id}"
 
 
-class File(models.Model):
+class File(PerOrgSequential):
     """Media model for storing video and image files"""
 
     FILE_TYPES = (("video", "Video"), ("image", "Image"))
@@ -337,7 +378,7 @@ class File(models.Model):
                 print(f"Error getting video duration: {e}")
 
 
-class Playlist(models.Model):
+class Playlist(PerOrgSequential):
     """Playlist model for organizing file and devices"""
 
     playlist_id = models.AutoField(primary_key=True)
