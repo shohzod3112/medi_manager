@@ -89,7 +89,7 @@ class CustomUserAdmin(UserAdmin):
     def clickable_username(self, obj):
         return format_html(
             '<a href="{}">{}</a>',
-            f"/admin/users/users/{obj.id}/change/",
+            f"/admin/users/user/{obj.id}/change/",
             obj.username,
         )
 
