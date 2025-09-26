@@ -254,3 +254,37 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
             setattr(instance, attr, value)
         instance.save()
         return instance
+
+
+class UserListForSelectSerializer(serializers.ModelSerializer):
+    value = serializers.SerializerMethodField()
+    label = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ['value', 'label']
+
+    def get_value(self, obj):
+        return obj.id
+
+    def get_label(self, obj):
+        return obj.username
+
+
+
+
+class UserProfileSelectList(serializers.ModelSerializer):
+    value = serializers.SerializerMethodField()
+    label = serializers.SerializerMethodField()
+
+    class Meta:
+        model = UserProfile
+        fields = ['value', 'label']
+
+    def get_value(self, obj):
+        return obj.id
+
+    def get_label(self, obj):
+        if obj.user:
+            return obj.user.username
+

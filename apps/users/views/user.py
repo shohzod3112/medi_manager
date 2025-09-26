@@ -108,3 +108,12 @@ class UserProfileRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIV
         if self.request.method == "GET":
             return user_serializer.UserProfileRetrieveSerializer
         return user_serializer.UserProfileUpdateSerializer
+
+class UserListForSelectAPIView(generics.ListAPIView):
+    queryset = User.objects.all()
+    serializer_class = user_serializer.UserListForSelectSerializer
+
+
+class UserProfileSelectListAPIView(generics.ListAPIView):
+    queryset = UserProfile.objects.all()
+    serializer_class = user_serializer.UserProfileSelectList

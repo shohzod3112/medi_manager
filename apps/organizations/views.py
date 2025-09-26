@@ -1,24 +1,30 @@
 from django.utils import timezone
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import mixins, permissions, status
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAdminUser
-from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
-from rest_framework import generics
-
 from core.paginations import CustomPagination
 from ..users.models import User, UserProfile
 from .models import Device, File, Organization, Playlist, DeviceType
 from .permissions import IsOrgAndProfileActive
-from .serializers import (
-    DeviceSerializer,
-    MediaSerializer,
-    OrganizationSerializer,
-    PlaylistSerializer,
-)
 from . import serializers
+from rest_framework import generics, permissions, status, mixins
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from django.contrib.auth import get_user_model
+from django.utils.dateparse import parse_date
+
+
+class FileSelectListAPIView(generics.ListAPIView):
+    queryset = File.objects.all()
+    serializer_class = serializers.FileSelectListSerializer
+
+
+class DeviceSelectListAPIView(generics.ListAPIView):
+    queryset = Device.objects.all()
+    serializer_class = serializers.DeviceSelectListSerializer
+
 
 
 class DeviceTypeListCreateView(generics.ListCreateAPIView):
@@ -42,19 +48,30 @@ class DeviceTypeRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIVi
         return serializers.DeviceTypeListSerializer
 
 
-class OrganizationAdminViewSet(ModelViewSet):
-    queryset = Organization.objects.all()
-    serializer_class = OrganizationSerializer
-    permission_classes = (permissions.IsAdminUser,)
+class DeviceTypeSelectListAPIView(generics.ListAPIView):
+    queryset = DeviceType.objects.all()
+    serializer_class = serializers.DeviceTypeSelectListSerializer
 
-    @action(
-        detail=True,
-        methods=["post"],
-        url_path="assign-user",
-        permission_classes=[permissions.IsAdminUser],
-    )
-    def assign_user(self, request, pk=None):
-        org = self.get_object()
+
+# CRUD for Organization
+class OrganizationListCreateView(generics.ListCreateAPIView):
+    queryset = Organization.objects.all()
+    serializer_class = serializers.OrganizationSerializer
+    permission_classes = [permissions.IsAdminUser]
+
+
+class OrganizationRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Organization.objects.all()
+    serializer_class = serializers.OrganizationSerializer
+    permission_classes = [permissions.IsAdminUser]
+
+
+# Assign user
+class AssignUserToOrganizationView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def post(self, request, pk):
+        org = generics.get_object_or_404(Organization, pk=pk)
         user_id = request.data.get("user_id")
         username = request.data.get("username")
         device_limit = request.data.get("device_limit")
@@ -62,139 +79,256 @@ class OrganizationAdminViewSet(ModelViewSet):
         expiration_date = request.data.get("expiration_date")
 
         if not user_id and not username:
-            return Response(
-                {"error": "user_id or username is required"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        from django.contrib.auth import get_user_model
+            return Response({"error": "user_id or username is required"},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         UserModel = get_user_model()
         try:
-            if user_id:
-                user = UserModel.objects.get(id=user_id)
-            else:
-                user = UserModel.objects.get(username=username)
+            user = UserModel.objects.get(id=user_id) if user_id else UserModel.objects.get(username=username)
         except UserModel.DoesNotExist:
-            return Response(
-                {"error": "User not found"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
         profile, created = UserProfile.objects.get_or_create(
-            user=user,
-            defaults={"organization": org},
+            user=user, defaults={"organization": org}
         )
+
         if not created and profile.organization_id != org.id:
             if profile.current_device_count > 0:
-                return Response(
-                    {
-                        "error": "Cannot move user to another organization while they have registered devices",
-                    },
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            # Move user to this organization
+                return Response({"error": "Cannot move user with devices"},
+                                status=status.HTTP_400_BAD_REQUEST)
             profile.organization = org
-        # Apply optional fields
+
+        # Optional fields
         if device_limit is not None:
             try:
                 profile.device_limit = int(device_limit)
             except (TypeError, ValueError):
-                return Response(
-                    {"error": "device_limit must be an integer"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+                return Response({"error": "device_limit must be an integer"},
+                                status=status.HTTP_400_BAD_REQUEST)
+
         if is_active is not None:
             profile.is_active = (
-                bool(is_active)
-                if isinstance(is_active, bool)
+                bool(is_active) if isinstance(is_active, bool)
                 else str(is_active).lower() in ["true", "1", "yes"]
             )
-        if expiration_date:
-            from django.utils.dateparse import parse_date
 
-            parsed = (
-                parse_date(expiration_date)
-                if isinstance(expiration_date, str)
-                else expiration_date
-            )
+        if expiration_date:
+            parsed = parse_date(expiration_date) if isinstance(expiration_date, str) else expiration_date
             if not parsed:
-                return Response(
-                    {"error": "Invalid expiration_date format (expected YYYY-MM-DD)"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+                return Response({"error": "Invalid expiration_date (YYYY-MM-DD)"},
+                                status=status.HTTP_400_BAD_REQUEST)
             profile.expiration_date = parsed
 
-        # Validate org capacity and user constraints via clean()
         try:
             profile.save()
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response(
-            {
-                "message": "User assigned to organization",
-                "user_id": user.id,
-                "organization": org.id,
-            },
-        )
+        return Response({
+            "message": "User assigned to organization",
+            "user_id": user.id,
+            "organization": org.id,
+        })
 
-    @action(
-        detail=True,
-        methods=["post"],
-        url_path="unassign-user",
-        permission_classes=[permissions.IsAdminUser],
-    )
-    def unassign_user(self, request, pk=None):
-        org = self.get_object()
+
+# Unassign user
+class UnassignUserFromOrganizationView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def post(self, request, pk):
+        org = generics.get_object_or_404(Organization, pk=pk)
         user_id = request.data.get("user_id")
         username = request.data.get("username")
-        if not user_id and not username:
-            return Response(
-                {"error": "user_id or username is required"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
 
-        from django.contrib.auth import get_user_model
+        if not user_id and not username:
+            return Response({"error": "user_id or username is required"},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         UserModel = get_user_model()
         try:
-            if user_id:
-                user = UserModel.objects.get(id=user_id)
-            else:
-                user = UserModel.objects.get(username=username)
+            user = UserModel.objects.get(id=user_id) if user_id else UserModel.objects.get(username=username)
         except UserModel.DoesNotExist:
-            return Response(
-                {"error": "User not found"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
         try:
             profile = UserProfile.objects.get(user=user, organization=org)
         except UserProfile.DoesNotExist:
-            return Response(
-                {"error": "User is not assigned to this organization"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            return Response({"error": "User not assigned to this organization"},
+                            status=status.HTTP_404_NOT_FOUND)
 
         if profile.current_device_count > 0:
-            return Response(
-                {"error": "Cannot unassign user who still has registered devices"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            return Response({"error": "Cannot unassign user with devices"},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         profile.delete()
-        return Response(
-            {
-                "message": "User unassigned from organization",
-                "user_id": user.id,
-                "organization": org.id,
-            },
-        )
+        return Response({
+            "message": "User unassigned from organization",
+            "user_id": user.id,
+            "organization": org.id,
+        })
+
+
+class OrganizationSelectListAPIView(generics.ListAPIView):
+    queryset = Organization.objects.all()
+    serializer_class = serializers.OrganizationSelectSerializer
+
+
+
+
+
+# class OrganizationAdminViewSet(ModelViewSet):
+#     queryset = Organization.objects.all()
+#     serializer_class = OrganizationSerializer
+#     permission_classes = (permissions.IsAdminUser,)
+#
+#     @action(
+#         detail=True,
+#         methods=["post"],
+#         url_path="assign-user",
+#         permission_classes=[permissions.IsAdminUser],
+#     )
+#     def assign_user(self, request, pk=None):
+#         org = self.get_object()
+#         user_id = request.data.get("user_id")
+#         username = request.data.get("username")
+#         device_limit = request.data.get("device_limit")
+#         is_active = request.data.get("is_active")
+#         expiration_date = request.data.get("expiration_date")
+#
+#         if not user_id and not username:
+#             return Response(
+#                 {"error": "user_id or username is required"},
+#                 status=status.HTTP_400_BAD_REQUEST,
+#             )
+#
+#         from django.contrib.auth import get_user_model
+#
+#         UserModel = get_user_model()
+#         try:
+#             if user_id:
+#                 user = UserModel.objects.get(id=user_id)
+#             else:
+#                 user = UserModel.objects.get(username=username)
+#         except UserModel.DoesNotExist:
+#             return Response(
+#                 {"error": "User not found"},
+#                 status=status.HTTP_404_NOT_FOUND,
+#             )
+#
+#         profile, created = UserProfile.objects.get_or_create(
+#             user=user,
+#             defaults={"organization": org},
+#         )
+#         if not created and profile.organization_id != org.id:
+#             if profile.current_device_count > 0:
+#                 return Response(
+#                     {
+#                         "error": "Cannot move user to another organization while they have registered devices",
+#                     },
+#                     status=status.HTTP_400_BAD_REQUEST,
+#                 )
+#             # Move user to this organization
+#             profile.organization = org
+#         # Apply optional fields
+#         if device_limit is not None:
+#             try:
+#                 profile.device_limit = int(device_limit)
+#             except (TypeError, ValueError):
+#                 return Response(
+#                     {"error": "device_limit must be an integer"},
+#                     status=status.HTTP_400_BAD_REQUEST,
+#                 )
+#         if is_active is not None:
+#             profile.is_active = (
+#                 bool(is_active)
+#                 if isinstance(is_active, bool)
+#                 else str(is_active).lower() in ["true", "1", "yes"]
+#             )
+#         if expiration_date:
+#             from django.utils.dateparse import parse_date
+#
+#             parsed = (
+#                 parse_date(expiration_date)
+#                 if isinstance(expiration_date, str)
+#                 else expiration_date
+#             )
+#             if not parsed:
+#                 return Response(
+#                     {"error": "Invalid expiration_date format (expected YYYY-MM-DD)"},
+#                     status=status.HTTP_400_BAD_REQUEST,
+#                 )
+#             profile.expiration_date = parsed
+#
+#         # Validate org capacity and user constraints via clean()
+#         try:
+#             profile.save()
+#         except Exception as e:
+#             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+#
+#         return Response(
+#             {
+#                 "message": "User assigned to organization",
+#                 "user_id": user.id,
+#                 "organization": org.id,
+#             },
+#         )
+#
+#     @action(
+#         detail=True,
+#         methods=["post"],
+#         url_path="unassign-user",
+#         permission_classes=[permissions.IsAdminUser],
+#     )
+#     def unassign_user(self, request, pk=None):
+#         org = self.get_object()
+#         user_id = request.data.get("user_id")
+#         username = request.data.get("username")
+#         if not user_id and not username:
+#             return Response(
+#                 {"error": "user_id or username is required"},
+#                 status=status.HTTP_400_BAD_REQUEST,
+#             )
+#
+#         from django.contrib.auth import get_user_model
+#
+#         UserModel = get_user_model()
+#         try:
+#             if user_id:
+#                 user = UserModel.objects.get(id=user_id)
+#             else:
+#                 user = UserModel.objects.get(username=username)
+#         except UserModel.DoesNotExist:
+#             return Response(
+#                 {"error": "User not found"},
+#                 status=status.HTTP_404_NOT_FOUND,
+#             )
+#
+#         try:
+#             profile = UserProfile.objects.get(user=user, organization=org)
+#         except UserProfile.DoesNotExist:
+#             return Response(
+#                 {"error": "User is not assigned to this organization"},
+#                 status=status.HTTP_404_NOT_FOUND,
+#             )
+#
+#         if profile.current_device_count > 0:
+#             return Response(
+#                 {"error": "Cannot unassign user who still has registered devices"},
+#                 status=status.HTTP_400_BAD_REQUEST,
+#             )
+#
+#         profile.delete()
+#         return Response(
+#             {
+#                 "message": "User unassigned from organization",
+#                 "user_id": user.id,
+#                 "organization": org.id,
+#             },
+#         )
 
 
 class PlaylistViewSet(ModelViewSet):
-    serializer_class = PlaylistSerializer
+    serializer_class = serializers.PlaylistSerializer
     permission_classes = (permissions.IsAuthenticated, IsOrgAndProfileActive)
 
     def get_permissions(self):
@@ -218,7 +352,7 @@ class PlaylistViewSet(ModelViewSet):
 
 
 class MediaViewSet(ModelViewSet):
-    serializer_class = MediaSerializer
+    serializer_class = serializers.MediaSerializer
     permission_classes = (permissions.IsAuthenticated, IsOrgAndProfileActive)
 
     def get_permissions(self):
@@ -248,7 +382,7 @@ class DeviceViewSet(
     mixins.DestroyModelMixin,
     GenericViewSet,
 ):
-    serializer_class = DeviceSerializer
+    serializer_class = serializers.DeviceSerializer
     queryset = Device.objects.all()
     permission_classes = (permissions.IsAuthenticated,)
     pagination_class = CustomPagination
@@ -331,7 +465,7 @@ class DeviceViewSet(
             start_time__lte=now,
             end_time__gte=now,
         )
-        playlist_data = PlaylistSerializer(assigned_playlists, many=True).data
+        playlist_data = serializers.PlaylistSerializer(assigned_playlists, many=True).data
         return Response(
             {"message": "Device sync successful", "playlists": playlist_data},
             status=status.HTTP_200_OK,

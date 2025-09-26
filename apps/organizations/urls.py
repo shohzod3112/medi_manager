@@ -6,7 +6,7 @@ from apps.organizations import views
 from apps.organizations.views import (
     DeviceViewSet,
     MediaViewSet,
-    OrganizationAdminViewSet,
+    # OrganizationAdminViewSet,
     PlaylistViewSet,
 )
 
@@ -19,14 +19,19 @@ router.register(r"playlists", PlaylistViewSet, basename="playlist")
 router.register(r"media", MediaViewSet, basename="media")
 
 # Admin API router
-admin_router = DefaultRouter()
-admin_router.register(
-    r"organizations",
-    OrganizationAdminViewSet,
-    basename="organization",
-)
+# admin_router = DefaultRouter()
+# admin_router.register(
+#     r"organizations",
+#     OrganizationAdminViewSet,
+#     basename="organization",
+# )
 
 urlpatterns = [
+    path("admin/organizations/", views.OrganizationListCreateView.as_view(), name="organization-list-create"),
+    path("admin/organizations/<int:pk>/", views.OrganizationRetrieveUpdateDestroyView.as_view(), name="organization-detail"),
+    path("admin/organizations/<int:pk>/assign-user/", views.AssignUserToOrganizationView.as_view(), name="organization-assign-user"),
+    path("admin/organizations/<int:pk>/unassign-user/", views.UnassignUserFromOrganizationView.as_view(), name="organization-unassign-user"),
+
     # Device/player endpoints (legacy paths now backed by ViewSet actions)
     path(
         "playlists/details/",
@@ -55,10 +60,17 @@ urlpatterns = [
     ),
     # Routers
     path("", include(router.urls)),
-    path("admin/", include(admin_router.urls)),
+    # path("admin/", include(admin_router.urls)),
 ]
 
 urlpatterns += [
+    path("organizations-select", views.OrganizationSelectListAPIView.as_view()),
+
     path("organizations/device-types", views.DeviceTypeListCreateView.as_view()),
+    path("organizations/device-types-select", views.DeviceTypeSelectListAPIView.as_view()),
     path("organizations/device-types/<int:pk>", views.DeviceTypeRetrieveUpdateDestroyAPIView.as_view()),
+
+    path("organizations/file-select", views.FileSelectListAPIView.as_view()),
+
+    path("organizations/device-select", views.DeviceSelectListAPIView.as_view()),
 ]

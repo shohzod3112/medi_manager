@@ -5,6 +5,35 @@ from apps.organizations.models import Device, File, Organization, Playlist, Devi
 from apps.users.models import UserProfile
 
 
+class FileSelectListSerializer(serializers.ModelSerializer):
+    value = serializers.SerializerMethodField()
+    label = serializers.SerializerMethodField()
+
+    class Meta:
+        model = File
+        fields = ['value', 'label']
+
+    def get_value(self, obj):
+        return obj.id
+
+    def get_label(self, obj):
+        return obj.name
+
+class DeviceSelectListSerializer(serializers.ModelSerializer):
+    value = serializers.SerializerMethodField()
+    label = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Device
+        fields = ['value', 'label']
+
+    def get_value(self, obj):
+        return obj.id
+
+    def get_label(self, obj):
+        return obj.name
+
+
 class DeviceTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = DeviceType
@@ -21,6 +50,20 @@ class DeviceTypeListSerializer(serializers.ModelSerializer):
             "is_active",
             "created_at",
         ]
+
+class DeviceTypeSelectListSerializer(serializers.ModelSerializer):
+    value = serializers.SerializerMethodField()
+    label = serializers.SerializerMethodField()
+
+    class Meta:
+        model = DeviceType
+        fields = ['value', 'label']
+
+    def get_value(self, obj):
+        return obj.id
+
+    def get_label(self, obj):
+        return obj.name
 
 
 def ensure_default_org_profile(user):
@@ -187,3 +230,18 @@ class OrganizationSerializer(serializers.ModelSerializer):
             "next_device_id",
         ]
         read_only_fields = ["current_device_count", "next_device_id"]
+
+
+class OrganizationSelectSerializer(serializers.ModelSerializer):
+    value = serializers.SerializerMethodField()
+    label = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Organization
+        fields = ['value', 'label']
+
+    def get_value(self, obj):
+        return obj.id
+
+    def get_label(self, obj):
+        return obj.name
