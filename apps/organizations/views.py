@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -14,6 +15,184 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 from django.utils.dateparse import parse_date
+from django.core.exceptions import ValidationError as DjangoValidationError
+from rest_framework.exceptions import ValidationError as DRFValidationError
+
+
+from rest_framework import generics, permissions, status, mixins
+from rest_framework.response import Response
+from django.utils import timezone
+from django.db.models import Q, F
+from . import serializers
+#
+#
+# # Device Create (register)
+# class DeviceCreateView(generics.CreateAPIView):
+#     serializer_class = serializers.DeviceSerializer
+#     permission_classes = [permissions.IsAuthenticated]
+#
+#     def perform_create(self, serializer):
+#         data = self.request.data.copy()
+#         data.pop("owner", None)
+#         device = serializer.save()
+#         self.created_device = device
+#
+#     def create(self, request, *args, **kwargs):
+#         response = super().create(request, *args, **kwargs)
+#         device = self.created_device
+#         return Response(
+#             {
+#                 "success": True,
+#                 "message": "Device registered successfully",
+#                 "device_id": str(device.id),
+#                 "token": device.token,
+#             },
+#             status=status.HTTP_201_CREATED,
+#         )
+#
+#
+# # Device Retrieve (get token)
+# class DeviceRetrieveView(generics.RetrieveAPIView):
+#     queryset = Device.objects.all()
+#     serializer_class = serializers.DeviceSerializer
+#     lookup_field = "serial_number"
+#     permission_classes = [permissions.IsAuthenticated]
+#
+#     def retrieve(self, request, *args, **kwargs):
+#         device = self.get_object()
+#         if not device.token:
+#             return Response({"error": "Token not found"}, status=404)
+#         return Response({"token": device.token}, status=200)
+#
+#
+# # Device List
+# class DeviceListView(generics.ListAPIView):
+#     serializer_class = serializers.DeviceSerializer
+#     permission_classes = [permissions.IsAuthenticated]
+#
+#     def get_queryset(self):
+#         user = self.request.user
+#         if not user or not user.is_authenticated:
+#             return Device.objects.none()
+#         return Device.objects.filter(user_profile__user=user).select_related(
+#             "user_profile", "organization"
+#         )
+#
+#
+# # Device Delete
+# class DeviceDeleteView(generics.DestroyAPIView):
+#     queryset = Device.objects.all()
+#     serializer_class = serializers.DeviceSerializer
+#     lookup_field = "serial_number"
+#     permission_classes = [permissions.IsAuthenticated]
+#
+#
+# # Device Sync
+# class DeviceSyncView(generics.RetrieveAPIView):
+#     queryset = Device.objects.all()
+#     serializer_class = serializers.DeviceSerializer
+#     lookup_field = "serial_number"
+#     permission_classes = [permissions.IsAuthenticated]
+#
+#     def retrieve(self, request, *args, **kwargs):
+#         device = self.get_object()
+#         if device.user_profile.user_id != request.user.id:
+#             return Response(
+#                 {"error": "Device not found or not assigned to this user"},
+#                 status=404,
+#             )
+#
+#         profile = device.user_profile
+#         org = device.organization
+#         if not profile.is_active or profile.is_expired():
+#             return Response({"error": "User profile inactive/expired"}, status=403)
+#         if not org.is_active or org.is_expired():
+#             return Response({"error": "Organization inactive/expired"}, status=403)
+#
+#         now = timezone.localtime().time()
+#         playlists = Playlist.objects.filter(
+#             devices=device,
+#             is_active=True,
+#         ).filter(
+#             Q(start_time__lt=F("end_time"), start_time__lte=now, end_time__gte=now)
+#             | Q(start_time__gt=F("end_time"), Q(start_time__lte=now) | Q(end_time__gte=now))
+#         )
+#
+#         data = serializers.PlaylistSerializer(playlists, many=True).data
+#         return Response({"message": "Device sync successful", "playlists": data}, status=200)
+#
+#
+# # Playlist Detail (public, token-based)
+# class PlaylistDetailView(generics.GenericAPIView):
+#     permission_classes = [permissions.AllowAny]
+#
+#     def get(self, request, *args, **kwargs):
+#         sn = request.query_params.get("sn")
+#         username = request.query_params.get("username")
+#         token = request.query_params.get("token")
+#
+#         if not (sn and username and token):
+#             return Response({"error": "sn, username, and token are required"}, status=400)
+#
+#         user = User.objects.filter(username__iexact=username).first()
+#         if not user:
+#             return Response({"error": "User Not Found"}, status=404)
+#
+#         device = Device.objects.filter(
+#             serial_number=sn, user_profile__user=user, token=token
+#         ).first()
+#         if not device:
+#             return Response({"error": "Device Not Found"}, status=404)
+#
+#         profile = device.user_profile
+#         org = device.organization
+#         if not profile.is_active or profile.is_expired():
+#             return Response({"error": "User profile inactive/expired"}, status=403)
+#         if not org.is_active or org.is_expired():
+#             return Response({"error": "Organization inactive/expired"}, status=403)
+#
+#         now = timezone.localtime().time()
+#         playlists = Playlist.objects.filter(
+#             devices=device, is_active=True,
+#         ).filter(
+#             Q(start_time__lt=F("end_time"), start_time__lte=now, end_time__gte=now)
+#             | Q(start_time__gt=F("end_time"), Q(start_time__lte=now) | Q(end_time__gte=now))
+#         )
+#
+#         if not playlists.exists():
+#             return Response({"error": "Playlist Not Found"}, status=404)
+#
+#         playlists_data = []
+#         for playlist in playlists.order_by("start_time"):
+#             medias = [
+#                 {
+#                     "id": m.media_id,
+#                     "name": m.name,
+#                     "url": request.build_absolute_uri(m.file.url),
+#                     "type": m.type,
+#                     "duration": m.duration,
+#                 }
+#                 for m in playlist.media.all()
+#             ]
+#             playlists_data.append(
+#                 {
+#                     "id": playlist.playlist_id,
+#                     "name": playlist.name,
+#                     "start_time": playlist.start_time.strftime("%H:%M:%S"),
+#                     "end_time": playlist.end_time.strftime("%H:%M:%S"),
+#                     "medias": medias,
+#                 }
+#             )
+#
+#         response = {
+#             "server_time": timezone.localtime(timezone.now()).strftime("%Y-%m-%d %H:%M:%S"),
+#             "exit_password": device.exit_password,
+#             "id": device.organization_device_id,
+#             "name": device.name,
+#             "playlists": playlists_data,
+#         }
+#         return Response(response, status=200)
+
 
 
 class FileSelectListAPIView(generics.ListAPIView):
@@ -171,9 +350,6 @@ class UnassignUserFromOrganizationView(APIView):
 class OrganizationSelectListAPIView(generics.ListAPIView):
     queryset = Organization.objects.all()
     serializer_class = serializers.OrganizationSelectSerializer
-
-
-
 
 
 # class OrganizationAdminViewSet(ModelViewSet):
@@ -407,12 +583,42 @@ class DeviceViewSet(
         return [permissions.IsAuthenticated()]
 
     def create(self, request, *args, **kwargs):
-        # Backward-compatible: accept minimal payload and ignore unknown fields like 'owner'
         data = request.data.copy()
         data.pop("owner", None)
+
+        organization_id = data.get("organization")
+        if not organization_id:
+            return Response(
+                {"success": False, "message": "Organization yuborilmadi"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        org = get_object_or_404(Organization, id=organization_id)
+
+        if org.has_reached_device_limit():
+            return Response(
+                {
+                    "success": False,
+                    "message": f"Organization {org.name} device limit ({org.device_limit}) ga yetib qolgan"
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
-        device = serializer.save()
+
+        try:
+            device = serializer.save()
+        except (DjangoValidationError, DRFValidationError) as e:
+            return Response(
+                {
+                    "success": False,
+                    "message": "Validation error",
+                    "errors": e.messages if hasattr(e, "messages") else e.detail,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         return Response(
             {
                 "success": True,
@@ -462,8 +668,8 @@ class DeviceViewSet(
         assigned_playlists = Playlist.objects.filter(
             devices=device,
             is_active=True,
-            start_time__lte=now,
-            end_time__gte=now,
+            start_date__lte=now,
+            end_date__gte=now,
         )
         playlist_data = serializers.PlaylistSerializer(assigned_playlists, many=True).data
         return Response(
@@ -569,8 +775,8 @@ class DeviceViewSet(
         playlists = Playlist.objects.filter(
             devices=device,
             is_active=True,
-            start_time__lte=now,
-            end_time__gte=now,
+            start_date__lte=now,
+            end_date__gte=now,
         )
         if not playlists.exists():
             return Response({"error": "Playlist Not Found"}, status=404)
@@ -578,10 +784,10 @@ class DeviceViewSet(
         playlists_data = []
         for playlist in playlists.order_by("start_time"):
             media_list = []
-            for media in playlist.media.all():
+            for media in playlist.file.all():
                 media_list.append(
                     {
-                        "id": media.media_id,
+                        "id": media.file_id,
                         "name": media.name,
                         "url": request.build_absolute_uri(media.file.url),
                         "type": media.type,

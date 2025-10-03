@@ -108,6 +108,14 @@ class DeviceSerializer(serializers.ModelSerializer):
             )
         return value
 
+    def validate(self, attrs):
+        org = attrs.get("organization")
+        if org and org.has_reached_device_limit():
+            raise serializers.ValidationError(
+                {"organization": "Device soni limitdan oshib ketti"}
+            )
+        return attrs
+
     def create(self, validated_data):
         request = self.context.get("request")
         user = request.user
@@ -165,6 +173,8 @@ class PlaylistSerializer(serializers.ModelSerializer):
             "playlist_id",
             "name",
             "owner",
+            "start_date",
+            "end_date",
             "start_time",
             "end_time",
             "file",

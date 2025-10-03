@@ -25,8 +25,8 @@ class ProfileSerializer(serializers.Serializer):
                 "id": getattr(org, "id", None),
                 "name": getattr(org, "name", None),
                 "slug": getattr(org, "slug", None),
-                "device_limit": getattr(org, "device_limit", None),
-                "current_device_count": org.get_total_used_devices() if org else None,
+                # "device_limit": getattr(org, "device_limit", None),
+                # "current_device_count": org.get_total_used_devices() if org else None,
                 "is_active": getattr(org, "is_active", None),
                 "is_expired": org.is_expired() if org else None,
                 "expiration_date": getattr(org, "expiration_date", None),
@@ -34,9 +34,9 @@ class ProfileSerializer(serializers.Serializer):
             "profile": None
             if not profile
             else {
-                "device_limit": profile.device_limit,
-                "current_device_count": profile.current_device_count,
-                "remaining_devices": profile.get_remaining_devices(),
+                # "device_limit": profile.device_limit,
+                # "current_device_count": profile.current_device_count,
+                # "remaining_devices": profile.get_remaining_devices(),
                 "is_active": profile.is_active,
                 "is_expired": profile.is_expired(),
                 "expiration_date": profile.expiration_date,
@@ -178,7 +178,7 @@ class UserProfileListSerializer(serializers.ModelSerializer):
             "id",
             "user",
             "organization",
-            "device_limit",
+            # "device_limit",
             "current_device_count",
             "expiration_date",
         ]
@@ -214,7 +214,7 @@ class UserProfileRetrieveSerializer(serializers.ModelSerializer):
             "id",
             "user",
             "organization",
-            "device_limit",
+            # "device_limit",
             "current_device_count",
             "expiration_date",
             "is_active",
@@ -243,7 +243,7 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
         fields = [
             "user",
             "organization",
-            "device_limit",
+            # "device_limit",
             "current_device_count",
             "expiration_date",
             "is_active",

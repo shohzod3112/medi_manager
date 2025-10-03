@@ -80,12 +80,7 @@ class Organization(models.Model):
 
     def get_total_used_devices(self):
         """Get total devices used by all users in this organization"""
-        return (
-            self.user_profiles.aggregate(total=models.Sum("current_device_count"))[
-                "total"
-            ]
-            or 0
-        )
+        return self.device_count()
 
     def get_available_device_slots(self):
         """Get available device slots"""
@@ -115,6 +110,14 @@ class Organization(models.Model):
     def get_active_user_count(self):
         """Get number of active users in this organization"""
         return self.user_profiles.filter(is_active=True).count()
+
+    def device_count(self):
+        return self.devices.count()
+
+    def has_reached_device_limit(self):
+        if self.device_limit == 0:
+            return False
+        return self.device_count() >= self.device_limit
 
 
 class OrgCounter(models.Model):
@@ -251,13 +254,13 @@ class Device(PerOrgSequential):
         return f"{self.organization.name} - Device {self.organization_device_id} ({self.name or self.serial_number})"
 
     def clean(self):
-        """Validate device creation"""
-        if not self.pk:  # New device
-            # Check if users can add more devices
-            if not self.user_profile.can_add_device():
-                raise DeviceLimitReached(
-                    f"User {self.user_profile.user.username} has reached their device limit of {self.user_profile.device_limit}",
-                )
+        # """Validate device creation"""
+        # if not self.pk:  # New device
+        #     # Check if users can add more devices
+        #     if not self.user_profile.can_add_device():
+        #         raise DeviceLimitReached(
+        #             f"User {self.user_profile.user.username} has reached their device limit of {self.user_profile.device_limit}",
+        #         )
 
             # Check if organization can add more devices
             if not self.organization.can_add_device():
@@ -278,13 +281,13 @@ class Device(PerOrgSequential):
                 self.token = hashlib.sha256(raw_token.encode()).hexdigest()
 
             # Increment users's device count
-            self.user_profile.add_device()
+            # self.user_profile.add_device()
 
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
         # Decrement users's device count
-        self.user_profile.remove_device()
+        # self.user_profile.remove_device()
         super().delete(*args, **kwargs)
 
     def get_full_device_id(self):
@@ -379,15 +382,24 @@ class File(PerOrgSequential):
 
 
 class Playlist(PerOrgSequential):
-    """Playlist model for organizing file and devices"""
+    PLAYLIST_TYPE_CHOICES = [
+        ("event", "Event"),
+        ("permanent", "Permanent"),
+    ]
 
     playlist_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
 
+    playlist_type = models.CharField(
+        max_length=20, choices=PLAYLIST_TYPE_CHOICES, default="permanent"
+    )
+
     # Timing
-    start_time = models.DateTimeField()
-    end_time = models.DateTimeField()
+    start_date = models.DateField(null=True, blank=True)   # Event uchun
+    end_date = models.DateField(null=True, blank=True)
+    start_time = models.TimeField()
+    end_time = models.TimeField()
 
     # Relationships
     organization = models.ForeignKey(

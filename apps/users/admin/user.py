@@ -121,18 +121,17 @@ class UserProfileAdmin(admin.ModelAdmin):
         "id",
         "user",
         "organization",
-        "device_limit",
-        "current_device_count",
-        "remaining_devices",
+        # "current_device_count",
+        # "remaining_devices",
         "is_active",
         "expiration_status",
     )
     list_filter = ("is_active", "organization", "expiration_date")
-    readonly_fields = ("current_device_count", "created_at", "updated_at")
+    readonly_fields = ("created_at", "updated_at")
 
     fieldsets = (
         ("User Information", {"fields": ("organization", "user")}),
-        ("Device Management", {"fields": ("device_limit", "current_device_count")}),
+        # ("Device Management", {"fields": ("device_limit", "current_device_count")}),
         ("Status", {"fields": ("is_active", "expiration_date")}),
         (
             "Timestamps",

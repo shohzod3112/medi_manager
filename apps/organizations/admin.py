@@ -309,7 +309,7 @@ class PlaylistAdmin(admin.ModelAdmin):
     fieldsets = (
         ("Playlist Information", {"fields": ("name", "description")}),
         ("Organization & Owner", {"fields": ("organization", "owner")}),
-        ("Timing", {"fields": ("start_time", "end_time")}),
+        ("Timing", {"fields": ("playlist_type", "start_date", "end_date","start_time", "end_time")}),
         ("Content", {"fields": ("file", "devices")}),
         ("Status", {"fields": ("is_active",)}),
         (
@@ -336,10 +336,10 @@ class PlaylistAdmin(admin.ModelAdmin):
 class UserProfileInline(admin.TabularInline):
     model = UserProfile
     extra = 0
-    readonly_fields = ("current_device_count", "created_at")
+    readonly_fields = ("created_at",)
     fields = (
         "user",
-        "device_limit",
+        # "device_limit",
         "current_device_count",
         "is_active",
         "expiration_date",
