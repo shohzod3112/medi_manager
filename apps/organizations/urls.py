@@ -1,76 +1,33 @@
 # organizations/urls.py
-from django.urls import include, path
-from rest_framework.routers import DefaultRouter
+from django.urls import path
 from apps.organizations import views
-
-from apps.organizations.views import (
-    DeviceViewSet,
-    MediaViewSet,
-    # OrganizationAdminViewSet,
-    PlaylistViewSet,
-)
 
 app_name = "organizations"
 
-# User-facing API router
-router = DefaultRouter()
-router.register(r"devices", DeviceViewSet, basename="device")
-router.register(r"playlists", PlaylistViewSet, basename="playlist")
-router.register(r"media", MediaViewSet, basename="media")
-
-# Admin API router
-# admin_router = DefaultRouter()
-# admin_router.register(
-#     r"organizations",
-#     OrganizationAdminViewSet,
-#     basename="organization",
-# )
-
 urlpatterns = [
-    path("admin/organizations/", views.OrganizationListCreateView.as_view(), name="organization-list-create"),
-    path("admin/organizations/<int:pk>/", views.OrganizationRetrieveUpdateDestroyView.as_view(), name="organization-detail"),
-    path("admin/organizations/<int:pk>/assign-user/", views.AssignUserToOrganizationView.as_view(), name="organization-assign-user"),
-    path("admin/organizations/<int:pk>/unassign-user/", views.UnassignUserFromOrganizationView.as_view(), name="organization-unassign-user"),
+    path(f"{app_name}", views.OrganizationListCreateView.as_view(), name="organization-list-create"),
+    path(f"{app_name}/<int:pk>", views.OrganizationRetrieveUpdateDestroyView.as_view(), name="organization-detail"),
+    path(f"{app_name}/<int:pk>/assign-user", views.AssignUserToOrganizationView.as_view(), name="organization-assign-user"),
+    path(f"{app_name}/<int:pk>/unassign-user", views.UnassignUserFromOrganizationView.as_view(), name="organization-unassign-user"),
 
-    # Device/player endpoints (legacy paths now backed by ViewSet actions)
-    path(
-        "playlists/details/",
-        DeviceViewSet.as_view({"get": "playlist_detail"}),
-        name="playlist_detail",
-    ),
-    path(
-        "register_device/",
-        DeviceViewSet.as_view({"post": "create"}),
-        name="register_device",
-    ),
-    path(
-        "upload_media/",
-        MediaViewSet.as_view({"post": "create"}),
-        name="upload_media",
-    ),
-    path(
-        "create_playlist/",
-        PlaylistViewSet.as_view({"post": "create"}),
-        name="create_playlist",
-    ),
-    path(
-        "sync_device/<str:serial_number>/",
-        DeviceViewSet.as_view({"get": "sync"}),
-        name="sync_device",
-    ),
-    # Routers
-    path("", include(router.urls)),
-    # path("admin/", include(admin_router.urls)),
-]
+    path(f"{app_name}/devices", views.DeviceListCreateAPIView.as_view(), name="device-list-create"),
+    path(f"{app_name}/devices/<str:serial_number>", views.DeviceDetailAPIView.as_view(), name="device-detail"),
+    path(f"{app_name}/devices/<str:serial_number>/sync", views.DeviceSyncAPIView.as_view(), name="device-sync"),
+    path(f"{app_name}/devices/playlist-detail", views.PlaylistDetailAPIView.as_view(), name="playlist-detail"),
 
-urlpatterns += [
-    path("organizations-select", views.OrganizationSelectListAPIView.as_view()),
+    path(f"{app_name}/playlists", views.PlaylistListCreateView.as_view(), name="playlist-list-create"),
+    path(f"{app_name}/playlists/<uuid:pk>", views.PlaylistDetailView.as_view(), name="playlist-detail"),
 
-    path("organizations/device-types", views.DeviceTypeListCreateView.as_view()),
-    path("organizations/device-types-select", views.DeviceTypeSelectListAPIView.as_view()),
-    path("organizations/device-types/<int:pk>", views.DeviceTypeRetrieveUpdateDestroyAPIView.as_view()),
+    path(f"{app_name}/media", views.MediaListCreateView.as_view(), name="media-list-create"),
+    path("media/<uuid:pk>", views.MediaDetailView.as_view(), name="media-detail"),
 
-    path("organizations/file-select", views.FileSelectListAPIView.as_view()),
+    path(f"{app_name}/select", views.OrganizationSelectListAPIView.as_view()),
 
-    path("organizations/device-select", views.DeviceSelectListAPIView.as_view()),
+    path(f"{app_name}/device-types", views.DeviceTypeListCreateView.as_view()),
+    path(f"{app_name}/device-types-select", views.DeviceTypeSelectListAPIView.as_view()),
+    path(f"{app_name}/device-types/<int:pk>", views.DeviceTypeRetrieveUpdateDestroyAPIView.as_view()),
+
+    path(f"{app_name}/file-select", views.FileSelectListAPIView.as_view()),
+
+    path(f"{app_name}/device-select", views.DeviceSelectListAPIView.as_view()),
 ]
