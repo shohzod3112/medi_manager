@@ -1,4 +1,4 @@
-from django.db.models import Q
+from django.db.models import Q, F
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework.permissions import AllowAny, IsAdminUser
@@ -14,7 +14,6 @@ from django.contrib.auth import get_user_model
 from django.utils.dateparse import parse_date
 
 
-# 🔹 1. Device List va Create
 class DeviceListCreateAPIView(generics.ListCreateAPIView):
     serializer_class = serializers.DeviceSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -60,7 +59,6 @@ class DeviceListCreateAPIView(generics.ListCreateAPIView):
         )
 
 
-# 🔹 2. Device Retrieve & Destroy
 class DeviceDetailAPIView(generics.RetrieveDestroyAPIView):
     serializer_class = serializers.DeviceSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -76,7 +74,6 @@ class DeviceDetailAPIView(generics.RetrieveDestroyAPIView):
         return Response({"token": device.token}, status=200)
 
 
-# 🔹 3. Device Sync (Authenticated)
 class DeviceSyncAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -85,6 +82,7 @@ class DeviceSyncAPIView(APIView):
         profile = device.user_profile
         org = device.organization
 
+        # Profil yoki tashkilot faol emas yoki muddati o'tgan
         if not profile.is_active or profile.is_expired():
             return Response({"error": "User profile is inactive or expired"}, status=403)
         if not org.is_active or org.is_expired():
@@ -98,8 +96,12 @@ class DeviceSyncAPIView(APIView):
             type="event",
             start_date__lte=now.date(),
             end_date__gte=now.date(),
-            start_time__lte=now.time(),
-            end_time__gte=now.time(),
+        ).filter(
+            Q(start_time__lte=now.time(), end_time__gte=now.time()) |
+            (
+                    Q(start_time__gt=F("end_time")) &
+                    (Q(start_time__lte=now.time()) | Q(end_time__gte=now.time()))
+            )
         )
 
         if event_playlists.exists():
@@ -109,7 +111,13 @@ class DeviceSyncAPIView(APIView):
                 devices=device,
                 is_active=True,
                 type="permanent",
-            ).filter(Q(start_time__lte=now.time(), end_time__gte=now.time()))
+            ).filter(
+                Q(start_time__lte=now.time(), end_time__gte=now.time()) |
+                (
+                        Q(start_time__gt=F("end_time")) &
+                        (Q(start_time__lte=now.time()) | Q(end_time__gte=now.time()))
+                )
+            )
 
         playlist_data = serializers.PlaylistSerializer(selected_playlists, many=True).data
 
@@ -119,7 +127,6 @@ class DeviceSyncAPIView(APIView):
         )
 
 
-# 🔹 4. Playlist Detail (Device token bilan)
 class PlaylistDetailAPIView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -158,8 +165,14 @@ class PlaylistDetailAPIView(APIView):
             devices=device,
             is_active=True,
             type="event",
-            start_date__lte=now,
-            end_date__gte=now,
+            start_date__lte=now.date(),
+            end_date__gte=now.date(),
+        ).filter(
+            Q(start_time__lte=now.time(), end_time__gte=now.time()) |
+            (
+                Q(start_time__gt=F("end_time")) &
+                (Q(start_time__lte=now.time()) | Q(end_time__gte=now.time()))
+            )
         )
 
         if event_playlists.exists():
@@ -170,12 +183,11 @@ class PlaylistDetailAPIView(APIView):
                 is_active=True,
                 type="permanent",
             ).filter(
+                Q(start_time__lte=now.time(), end_time__gte=now.time()) |
                 (
-                    Q(start_date__isnull=True, end_date__isnull=True)
-                    | Q(start_date__lte=now, end_date__gte=now)
-                ),
-                start_time__lte=now.time(),
-                end_time__gte=now.time(),
+                    Q(start_time__gt=F("end_time")) &
+                    (Q(start_time__lte=now.time()) | Q(end_time__gte=now.time()))
+                )
             ).order_by("-created_at")
 
         if not active_playlists.exists():
@@ -209,7 +221,7 @@ class PlaylistDetailAPIView(APIView):
             {
                 "success": True,
                 "message": "Playlist data loaded successfully",
-                "server_time": timezone.localtime(now).strftime("%Y-%m-%d %H:%M:%S"),
+                "server_time": now.strftime("%Y-%m-%d %H:%M:%S"),
                 "device": {
                     "id": device.organization_device_id,
                     "name": device.name,
@@ -376,158 +388,6 @@ class UnassignUserFromOrganizationView(APIView):
 class OrganizationSelectListAPIView(generics.ListAPIView):
     queryset = Organization.objects.all()
     serializer_class = serializers.OrganizationSelectSerializer
-
-
-# class OrganizationAdminViewSet(ModelViewSet):
-#     queryset = Organization.objects.all()
-#     serializer_class = OrganizationSerializer
-#     permission_classes = (permissions.IsAdminUser,)
-#
-#     @action(
-#         detail=True,
-#         methods=["post"],
-#         url_path="assign-user",
-#         permission_classes=[permissions.IsAdminUser],
-#     )
-#     def assign_user(self, request, pk=None):
-#         org = self.get_object()
-#         user_id = request.data.get("user_id")
-#         username = request.data.get("username")
-#         device_limit = request.data.get("device_limit")
-#         is_active = request.data.get("is_active")
-#         expiration_date = request.data.get("expiration_date")
-#
-#         if not user_id and not username:
-#             return Response(
-#                 {"error": "user_id or username is required"},
-#                 status=status.HTTP_400_BAD_REQUEST,
-#             )
-#
-#         from django.contrib.auth import get_user_model
-#
-#         UserModel = get_user_model()
-#         try:
-#             if user_id:
-#                 user = UserModel.objects.get(id=user_id)
-#             else:
-#                 user = UserModel.objects.get(username=username)
-#         except UserModel.DoesNotExist:
-#             return Response(
-#                 {"error": "User not found"},
-#                 status=status.HTTP_404_NOT_FOUND,
-#             )
-#
-#         profile, created = UserProfile.objects.get_or_create(
-#             user=user,
-#             defaults={"organization": org},
-#         )
-#         if not created and profile.organization_id != org.id:
-#             if profile.current_device_count > 0:
-#                 return Response(
-#                     {
-#                         "error": "Cannot move user to another organization while they have registered devices",
-#                     },
-#                     status=status.HTTP_400_BAD_REQUEST,
-#                 )
-#             # Move user to this organization
-#             profile.organization = org
-#         # Apply optional fields
-#         if device_limit is not None:
-#             try:
-#                 profile.device_limit = int(device_limit)
-#             except (TypeError, ValueError):
-#                 return Response(
-#                     {"error": "device_limit must be an integer"},
-#                     status=status.HTTP_400_BAD_REQUEST,
-#                 )
-#         if is_active is not None:
-#             profile.is_active = (
-#                 bool(is_active)
-#                 if isinstance(is_active, bool)
-#                 else str(is_active).lower() in ["true", "1", "yes"]
-#             )
-#         if expiration_date:
-#             from django.utils.dateparse import parse_date
-#
-#             parsed = (
-#                 parse_date(expiration_date)
-#                 if isinstance(expiration_date, str)
-#                 else expiration_date
-#             )
-#             if not parsed:
-#                 return Response(
-#                     {"error": "Invalid expiration_date format (expected YYYY-MM-DD)"},
-#                     status=status.HTTP_400_BAD_REQUEST,
-#                 )
-#             profile.expiration_date = parsed
-#
-#         # Validate org capacity and user constraints via clean()
-#         try:
-#             profile.save()
-#         except Exception as e:
-#             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-#
-#         return Response(
-#             {
-#                 "message": "User assigned to organization",
-#                 "user_id": user.id,
-#                 "organization": org.id,
-#             },
-#         )
-#
-#     @action(
-#         detail=True,
-#         methods=["post"],
-#         url_path="unassign-user",
-#         permission_classes=[permissions.IsAdminUser],
-#     )
-#     def unassign_user(self, request, pk=None):
-#         org = self.get_object()
-#         user_id = request.data.get("user_id")
-#         username = request.data.get("username")
-#         if not user_id and not username:
-#             return Response(
-#                 {"error": "user_id or username is required"},
-#                 status=status.HTTP_400_BAD_REQUEST,
-#             )
-#
-#         from django.contrib.auth import get_user_model
-#
-#         UserModel = get_user_model()
-#         try:
-#             if user_id:
-#                 user = UserModel.objects.get(id=user_id)
-#             else:
-#                 user = UserModel.objects.get(username=username)
-#         except UserModel.DoesNotExist:
-#             return Response(
-#                 {"error": "User not found"},
-#                 status=status.HTTP_404_NOT_FOUND,
-#             )
-#
-#         try:
-#             profile = UserProfile.objects.get(user=user, organization=org)
-#         except UserProfile.DoesNotExist:
-#             return Response(
-#                 {"error": "User is not assigned to this organization"},
-#                 status=status.HTTP_404_NOT_FOUND,
-#             )
-#
-#         if profile.current_device_count > 0:
-#             return Response(
-#                 {"error": "Cannot unassign user who still has registered devices"},
-#                 status=status.HTTP_400_BAD_REQUEST,
-#             )
-#
-#         profile.delete()
-#         return Response(
-#             {
-#                 "message": "User unassigned from organization",
-#                 "user_id": user.id,
-#                 "organization": org.id,
-#             },
-#         )
-
 
 
 class PlaylistListCreateView(generics.ListCreateAPIView):

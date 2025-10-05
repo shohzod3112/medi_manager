@@ -1,5 +1,6 @@
 from django.core.files.base import ContentFile
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
 from apps.organizations.models import Device, File, Organization, Playlist, DeviceType
 from apps.users.models import UserProfile
@@ -173,6 +174,7 @@ class PlaylistSerializer(serializers.ModelSerializer):
             "playlist_id",
             "name",
             "owner",
+            "playlist_type",
             "start_date",
             "end_date",
             "start_time",
@@ -186,6 +188,19 @@ class PlaylistSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         user = request.user
         profile = getattr(user, "profile", None)
+        playlist_type = attrs.get("playlist_type")
+        start_date = attrs.get("start_date")
+        end_date = attrs.get("end_date")
+
+        if playlist_type == "event":
+            if not start_date or not end_date:
+                raise ValidationError(
+                    {"detail": "Tadbir turidagi playlist uchun start_date va end_date majburiy!"}
+                )
+            if end_date < start_date:
+                raise ValidationError(
+                    {"detail": "end_date start_date dan oldin bo'lishi mumkin emas!"}
+                )
         if not profile or not profile.organization_id:
             profile = ensure_default_org_profile(user)
 
@@ -195,7 +210,7 @@ class PlaylistSerializer(serializers.ModelSerializer):
         devices_list = attrs.get("devices", []) or []
         if any(m.organization_id != org.id for m in files_list):
             raise serializers.ValidationError(
-                {"media": "All media must belong to your organization"},
+                {"files": "All files must belong to your organization"},
             )
         if any(d.organization_id != org.id for d in devices_list):
             raise serializers.ValidationError(

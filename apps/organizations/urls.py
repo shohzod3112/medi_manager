@@ -9,6 +9,7 @@ urlpatterns = [
     path(f"{app_name}/<int:pk>", views.OrganizationRetrieveUpdateDestroyView.as_view(), name="organization-detail"),
     path(f"{app_name}/<int:pk>/assign-user", views.AssignUserToOrganizationView.as_view(), name="organization-assign-user"),
     path(f"{app_name}/<int:pk>/unassign-user", views.UnassignUserFromOrganizationView.as_view(), name="organization-unassign-user"),
+    path(f"{app_name}/select", views.OrganizationSelectListAPIView.as_view()),
 
     path(f"{app_name}/devices", views.DeviceListCreateAPIView.as_view(), name="device-list-create"),
     path(f"{app_name}/devices/<str:serial_number>", views.DeviceDetailAPIView.as_view(), name="device-detail"),
@@ -22,8 +23,6 @@ urlpatterns = [
     path(f"{app_name}/file-select", views.FileSelectListAPIView.as_view()),
     path(f"{app_name}/file", views.FileListCreateView.as_view(), name="file-list-create"),
     path(f"{app_name}/file/<uuid:pk>", views.FileDetailView.as_view(), name="file-detail"),
-
-    path(f"{app_name}/select", views.OrganizationSelectListAPIView.as_view()),
 
     path(f"{app_name}/device-types", views.DeviceTypeListCreateView.as_view()),
     path(f"{app_name}/device-types-select", views.DeviceTypeSelectListAPIView.as_view()),
