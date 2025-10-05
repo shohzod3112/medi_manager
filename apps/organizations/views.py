@@ -571,8 +571,8 @@ class PlaylistDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 
-class MediaListCreateView(generics.ListCreateAPIView):
-    serializer_class = serializers.MediaSerializer
+class FileListCreateView(generics.ListCreateAPIView):
+    serializer_class = serializers.FileSerializer
     permission_classes = (permissions.IsAuthenticated, IsOrgAndProfileActive)
 
     def get_permissions(self):
@@ -597,8 +597,8 @@ class MediaListCreateView(generics.ListCreateAPIView):
         serializer.save()
 
 
-class MediaDetailView(generics.RetrieveUpdateDestroyAPIView):
-    serializer_class = serializers.MediaSerializer
+class FileDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = serializers.FileSerializer
     permission_classes = (permissions.IsAuthenticated, IsOrgAndProfileActive)
 
     def get_queryset(self):

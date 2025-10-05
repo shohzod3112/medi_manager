@@ -1,3 +1,3 @@
-from .user import AuthViewSet, get_org_db_name, WhoAmIAPIView
+from .user import get_org_db_name, WhoAmIAPIView
 
-__all__ = ["AuthViewSet", "get_org_db_name"]
+__all__ = ["get_org_db_name"]

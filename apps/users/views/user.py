@@ -33,28 +33,39 @@ def get_org_db_name(request):
         return JsonResponse({"db_name": ""})
 
 
-class AuthViewSet(ViewSet):
+class LoginAPIView(generics.GenericAPIView):
     permission_classes = [AllowAny]
 
-    @action(detail=False, methods=["post"], permission_classes=[AllowAny])
-    def login(self, request):
+    def post(self, request, *args, **kwargs):
         username = request.data.get("username")
         password = request.data.get("password")
-        user = authenticate(username=username, password=password)
-        if user:
-            refresh = RefreshToken.for_user(user)
-            access = str(refresh.access_token)
+
+        if not username or not password:
             return Response(
-                {
-                    "token": access,
-                    "access_token": access,
-                    "refresh_token": str(refresh),
-                    "users": UserSerializer(user).data,
-                },
+                {"error": "Username va password majburiy"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
+
+        user = authenticate(username=username, password=password)
+
+        if not user:
+            return Response(
+                {"error": "Noto‘g‘ri login yoki parol"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        refresh = RefreshToken.for_user(user)
+        access = str(refresh.access_token)
+
         return Response(
-            {"error": "Invalid Credentials"},
-            status=status.HTTP_400_BAD_REQUEST,
+            {
+                "success": True,
+                "message": "Login muvaffaqiyatli amalga oshirildi",
+                "access_token": access,
+                "refresh_token": str(refresh),
+                "user": UserSerializer(user).data,
+            },
+            status=status.HTTP_200_OK,
         )
 
 

@@ -14,20 +14,18 @@ urlpatterns = [
     path(f"{app_name}/devices/<str:serial_number>", views.DeviceDetailAPIView.as_view(), name="device-detail"),
     path(f"{app_name}/devices/<str:serial_number>/sync", views.DeviceSyncAPIView.as_view(), name="device-sync"),
     path(f"{app_name}/devices/playlist-detail", views.PlaylistDetailAPIView.as_view(), name="playlist-detail"),
+    path(f"{app_name}/device-select", views.DeviceSelectListAPIView.as_view()),
 
     path(f"{app_name}/playlists", views.PlaylistListCreateView.as_view(), name="playlist-list-create"),
     path(f"{app_name}/playlists/<uuid:pk>", views.PlaylistDetailView.as_view(), name="playlist-detail"),
 
-    path(f"{app_name}/media", views.MediaListCreateView.as_view(), name="media-list-create"),
-    path("media/<uuid:pk>", views.MediaDetailView.as_view(), name="media-detail"),
+    path(f"{app_name}/file-select", views.FileSelectListAPIView.as_view()),
+    path(f"{app_name}/file", views.FileListCreateView.as_view(), name="file-list-create"),
+    path(f"{app_name}/file/<uuid:pk>", views.FileDetailView.as_view(), name="file-detail"),
 
     path(f"{app_name}/select", views.OrganizationSelectListAPIView.as_view()),
 
     path(f"{app_name}/device-types", views.DeviceTypeListCreateView.as_view()),
     path(f"{app_name}/device-types-select", views.DeviceTypeSelectListAPIView.as_view()),
     path(f"{app_name}/device-types/<int:pk>", views.DeviceTypeRetrieveUpdateDestroyAPIView.as_view()),
-
-    path(f"{app_name}/file-select", views.FileSelectListAPIView.as_view()),
-
-    path(f"{app_name}/device-select", views.DeviceSelectListAPIView.as_view()),
 ]

@@ -128,7 +128,7 @@ class DeviceSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
-class MediaSerializer(serializers.ModelSerializer):
+class FileSerializer(serializers.ModelSerializer):
     file = serializers.FileField(required=False, allow_empty_file=True)
 
     class Meta:
