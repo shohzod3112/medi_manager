@@ -179,7 +179,7 @@ class UserProfileListSerializer(serializers.ModelSerializer):
             "user",
             "organization",
             # "device_limit",
-            "current_device_count",
+            # "current_device_count",
             "expiration_date",
         ]
 
@@ -215,7 +215,7 @@ class UserProfileRetrieveSerializer(serializers.ModelSerializer):
             "user",
             "organization",
             # "device_limit",
-            "current_device_count",
+            # "current_device_count",
             "expiration_date",
             "is_active",
             "created_at",
@@ -244,7 +244,7 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
             "user",
             "organization",
             # "device_limit",
-            "current_device_count",
+            # "current_device_count",
             "expiration_date",
             "is_active",
         ]
