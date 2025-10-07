@@ -105,9 +105,8 @@ class CustomUserAdmin(UserAdmin):
         try:
             profile = obj.profile
             return format_html(
-                '<span style="color: green;">{}</span> ({} devices)',
+                '<span style="color: green;">{}</span>',
                 profile.organization.name,
-                profile.current_device_count,
             )
         except UserProfile.DoesNotExist:
             return format_html('<span style="color: red;">No Organization</span>')
