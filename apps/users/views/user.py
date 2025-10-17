@@ -10,6 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.utils import timezone
 
 from apps.users.models import UserProfile
 from apps.users.models.user import User
@@ -17,6 +18,7 @@ from apps.organizations.models import Organization
 from apps.organizations.serializers import ensure_default_org_profile
 from apps.users.serializers import ProfileSerializer, UserSerializer
 from apps.users.serializers import user as user_serializer
+from apps.users.serializers.user import LoginSerializer
 from core.paginations import CustomPagination
 
 # permission dagi barchasini IsAdminUser ga o'girish kerak
@@ -35,6 +37,7 @@ def get_org_db_name(request):
 
 class LoginAPIView(generics.GenericAPIView):
     permission_classes = [AllowAny]
+    serializer_class = LoginSerializer
 
     def post(self, request, *args, **kwargs):
         username = request.data.get("username")
