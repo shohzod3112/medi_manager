@@ -17,7 +17,7 @@ services:
       timeout: 5s
       retries: 5
     container_name: medi_manager_db
-  #    restart: unless-stopped
+    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
@@ -29,7 +29,7 @@ services:
       timeout: 5s
       retries: 5
     container_name: medi_manager_redis
-  #    restart: unless-stopped
+    restart: unless-stopped
 
   web:
     build: .
@@ -55,7 +55,7 @@ services:
       redis:
         condition: service_healthy
     container_name: medi_manager_web
-  #    restart: unless-stopped
+    restart: unless-stopped
 
   celery_worker:
     build: .
@@ -75,7 +75,7 @@ services:
       redis:
         condition: service_healthy
     container_name: medi_manager_celery_worker
-  #    restart: unless-stopped
+    restart: unless-stopped
 
   celery_beat:
     build: .
@@ -93,7 +93,7 @@ services:
       redis:
         condition: service_healthy
     container_name: medi_manager_celery_beat
-#    restart: unless-stopped
+    restart: unless-stopped
 
 volumes:
   postgres_data:
