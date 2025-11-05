@@ -10,7 +10,8 @@ app_name = "users"
 urlpatterns = [
     # Backward-compatible explicit endpoints
     path(f"{app_name}/login", user_views.LoginAPIView.as_view(), name="login"),
-    path(f"{app_name}/me", views.WhoAmIAPIView.as_view(), name="me"),
+    path(f"{app_name}/me", views.MeAPIView.as_view(), name="me"),
+    path(f"{app_name}/whoami", views.WhoAmIAPIView.as_view(), name="whoami"),
     path(f"{app_name}/refresh", TokenRefreshView.as_view(), name="token_refresh"),
     path(f"{app_name}/admin/get-org-db-name", views.get_org_db_name, name="get_org_db_name"),
 

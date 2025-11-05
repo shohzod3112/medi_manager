@@ -18,7 +18,7 @@ from apps.organizations.models import Organization
 from apps.organizations.serializers import ensure_default_org_profile
 from apps.users.serializers import ProfileSerializer, UserSerializer
 from apps.users.serializers import user as user_serializer
-from apps.users.serializers.user import LoginSerializer
+from apps.users.serializers.user import LoginSerializer, WhoAmISerializer
 from core.paginations import CustomPagination
 
 # permission dagi barchasini IsAdminUser ga o'girish kerak
@@ -67,12 +67,13 @@ class LoginAPIView(generics.GenericAPIView):
                 "access_token": access,
                 "refresh_token": str(refresh),
                 "user": UserSerializer(user).data,
+                "fullname": f"{user.first_name or ''} {user.last_name or ''}".strip(),
             },
             status=status.HTTP_200_OK,
         )
 
 
-class WhoAmIAPIView(APIView):
+class MeAPIView(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request):
         user = request.user
@@ -80,6 +81,15 @@ class WhoAmIAPIView(APIView):
         ensure_default_org_profile(user)
         data = ProfileSerializer(user).data
         return Response(data)
+
+
+class WhoAmIAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        user = request.user
+        serializer = WhoAmISerializer(user)
+        return Response(serializer.data)
+
 
 class UserListCreateAPIView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]

@@ -14,6 +14,22 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ("id", "username", "is_superuser")
 
 
+class WhoAmISerializer(serializers.ModelSerializer):
+    fullname = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ("id", "username", "fullname")
+
+    def get_fullname(self, obj):
+        fullname = ""
+        if obj.first_name:
+            fullname = obj.first_name
+        if obj.last_name:
+            fullname = " " + obj.last_name
+        return fullname
+
+
 class ProfileSerializer(serializers.Serializer):
     def to_representation(self, user: User):
         profile = getattr(user, "profile", None)
