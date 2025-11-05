@@ -340,7 +340,7 @@ class UserProfileInline(admin.TabularInline):
     fields = (
         "user",
         # "device_limit",
-        "current_device_count",
+        # "current_device_count",
         "is_active",
         "expiration_date",
     )
