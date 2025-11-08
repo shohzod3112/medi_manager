@@ -440,13 +440,13 @@ class PlaylistDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 class FileListCreateView(generics.ListCreateAPIView):
     serializer_class = serializers.FileSerializer
-    permission_classes = (permissions.IsAuthenticated, IsOrgAndProfileActive)
+    permission_classes = (IsOrgAndProfileActive,)
 
-    def get_permissions(self):
-        # create uchun faqat login bo‘lish kifoya
-        if self.request.method == "POST":
-            return [permissions.IsAuthenticated()]
-        return [permissions.IsAuthenticated(), IsOrgAndProfileActive()]
+    # def get_permissions(self):
+    #     # create uchun faqat login bo‘lish kifoya
+    #     if self.request.method == "POST":
+    #         return [permissions.IsAuthenticated()]
+    #     return [permissions.IsAuthenticated(), IsOrgAndProfileActive]
 
     def get_queryset(self):
         user = self.request.user
@@ -466,7 +466,7 @@ class FileListCreateView(generics.ListCreateAPIView):
 
 class FileDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = serializers.FileSerializer
-    permission_classes = (permissions.IsAuthenticated, IsOrgAndProfileActive)
+    permission_classes = (IsOrgAndProfileActive,)
 
     def get_queryset(self):
         user = self.request.user
