@@ -18,7 +18,7 @@ class FileSelectListSerializer(serializers.ModelSerializer):
         return obj.id
 
     def get_label(self, obj):
-        return obj.name
+        return obj.attachment.name
 
 class DeviceSelectListSerializer(serializers.ModelSerializer):
     value = serializers.SerializerMethodField()
@@ -130,11 +130,11 @@ class DeviceSerializer(serializers.ModelSerializer):
 
 
 class FileSerializer(serializers.ModelSerializer):
-    file = serializers.FileField(required=False, allow_empty_file=True)
+    # file = serializers.FileField(required=False, allow_empty_file=True)
 
     class Meta:
         model = File
-        fields = ["file_id", "name", "type", "file", "duration", "owner"]
+        fields = ["file_id", "type", "attachment", "duration", "owner"]
         read_only_fields = ["owner", "duration", "type"]
 
     def create(self, validated_data):
@@ -148,10 +148,10 @@ class FileSerializer(serializers.ModelSerializer):
         validated_data["owner"] = user
         validated_data["organization"] = org
 
-        # If no file provided (legacy tests), generate a tiny dummy image file
-        if not validated_data.get("file"):
-            dummy_content = ContentFile(b"dummy image content", name="placeholder.jpg")
-            validated_data["file"] = dummy_content
+        # # If no file provided (legacy tests), generate a tiny dummy image file
+        # if not validated_data.get("attachment"):
+        #     dummy_content = ContentFile(b"dummy image content", name="placeholder.jpg")
+        #     validated_data["file"] = dummy_content
 
         return super().create(validated_data)
 
