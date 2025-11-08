@@ -58,8 +58,8 @@ urlpatterns = [
     path("admin/get-org-db-name/", user_views.get_org_db_name, name="get_org_db_name"),
     path("admin/", admin.site.urls),
     path("health/", health_check, name="health_check"),
-    path("api/", include("apps.urls")),  # Authentication APIs
     path("api/attachments/", include("attachment.urls")),
+    path("api/", include("apps.urls")),  # Authentication APIs
 ]
 
 if settings.DEBUG:
