@@ -304,7 +304,7 @@ class File(PerOrgSequential):
     file_id = models.AutoField(primary_key=True)
     # name = models.CharField(max_length=255)
     type = models.CharField(max_length=10, choices=FILE_TYPES)
-    file = models.ForeignKey(Attachment, on_delete=models.SET_NULL, null=True)
+    attachment = models.ForeignKey(Attachment, on_delete=models.SET_NULL, null=True, related_name="files")
     duration = models.IntegerField(null=True, blank=True)
 
     organization = models.ForeignKey(
@@ -340,14 +340,14 @@ class File(PerOrgSequential):
             raise ValueError("Owner and organization must be set before saving file")
 
         # Fix file name path
-        if self.file.file and not self.file.file.name.startswith(
+        if self.attachment.file and not self.attachment.file.name.startswith(
             f"{self.organization.slug}/{self.owner.username}/",
         ):
-            original_filename = os.path.basename(self.file.name)
-            self.file.file.name = self.get_upload_path(original_filename)
+            original_filename = os.path.basename(self.attachment.file.name)
+            self.attachment.file.name = self.get_upload_path(original_filename)
 
         # Detect file type by file extension
-        ext = os.path.splitext(self.file.file.name)[1].lower()
+        ext = os.path.splitext(self.attachment.file.name)[1].lower()
         if ext in [".jpg", ".jpeg", ".png", ".gif"]:
             self.type = "image"
             self.duration = None  # Images don't have duration
@@ -371,7 +371,7 @@ class File(PerOrgSequential):
                     except Exception:
                         _VFC = None
                 if _VFC:
-                    clip = _VFC(self.file.file.path)
+                    clip = _VFC(self.attachment.file.path)
                     duration_seconds = int(getattr(clip, "duration", 0) or 0)
                     clip.close()
 
