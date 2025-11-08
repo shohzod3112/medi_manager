@@ -17,11 +17,17 @@ from django.utils.dateparse import parse_date
 class DeviceListCreateAPIView(generics.ListCreateAPIView):
     serializer_class = serializers.DeviceSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = CustomPagination
 
     def get_queryset(self):
         return Device.objects.filter(user_profile__user=self.request.user).select_related(
             "user_profile", "organization"
         )
+
+    # def get_permissions(self):
+    #     if self.request.method == "POST":
+    #         return [permissions.IsAuthenticated]
+    #     return [permissions.AllowAny]
 
     def create(self, request, *args, **kwargs):
         data = request.data.copy()
@@ -275,6 +281,7 @@ class OrganizationListCreateView(generics.ListCreateAPIView):
     queryset = Organization.objects.all()
     serializer_class = serializers.OrganizationSerializer
     permission_classes = [permissions.IsAdminUser]
+    pagination_class = CustomPagination
 
 
 class OrganizationRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
