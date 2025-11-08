@@ -11,5 +11,5 @@ class AttachmentSerializer(serializers.ModelSerializer):
     def get_file(self, obj):
         request = self.context.get("request")
         if obj.file:
-            return request.build_absolute_uri(obj.file.url) if request else obj.file.url
+            return request.build_absolute_uri(obj.file.url)
         return None
