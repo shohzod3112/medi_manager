@@ -200,7 +200,7 @@ class FileAdmin(admin.ModelAdmin):
     list_display = (
         "file_id",
         "local_id",
-        "name",
+        # "name",
         "type",
         "organization",
         "owner",
@@ -208,12 +208,12 @@ class FileAdmin(admin.ModelAdmin):
         "created_at",
     )
     list_filter = ("type", "organization", "created_at")
-    search_fields = ("name", "organization__name")
+    search_fields = ("organization__name",)
     readonly_fields = ("file_id", "duration", "created_at", "updated_at")
     ordering = ("-created_at",)
 
     fieldsets = (
-        ("File Information", {"fields": ("name", "type", "file", "duration")}),
+        ("File Information", {"fields": ("type", "file", "duration")}),
         ("Organization & Owner", {"fields": ("organization", "owner")}),
         (
             "Timestamps",

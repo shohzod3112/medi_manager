@@ -10,6 +10,7 @@ from django.utils import timezone
 from django.utils.timezone import now
 
 from apps.organizations.exseptions.limit import DeviceLimitReached
+from attachment.models import Attachment
 
 
 class BaseModel(models.Model):
@@ -301,9 +302,9 @@ class File(PerOrgSequential):
     FILE_TYPES = (("video", "Video"), ("image", "Image"))
 
     file_id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=255)
+    # name = models.CharField(max_length=255)
     type = models.CharField(max_length=10, choices=FILE_TYPES)
-    file = models.FileField(upload_to="")
+    file = models.ForeignKey(Attachment, on_delete=models.SET_NULL, null=True)
     duration = models.IntegerField(null=True, blank=True)
 
     organization = models.ForeignKey(
@@ -327,7 +328,7 @@ class File(PerOrgSequential):
         ordering = ["-created_at"]
 
     def __str__(self):
-        return self.name
+        return self.file.name
 
     def get_upload_path(self, filename):
         if not self.owner_id or not self.organization_id:
@@ -339,14 +340,14 @@ class File(PerOrgSequential):
             raise ValueError("Owner and organization must be set before saving file")
 
         # Fix file name path
-        if self.file and not self.file.name.startswith(
+        if self.file.file and not self.file.file.name.startswith(
             f"{self.organization.slug}/{self.owner.username}/",
         ):
             original_filename = os.path.basename(self.file.name)
-            self.file.name = self.get_upload_path(original_filename)
+            self.file.file.name = self.get_upload_path(original_filename)
 
         # Detect file type by file extension
-        ext = os.path.splitext(self.file.name)[1].lower()
+        ext = os.path.splitext(self.file.file.name)[1].lower()
         if ext in [".jpg", ".jpeg", ".png", ".gif"]:
             self.type = "image"
             self.duration = None  # Images don't have duration
@@ -370,7 +371,7 @@ class File(PerOrgSequential):
                     except Exception:
                         _VFC = None
                 if _VFC:
-                    clip = _VFC(self.file.path)
+                    clip = _VFC(self.file.file.path)
                     duration_seconds = int(getattr(clip, "duration", 0) or 0)
                     clip.close()
 

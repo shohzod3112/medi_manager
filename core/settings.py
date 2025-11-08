@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     # "mediaa",
     "users",
     "organizations",
+    "attachment",
 ]
 
 MIDDLEWARE = [
