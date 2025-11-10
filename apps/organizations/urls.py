@@ -22,7 +22,7 @@ urlpatterns = [
 
     path(f"{app_name}/file-select", views.FileSelectListAPIView.as_view()),
     path(f"{app_name}/file", views.FileListCreateView.as_view(), name="file-list-create"),
-    path(f"{app_name}/file/<uuid:pk>", views.FileDetailView.as_view(), name="file-detail"),
+    path(f"{app_name}/file/<int:pk>", views.FileDetailView.as_view(), name="file-detail"),
 
     path(f"{app_name}/device-types", views.DeviceTypeListCreateView.as_view()),
     path(f"{app_name}/device-types-select", views.DeviceTypeSelectListAPIView.as_view()),

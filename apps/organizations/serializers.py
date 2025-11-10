@@ -3,7 +3,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from apps.organizations.models import Device, File, Organization, Playlist, DeviceType
-from apps.users.models import UserProfile
+from apps.users.models import UserProfile, User
 
 
 class FileSelectListSerializer(serializers.ModelSerializer):
@@ -86,6 +86,67 @@ def ensure_default_org_profile(user):
     return profile
 
 
+class DeviceCreateSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = Device
+        fields = [
+            "id",
+            "username",
+            "serial_number",
+            "name",
+            "device_type",
+            "is_active",
+            "last_seen",
+            "created_at",
+        ]
+        read_only_fields = ["id", "is_active", "last_seen", "created_at"]
+
+    def create(self, validated_data):
+        username = validated_data.pop("username")
+        serial_number = validated_data.get("serial_number")
+
+        # 🔍 Foydalanuvchini topamiz
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            raise serializers.ValidationError({"username": "User not found"})
+
+        # 🔍 UserProfile ni topamiz
+        profile = getattr(user, "profile", None)
+        if not profile:
+            raise serializers.ValidationError({"username": "UserProfile not found"})
+
+        # 🔍 Tashkilotni olamiz
+        organization = profile.organization
+        if not organization:
+            raise serializers.ValidationError({"organization": "Organization not found"})
+
+        # 📱 Device obyektini yaratamiz
+        device = Device.objects.create(
+            serial_number=serial_number,
+            name=validated_data.get("name", ""),
+            device_type=validated_data.get("device_type"),
+            organization=organization,
+            user_profile=profile,
+        )
+        return device
+
+    def to_representation(self, instance):
+        """Response formatini moslab chiqaramiz"""
+        return {
+            "id": instance.id,
+            "organization": instance.organization.name,
+            "organization_device_id": instance.organization_device_id,
+            "name": instance.name,
+            "serial_number": instance.serial_number,
+            "device_type": instance.device_type.name if instance.device_type else None,
+            "token": instance.token,
+            "created_at": instance.created_at,
+        }
+
+
 class DeviceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Device
@@ -127,6 +188,23 @@ class DeviceSerializer(serializers.ModelSerializer):
         validated_data["user_profile"] = profile
         validated_data["organization"] = profile.organization
         return super().create(validated_data)
+
+
+class FileListSerializer(serializers.ModelSerializer):
+    attachment = serializers.SerializerMethodField()
+
+    class Meta:
+        model = File
+        fields = ["file_id", "type", "attachment", "duration", "owner"]
+
+    def get_attachment(self, obj):
+        request = self.context.get("request")
+        if obj.attachment:
+            return {
+                "id": obj.attachment.id,
+                "name": obj.attachment.name,
+                "file": request.build_absolute_uri(obj.attachment.file.url) if request else None,
+            }
 
 
 class FileSerializer(serializers.ModelSerializer):

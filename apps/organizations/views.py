@@ -15,7 +15,6 @@ from django.utils.dateparse import parse_date
 
 
 class DeviceListCreateAPIView(generics.ListCreateAPIView):
-    serializer_class = serializers.DeviceSerializer
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = CustomPagination
 
@@ -24,45 +23,21 @@ class DeviceListCreateAPIView(generics.ListCreateAPIView):
             "user_profile", "organization"
         )
 
+    def get_serializer_class(self):
+        if self.request.method == "POST":
+            return serializers.DeviceCreateSerializer
+        return serializers.DeviceSerializer
+
     # def get_permissions(self):
     #     if self.request.method == "POST":
     #         return [permissions.IsAuthenticated]
     #     return [permissions.AllowAny]
 
     def create(self, request, *args, **kwargs):
-        data = request.data.copy()
-        organization_id = data.get("organization")
-
-        if not organization_id:
-            return Response(
-                {"success": False, "message": "Organization yuborilmadi"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        org = get_object_or_404(Organization, id=organization_id)
-
-        if org.has_reached_device_limit():
-            return Response(
-                {
-                    "success": False,
-                    "message": f"Organization {org.name} device limit ({org.device_limit}) ga yetib qolgan",
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        serializer = self.get_serializer(data=data)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         device = serializer.save()
-
-        return Response(
-            {
-                "success": True,
-                "message": "Device registered successfully",
-                "device_id": str(device.id),
-                "token": device.token,
-            },
-            status=status.HTTP_201_CREATED,
-        )
+        return Response(serializer.to_representation(device), status=status.HTTP_201_CREATED)
 
 
 class DeviceDetailAPIView(generics.RetrieveDestroyAPIView):
@@ -442,11 +417,10 @@ class FileListCreateView(generics.ListCreateAPIView):
     serializer_class = serializers.FileSerializer
     permission_classes = (IsOrgAndProfileActive,)
 
-    # def get_permissions(self):
-    #     # create uchun faqat login bo‘lish kifoya
-    #     if self.request.method == "POST":
-    #         return [permissions.IsAuthenticated()]
-    #     return [permissions.IsAuthenticated(), IsOrgAndProfileActive]
+    def get_serializer_class(self):
+        if self.request.method == "POST":
+            return serializers.FileSerializer
+        return serializers.FileListSerializer
 
     def get_queryset(self):
         user = self.request.user
@@ -460,6 +434,14 @@ class FileListCreateView(generics.ListCreateAPIView):
             owner=user,
         ).order_by("-created_at")
 
+    def create(self, request, *args, **kwargs):
+        if request.data.get("attachment") is None:
+            return Response({"error": "Attachment required"}, status=status.HTTP_400_BAD_REQUEST)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
     def perform_create(self, serializer):
         serializer.save()
 
@@ -467,6 +449,11 @@ class FileListCreateView(generics.ListCreateAPIView):
 class FileDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = serializers.FileSerializer
     permission_classes = (IsOrgAndProfileActive,)
+
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return serializers.FileListSerializer
+        return serializers.FileSerializer
 
     def get_queryset(self):
         user = self.request.user

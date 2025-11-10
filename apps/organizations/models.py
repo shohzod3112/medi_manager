@@ -340,11 +340,11 @@ class File(PerOrgSequential):
             raise ValueError("Owner and organization must be set before saving file")
 
         # Fix file name path
-        if self.attachment.file and not self.attachment.file.name.startswith(
-            f"{self.organization.slug}/{self.owner.username}/",
-        ):
-            original_filename = os.path.basename(self.attachment.file.name)
-            self.attachment.file.name = self.get_upload_path(original_filename)
+        # if self.attachment.file and not self.attachment.file.name.startswith(
+        #     f"{self.organization.slug}/{self.owner.username}/",
+        # ):
+        #     original_filename = os.path.basename(self.attachment.file.name)
+        #     self.attachment.file.name = self.get_upload_path(original_filename)
 
         # Detect file type by file extension
         ext = os.path.splitext(self.attachment.file.name)[1].lower()
