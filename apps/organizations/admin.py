@@ -200,7 +200,7 @@ class FileAdmin(admin.ModelAdmin):
     list_display = (
         "file_id",
         "local_id",
-        # "name",
+        "attachment",
         "type",
         "organization",
         "owner",
@@ -213,7 +213,7 @@ class FileAdmin(admin.ModelAdmin):
     ordering = ("-created_at",)
 
     fieldsets = (
-        ("File Information", {"fields": ("type", "file", "duration")}),
+        ("File Information", {"fields": ("type", "attachment", "duration")}),
         ("Organization & Owner", {"fields": ("organization", "owner")}),
         (
             "Timestamps",

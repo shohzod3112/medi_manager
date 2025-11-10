@@ -328,7 +328,7 @@ class File(PerOrgSequential):
         ordering = ["-created_at"]
 
     def __str__(self):
-        return self.file.name
+        return f"{self.file_id} - {self.attachment.name if self.attachment else ''}"
 
     def get_upload_path(self, filename):
         if not self.owner_id or not self.organization_id:
