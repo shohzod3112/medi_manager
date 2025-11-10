@@ -1,15 +1,20 @@
 from rest_framework import generics, permissions
+
+from . import serializers
 from .models import Attachment
-from .serializers import AttachmentSerializer
 
 
 class AttachmentListCreateAPIView(generics.ListCreateAPIView):
     queryset = Attachment.objects.all()
-    serializer_class = AttachmentSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return serializers.AttachmentCreateSerializer
+        return serializers.AttachmentSerializer
 
 
 class AttachmentRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Attachment.objects.all()
-    serializer_class = AttachmentSerializer
+    serializer_class = serializers.AttachmentSerializer
     permission_classes = [permissions.IsAuthenticated]
