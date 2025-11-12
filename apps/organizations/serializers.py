@@ -195,7 +195,7 @@ class FileListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = File
-        fields = ["file_id", "type", "attachment", "duration", "owner"]
+        fields = ["file_id", "name", "type", "attachment", "duration", "owner"]
 
     def get_attachment(self, obj):
         request = self.context.get("request")
@@ -212,7 +212,7 @@ class FileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = File
-        fields = ["file_id", "type", "attachment", "duration", "owner"]
+        fields = ["file_id", "name", "type", "attachment", "duration", "owner"]
         read_only_fields = ["owner", "duration", "type"]
 
     def create(self, validated_data):
