@@ -348,7 +348,7 @@ class File(PerOrgSequential):
 
         # Detect file type by file extension
         ext = os.path.splitext(self.attachment.file.name)[1].lower()
-        if ext in [".jpg", ".jpeg", ".png", ".gif"]:
+        if ext in [".jpg", ".jpeg", ".png", ".gif", ".webm"]:
             self.type = "image"
             self.duration = None  # Images don't have duration
         elif ext in [".mp4", ".mov", ".avi", ".mkv"]:

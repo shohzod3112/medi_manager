@@ -36,7 +36,7 @@ def generate_video_preview(sender, instance, **kwargs):
     preview_path = os.path.join(
         settings.MEDIA_ROOT,
         "previews",
-        f"media_{instance.media_id}.jpg",
+        f"media_{instance.file_id}.jpg",
     )
 
     if os.path.exists(preview_path):

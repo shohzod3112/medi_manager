@@ -152,7 +152,7 @@ class DeviceAdmin(admin.ModelAdmin):
                 ),
             },
         ),
-        ("Organization & User", {"fields": ("organization", "user_profile")}),
+        # ("Organization & User", {"fields": ("organization", "user_profile")}),
         ("Security", {"fields": ("exit_password", "token")}),
         ("Status", {"fields": ("is_active", "last_seen")}),
         (
@@ -214,7 +214,7 @@ class FileAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ("File Information", {"fields": ("type", "attachment", "duration")}),
-        ("Organization & Owner", {"fields": ("organization", "owner")}),
+        # ("Organization & Owner", {"fields": ("organization", "owner")}),
         (
             "Timestamps",
             {"fields": ("created_at", "updated_at"), "classes": ("collapse",)},
@@ -308,7 +308,7 @@ class PlaylistAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ("Playlist Information", {"fields": ("name", "description")}),
-        ("Organization & Owner", {"fields": ("organization", "owner")}),
+        # ("Organization & Owner", {"fields": ("organization", "owner")}),
         ("Timing", {"fields": ("playlist_type", "start_date", "end_date","start_time", "end_time")}),
         ("Content", {"fields": ("file", "devices")}),
         ("Status", {"fields": ("is_active",)}),
