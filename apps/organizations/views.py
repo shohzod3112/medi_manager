@@ -20,7 +20,7 @@ class DeviceListCreateAPIView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         return Device.objects.filter(user_profile__user=self.request.user).select_related(
-            "user_profile", "organization"
+            "user_profile", "organization", 'device_type'
         )
 
     def get_serializer_class(self):
@@ -42,7 +42,7 @@ class DeviceListCreateAPIView(generics.ListCreateAPIView):
 
 class DeviceRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAuthenticated]
-    queryset = Device.objects.select_related('user_profile', 'organization')
+    queryset = Device.objects.select_related('user_profile', 'organization', 'device_type')
 
     def get_serializer_class(self):
         if self.request.method == "GET":

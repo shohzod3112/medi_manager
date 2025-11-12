@@ -9,6 +9,7 @@ from apps.users.models import UserProfile, User
 class DeviceRetrieveSerializer(serializers.ModelSerializer):
     organization = serializers.SerializerMethodField()
     user_profile = serializers.SerializerMethodField()
+    device_type = serializers.SerializerMethodField()
 
     class Meta:
         model = Device
@@ -17,6 +18,13 @@ class DeviceRetrieveSerializer(serializers.ModelSerializer):
             "device_type", "exit_password", "token", "organization",
             "user_profile", "is_active", "last_seen", "created_at", "updated_at"
         )
+
+    def get_device_type(self, obj):
+        if obj.device_type:
+            return {
+                "id": obj.device_type.id,
+                "name": obj.device_type.name,
+            }
 
     def get_organization(self, obj):
         if obj.organization:
@@ -175,6 +183,8 @@ class DeviceCreateSerializer(serializers.ModelSerializer):
 
 
 class DeviceSerializer(serializers.ModelSerializer):
+    device_type = serializers.SerializerMethodField()
+
     class Meta:
         model = Device
         fields = ["id", "serial_number", "name", "exit_password", "token", "device_type"]
@@ -189,6 +199,13 @@ class DeviceSerializer(serializers.ModelSerializer):
             "exit_password": {"required": False},
             "device_type": {"required": True},
         }
+
+    def get_device_type(self, obj):
+        if obj.device_type:
+            return {
+                "id": obj.device_type.id,
+                "name": obj.device_type.name,
+            }
 
     def validate_serial_number(self, value):
         if Device.objects.filter(serial_number=value).exists():
