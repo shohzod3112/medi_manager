@@ -38,6 +38,7 @@ class DeviceRetrieveSerializer(serializers.ModelSerializer):
             return {
                 "id": obj.user_profile.id,
                 "name": obj.user_profile.user.get_full_name(),
+                "username": obj.user_profile.user.username,
             }
 
 
