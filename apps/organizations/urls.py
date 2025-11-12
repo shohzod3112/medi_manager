@@ -12,6 +12,7 @@ urlpatterns = [
     path(f"{app_name}/select", views.OrganizationSelectListAPIView.as_view()),
 
     path(f"{app_name}/devices", views.DeviceListCreateAPIView.as_view(), name="device-list-create"),
+    path(f"{app_name}/devices/<int:pk>", views.DeviceListCreateAPIView.as_view(), name="device-list-create"),
     path(f"{app_name}/devices/<str:serial_number>", views.DeviceDetailAPIView.as_view(), name="device-detail"),
     path(f"{app_name}/devices/<str:serial_number>/sync", views.DeviceSyncAPIView.as_view(), name="device-sync"),
     path(f"{app_name}/devices/playlist-detail", views.PlaylistDetailAPIView.as_view(), name="playlist-detail"),

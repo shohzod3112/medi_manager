@@ -6,6 +6,33 @@ from apps.organizations.models import Device, File, Organization, Playlist, Devi
 from apps.users.models import UserProfile, User
 
 
+class DeviceRetrieveSerializer(serializers.ModelSerializer):
+    organization = serializers.SerializerMethodField()
+    user_profile = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Device
+        fields = (
+            "id", "organization_device_id", "name", "serial_number",
+            "device_type", "exit_password", "token", "organization",
+            "user_profile", "is_active", "last_seen", "created_at", "updated_at"
+        )
+
+    def get_organization(self, obj):
+        if obj.organization:
+            return {
+                "id": obj.organization.id,
+                "name": obj.organization.name,
+            }
+
+    def get_user_profile(self, obj):
+        if obj.user_profile:
+            return {
+                "id": obj.user_profile.id,
+                "name": obj.user_profile.user.get_full_name(),
+            }
+
+
 class FileSelectListSerializer(serializers.ModelSerializer):
     value = serializers.SerializerMethodField()
     label = serializers.SerializerMethodField()

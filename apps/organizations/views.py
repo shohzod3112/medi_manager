@@ -40,6 +40,16 @@ class DeviceListCreateAPIView(generics.ListCreateAPIView):
         return Response(serializer.to_representation(device), status=status.HTTP_201_CREATED)
 
 
+class DeviceRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = Device.objects.select_related('user_profile', 'organization')
+
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return serializers.DeviceRetrieveSerializer
+        return serializers.DeviceSerializer
+
+
 class DeviceDetailAPIView(generics.RetrieveDestroyAPIView):
     serializer_class = serializers.DeviceSerializer
     permission_classes = [permissions.IsAuthenticated]
