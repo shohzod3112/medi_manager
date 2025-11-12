@@ -302,7 +302,7 @@ class File(PerOrgSequential):
     FILE_TYPES = (("video", "Video"), ("image", "Image"))
 
     file_id = models.AutoField(primary_key=True)
-    # name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, null=True)
     type = models.CharField(max_length=10, choices=FILE_TYPES)
     attachment = models.ForeignKey(Attachment, on_delete=models.SET_NULL, null=True, related_name="files")
     duration = models.IntegerField(null=True, blank=True)
