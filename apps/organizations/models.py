@@ -381,6 +381,17 @@ class File(PerOrgSequential):
             except Exception as e:
                 print(f"Error getting video duration: {e}")
 
+    def delete(self, *args, **kwargs):
+        # O‘chiriladigan faylga bog‘langan attachmentni eslab qolamiz
+        attachment = self.attachment
+
+        # Fayl yozuvini o‘chiramiz
+        super().delete(*args, **kwargs)
+
+        # Agar shu attachmentga boshqa fayl qolmagan bo‘lsa, attachmentni o‘chiramiz
+        if attachment and not attachment.files.exists():
+            attachment.delete()
+
 
 class Playlist(PerOrgSequential):
     PLAYLIST_TYPE_CHOICES = [

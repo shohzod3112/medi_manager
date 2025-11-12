@@ -8,24 +8,24 @@ from django.dispatch import receiver
 from apps.organizations.models import File
 
 
-@receiver(post_delete, sender=File)
-def delete_empty_folder(sender, instance, **kwargs):
-    """Delete the file's folder if empty, then check and delete the users's folder."""
-    if not instance.file:
-        return
-
-    file_path = instance.file.path
-    folder_path = os.path.dirname(file_path)
-    user_folder = os.path.dirname(folder_path)
-
-    if os.path.exists(file_path):
-        os.remove(file_path)
-
-    if os.path.exists(folder_path) and not os.listdir(folder_path):
-        shutil.rmtree(folder_path)
-
-    if os.path.exists(user_folder) and not os.listdir(user_folder):
-        shutil.rmtree(user_folder)
+# @receiver(post_delete, sender=File)
+# def delete_empty_folder(sender, instance, **kwargs):
+#     """Delete the file's folder if empty, then check and delete the users's folder."""
+#     if not instance.file:
+#         return
+#
+#     file_path = instance.file.path
+#     folder_path = os.path.dirname(file_path)
+#     user_folder = os.path.dirname(folder_path)
+#
+#     if os.path.exists(file_path):
+#         os.remove(file_path)
+#
+#     if os.path.exists(folder_path) and not os.listdir(folder_path):
+#         shutil.rmtree(folder_path)
+#
+#     if os.path.exists(user_folder) and not os.listdir(user_folder):
+#         shutil.rmtree(user_folder)
 
 
 @receiver(post_save, sender=File)

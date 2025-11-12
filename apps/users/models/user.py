@@ -8,6 +8,14 @@ def get_default_expiration_date():
 
 
 class User(AbstractUser):
+    role = models.CharField(
+        max_length=20,
+        choices=(
+            ("superadmin", "Superadmin"),
+            ("admin", "Admin"),
+            ("operator", "Operator"),
+        ), null=True,
+    )
     username = models.CharField(max_length=255, unique=True, db_index=True)
     email = models.EmailField(unique=True)
     first_name = models.CharField(max_length=150, blank=True)
