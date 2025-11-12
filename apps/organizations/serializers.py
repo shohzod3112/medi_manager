@@ -183,6 +183,17 @@ class DeviceCreateSerializer(serializers.ModelSerializer):
         }
 
 
+class DeviceUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Device
+        fields = [
+            'id',
+            'name',
+            'device_type',
+            'exit_password',
+        ]
+
+
 class DeviceSerializer(serializers.ModelSerializer):
     device_type = serializers.SerializerMethodField()
 

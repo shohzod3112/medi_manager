@@ -47,7 +47,7 @@ class DeviceRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
     def get_serializer_class(self):
         if self.request.method == "GET":
             return serializers.DeviceRetrieveSerializer
-        return serializers.DeviceSerializer
+        return serializers.DeviceUpdateSerializer
 
 
 class DeviceDetailAPIView(generics.RetrieveDestroyAPIView):
