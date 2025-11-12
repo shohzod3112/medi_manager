@@ -467,9 +467,3 @@ class FileDetailView(generics.RetrieveUpdateDestroyAPIView):
             organization=profile.organization,
             owner=user,
         )
-
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        self.perform_destroy(instance)
-        instance.files.all().delete()
-        return Response({"detail": "O‘chirildi"}, status=status.HTTP_200_OK)
