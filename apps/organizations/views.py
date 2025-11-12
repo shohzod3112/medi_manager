@@ -416,6 +416,7 @@ class PlaylistDetailView(generics.RetrieveUpdateDestroyAPIView):
 class FileListCreateView(generics.ListCreateAPIView):
     serializer_class = serializers.FileSerializer
     permission_classes = (IsOrgAndProfileActive,)
+    pagination_class = CustomPagination
 
     def get_serializer_class(self):
         if self.request.method == "POST":
