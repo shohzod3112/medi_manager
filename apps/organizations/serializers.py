@@ -177,7 +177,7 @@ class DeviceCreateSerializer(serializers.ModelSerializer):
 class DeviceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Device
-        fields = ["serial_number", "name", "exit_password", "token", "device_type"]
+        fields = ["id", "serial_number", "name", "exit_password", "token", "device_type"]
         extra_kwargs = {
             "token": {"read_only": True},
             "serial_number": {
