@@ -11,7 +11,7 @@ class LoginSerializer(serializers.Serializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ("id", "username", "is_superuser", "role")
+        fields = ("id", "username", "is_superuser")
 
 
 class WhoAmISerializer(serializers.ModelSerializer):

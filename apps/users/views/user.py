@@ -68,6 +68,7 @@ class LoginAPIView(generics.GenericAPIView):
                 "refresh_token": str(refresh),
                 "user": UserSerializer(user).data,
                 "fullname": f"{user.first_name or ''} {user.last_name or ''}".strip(),
+                "role": user.role,
             },
             status=status.HTTP_200_OK,
         )
