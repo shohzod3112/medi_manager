@@ -54,7 +54,7 @@ class FileSelectListSerializer(serializers.ModelSerializer):
         return obj.file_id
 
     def get_label(self, obj):
-        return obj.attachment.name
+        return obj.name
 
 class DeviceSelectListSerializer(serializers.ModelSerializer):
     value = serializers.SerializerMethodField()
