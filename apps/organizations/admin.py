@@ -196,6 +196,29 @@ class DeviceTypeAdmin(admin.ModelAdmin):
     device_count.short_description = "Devices"
 
 
+class FileInline(admin.StackedInline):
+    model = File
+    extra = 0
+    max_num = 1
+    can_delete = True
+
+    fields = ("type",)
+    readonly_fields = ()
+
+    def has_add_permission(self, request, obj):
+        # Attachment’da shundoq ham max 1 ta File bo'ladi,
+        # shuning uchun qo‘shimcha File qo‘shish tugmasi YO‘QILSIN
+        if obj and obj.files.exists():
+            return False
+        return True
+
+
+@admin.register(Attachment)
+class AttachmentAdmin(admin.ModelAdmin):
+    list_display = ("id", "name", "file")
+    inlines = [FileInline]
+
+
 @admin.register(File)
 class FileAdmin(admin.ModelAdmin):
     list_display = (

@@ -30,8 +30,8 @@ class DeviceListCreateAPIView(generics.ListCreateAPIView):
 
     def get_permissions(self):
         if self.request.method == "POST":
-            return [permissions.AllowAny]
-        return [permissions.IsAuthenticated]
+            return [permissions.AllowAny()]
+        return [permissions.IsAuthenticated()]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

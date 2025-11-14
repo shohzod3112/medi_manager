@@ -332,7 +332,6 @@ class File(PerOrgSequential):
 
     def save(self, *args, **kwargs):
 
-        # 1️⃣ Owner va organization mavjudligini tekshirish
         if not self.owner_id or not self.organization_id:
             raise ValueError("Owner va organization bo‘lishi kerak")
 
