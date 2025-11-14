@@ -202,7 +202,7 @@ class FileInline(admin.StackedInline):
     max_num = 1
     can_delete = True
 
-    fields = ("type",)
+    fields = ('name',)
     readonly_fields = ()
 
     def has_add_permission(self, request, obj):
@@ -219,44 +219,44 @@ class AttachmentAdmin(admin.ModelAdmin):
     inlines = [FileInline]
 
 
-@admin.register(File)
-class FileAdmin(admin.ModelAdmin):
-    list_display = (
-        "file_id",
-        "local_id",
-        "attachment",
-        "type",
-        "organization",
-        "owner",
-        "duration",
-        "created_at",
-    )
-    list_filter = ("type", "organization", "created_at")
-    search_fields = ("organization__name",)
-    readonly_fields = ("file_id", "duration", "created_at", "updated_at")
-    ordering = ("-created_at",)
-
-    fieldsets = (
-        ("File Information", {"fields": ("type", "duration")}),
-        (
-            "Timestamps",
-            {"fields": ("created_at", "updated_at"), "classes": ("collapse",)},
-        ),
-    )
-
-    def save_model(self, request, obj, form, change):
-        # 1. Faylni saqlashdan oldin owner va organizationni to‘ldiramiz
-        if not obj.owner_id:
-            obj.owner = request.user
-
-        if not obj.organization_id and hasattr(request.user, "profile"):
-            obj.organization = request.user.profile.organization
-
-        # 2. Endi PerOrgSequential.save() chaqiriladi va organization mavjud bo‘ladi
-        super().save_model(request, obj, form, change)
-
-    def get_queryset(self, request):
-        return super().get_queryset(request).select_related("organization", "owner")
+# @admin.register(File)
+# class FileAdmin(admin.ModelAdmin):
+#     list_display = (
+#         "file_id",
+#         "local_id",
+#         "attachment",
+#         "type",
+#         "organization",
+#         "owner",
+#         "duration",
+#         "created_at",
+#     )
+#     list_filter = ("type", "organization", "created_at")
+#     search_fields = ("organization__name",)
+#     readonly_fields = ("file_id", "duration", "created_at", "updated_at")
+#     ordering = ("-created_at",)
+#
+#     fieldsets = (
+#         ("File Information", {"fields": ("type", "duration")}),
+#         (
+#             "Timestamps",
+#             {"fields": ("created_at", "updated_at"), "classes": ("collapse",)},
+#         ),
+#     )
+#
+#     def save_model(self, request, obj, form, change):
+#         # 1. Faylni saqlashdan oldin owner va organizationni to‘ldiramiz
+#         if not obj.owner_id:
+#             obj.owner = request.user
+#
+#         if not obj.organization_id and hasattr(request.user, "profile"):
+#             obj.organization = request.user.profile.organization
+#
+#         # 2. Endi PerOrgSequential.save() chaqiriladi va organization mavjud bo‘ladi
+#         super().save_model(request, obj, form, change)
+#
+#     def get_queryset(self, request):
+#         return super().get_queryset(request).select_related("organization", "owner")
 
 
 # Playlist Admin

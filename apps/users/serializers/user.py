@@ -11,7 +11,7 @@ class LoginSerializer(serializers.Serializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ("id", "username", "is_superuser")
+        fields = ("id", "username", "is_superuser", "role")
 
 
 class WhoAmISerializer(serializers.ModelSerializer):
@@ -19,7 +19,7 @@ class WhoAmISerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ("id", "username", "fullname")
+        fields = ("id", "username", "fullname", "role")
 
     def get_fullname(self, obj):
         fullname = ""
