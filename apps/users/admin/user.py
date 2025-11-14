@@ -118,6 +118,7 @@ class CustomUserAdmin(UserAdmin):
 class UserProfileAdmin(admin.ModelAdmin):
     list_display = (
         "id",
+        "role",
         "user",
         "organization",
         # "current_device_count",
@@ -129,7 +130,7 @@ class UserProfileAdmin(admin.ModelAdmin):
     readonly_fields = ("created_at", "updated_at")
 
     fieldsets = (
-        ("User Information", {"fields": ("organization", "user")}),
+        ("User Information", {"fields": ("organization", "user", "role")}),
         # ("Device Management", {"fields": ("device_limit", "current_device_count")}),
         ("Status", {"fields": ("is_active", "expiration_date")}),
         (
