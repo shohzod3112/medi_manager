@@ -51,7 +51,7 @@ class FileSelectListSerializer(serializers.ModelSerializer):
         fields = ['value', 'label']
 
     def get_value(self, obj):
-        return obj.id
+        return obj.file_id
 
     def get_label(self, obj):
         return obj.attachment.name

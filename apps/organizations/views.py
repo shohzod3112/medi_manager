@@ -384,12 +384,8 @@ class OrganizationSelectListAPIView(generics.ListAPIView):
 
 class PlaylistListCreateView(generics.ListCreateAPIView):
     serializer_class = serializers.PlaylistSerializer
-    permission_classes = (permissions.IsAuthenticated, IsOrgAndProfileActive)
-
-    def get_permissions(self):
-        if self.request.method == "POST":
-            return [permissions.IsAuthenticated()]
-        return [permissions.IsAuthenticated(), IsOrgAndProfileActive()]
+    permission_classes = (permissions.IsAuthenticated,)
+    pagination_class = CustomPagination
 
     def get_queryset(self):
         user = self.request.user

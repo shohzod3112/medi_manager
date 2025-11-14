@@ -148,7 +148,7 @@ class PerOrgSequential(models.Model):
         return self._meta.model_name
 
     def save(self, *args, **kwargs):
-        if self.local_id:  # agar allaqachon local_id bo‘lsa
+        if self.local_id:
             return super().save(*args, **kwargs)
 
         with transaction.atomic():
@@ -330,21 +330,11 @@ class File(PerOrgSequential):
     def __str__(self):
         return f"{self.file_id} - {self.attachment.name if self.attachment else ''}"
 
-    def get_upload_path(self, filename):
-        if not self.owner_id or not self.organization_id:
-            raise ValueError("Owner and organization must be set before saving file")
-        return f"{self.organization.slug}/{self.owner.username}/{filename}"
-
     def save(self, *args, **kwargs):
-        if not self.owner_id or not self.organization_id:
-            raise ValueError("Owner and organization must be set before saving file")
 
-        # Fix file name path
-        # if self.attachment.file and not self.attachment.file.name.startswith(
-        #     f"{self.organization.slug}/{self.owner.username}/",
-        # ):
-        #     original_filename = os.path.basename(self.attachment.file.name)
-        #     self.attachment.file.name = self.get_upload_path(original_filename)
+        # 1️⃣ Owner va organization mavjudligini tekshirish
+        if not self.owner_id or not self.organization_id:
+            raise ValueError("Owner va organization bo‘lishi kerak")
 
         # Detect file type by file extension
         ext = os.path.splitext(self.attachment.file.name)[1].lower()
@@ -387,10 +377,6 @@ class File(PerOrgSequential):
 
         # Fayl yozuvini o‘chiramiz
         super().delete(*args, **kwargs)
-
-        # Agar shu attachmentga boshqa fayl qolmagan bo‘lsa, attachmentni o‘chiramiz
-        if attachment and not attachment.files.exists():
-            attachment.delete()
 
 
 class Playlist(PerOrgSequential):

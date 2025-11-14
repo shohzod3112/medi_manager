@@ -7,6 +7,7 @@ from django.db.models import Count, Sum
 from django.utils.html import format_html
 
 from apps.users.models import UserProfile
+from attachment.models import Attachment
 
 from .models import Device, DeviceType, File, Organization, Playlist
 
@@ -213,8 +214,7 @@ class FileAdmin(admin.ModelAdmin):
     ordering = ("-created_at",)
 
     fieldsets = (
-        ("File Information", {"fields": ("type", "attachment", "duration")}),
-        # ("Organization & Owner", {"fields": ("organization", "owner")}),
+        ("File Information", {"fields": ("type", "duration")}),
         (
             "Timestamps",
             {"fields": ("created_at", "updated_at"), "classes": ("collapse",)},
@@ -222,8 +222,14 @@ class FileAdmin(admin.ModelAdmin):
     )
 
     def save_model(self, request, obj, form, change):
+        # 1. Faylni saqlashdan oldin owner va organizationni to‘ldiramiz
         if not obj.owner_id:
             obj.owner = request.user
+
+        if not obj.organization_id and hasattr(request.user, "profile"):
+            obj.organization = request.user.profile.organization
+
+        # 2. Endi PerOrgSequential.save() chaqiriladi va organization mavjud bo‘ladi
         super().save_model(request, obj, form, change)
 
     def get_queryset(self, request):
