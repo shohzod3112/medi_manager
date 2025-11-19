@@ -374,6 +374,34 @@ class PlaylistSerializer(serializers.ModelSerializer):
         return playlist
 
 
+class DeviceListSerializer(serializers.ModelSerializer):
+    device_type = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Device
+        fields = ["id", "name", "serial_number", "device_type"]
+
+    def get_device_type(self, obj):
+        if obj.device_type:
+            return {
+                "id": obj.device_type.id,
+                "name": obj.device_type.name
+            }
+
+
+class OrganizationListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Organization
+        fields = ["id", "name", "is_active", "device_limit", "current_device_count", 'expiration_date']
+
+
+class OrganizationDetailSerializer(serializers.ModelSerializer):
+    devices = DeviceListSerializer(many=True, read_only=True)
+    class Meta:
+        model = Organization
+        fields = ["id", "name", "description", "device_limit", "current_device_count", 'next_device_id', "expiration_date", "is_active", "created_by", "created_at", 'updated_at', "devices"]
+
+
 class OrganizationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Organization

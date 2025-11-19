@@ -1,11 +1,31 @@
 import os
-import shutil
-
 from django.conf import settings
-from django.db.models.signals import post_delete, post_save
-from django.dispatch import receiver
 
 from apps.organizations.models import File
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.utils import timezone
+from datetime import datetime, time
+from .models import Organization
+from .tasks import deactivate_organization
+
+
+@receiver(post_save, sender=Organization)
+def schedule_expiration_date(sender, instance, created, **kwargs):
+    if not instance.expiration_date:
+        return
+
+    run_at = datetime.combine(instance.expiration_date, time(23, 59, 59))
+
+    # Tizim vaqtiga o'tkazamiz
+    run_at = timezone.make_aware(run_at)
+
+    # Celery taskni rejalashtiramiz
+    deactivate_organization.apply_async(
+        args=[instance.id],
+        eta=run_at
+    )
 
 
 # @receiver(post_delete, sender=File)

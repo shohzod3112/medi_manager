@@ -24,7 +24,6 @@ class BaseModel(models.Model):
 
 class Organization(models.Model):
     name = models.CharField(max_length=255, unique=True)
-    slug = models.SlugField(max_length=255, unique=True, blank=True)
     description = models.TextField(blank=True)
 
     # Device management
@@ -73,11 +72,11 @@ class Organization(models.Model):
     def __str__(self):
         return self.name
 
-    def save(self, *args, **kwargs):
-        # Generate slug if not provided
-        if not self.slug and self.name:
-            self.slug = self.name.lower().replace(" ", "-")
-        super().save(*args, **kwargs)
+    # def save(self, *args, **kwargs):
+    #     # Generate slug if not provided
+    #     if not self.slug and self.name:
+    #         self.slug = self.name.lower().replace(" ", "-")
+    #     super().save(*args, **kwargs)
 
     def get_total_used_devices(self):
         """Get total devices used by all users in this organization"""
@@ -291,9 +290,9 @@ class Device(PerOrgSequential):
         # self.user_profile.remove_device()
         super().delete(*args, **kwargs)
 
-    def get_full_device_id(self):
-        """Get full device identifier"""
-        return f"{self.organization.slug}-{self.organization_device_id}"
+    # def get_full_device_id(self):
+    #     """Get full device identifier"""
+    #     return f"{self.organization.slug}-{self.organization_device_id}"
 
 
 class File(PerOrgSequential):

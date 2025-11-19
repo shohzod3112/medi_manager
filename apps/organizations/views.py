@@ -19,9 +19,22 @@ class DeviceListCreateAPIView(generics.ListCreateAPIView):
     pagination_class = CustomPagination
 
     def get_queryset(self):
-        return Device.objects.filter(user_profile__user=self.request.user).select_related(
+        queryset = Device.objects.filter(user_profile__user=self.request.user).select_related(
             "user_profile", "organization", 'device_type'
         )
+        name = self.request.query_params.get("name", None)
+        if name:
+            queryset = queryset.filter(name__icontains=name)
+        serial_number = self.request.query_params.get("serial_number", None)
+        if serial_number:
+            queryset = queryset.filter(serial_number__icontains=serial_number)
+        device_type = self.request.query_params.get("device_type", None)
+        if device_type:
+            queryset = queryset.filter(device_type=device_type)
+        organization = self.request.query_params.get("organization", None)
+        if organization:
+            queryset = queryset.filter(organization=organization)
+        return queryset
 
     def get_serializer_class(self):
         if self.request.method == "POST":
@@ -264,15 +277,39 @@ class DeviceTypeSelectListAPIView(generics.ListAPIView):
 # CRUD for Organization
 class OrganizationListCreateView(generics.ListCreateAPIView):
     queryset = Organization.objects.all()
-    serializer_class = serializers.OrganizationSerializer
     permission_classes = [permissions.IsAdminUser]
     pagination_class = CustomPagination
+
+    def get_queryset(self):
+        queryset = Organization.objects.all()
+        ex_date = self.request.query_params.get("ex_date", None)
+        if ex_date:
+            queryset = queryset.filter(expiration_date=ex_date)
+        is_active = self.request.query_params.get("is_active", None)
+        if is_active:
+            queryset = queryset.filter(is_active=is_active)
+        name = self.request.query_params.get("name", None)
+        if name:
+            queryset = queryset.filter(name__icontains=name)
+        return queryset
+
+
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return serializers.OrganizationSerializer
+        return serializers.OrganizationListSerializer
 
 
 class OrganizationRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Organization.objects.all()
     serializer_class = serializers.OrganizationSerializer
     permission_classes = [permissions.IsAdminUser]
+
+    def get_serializer_class(self):
+        if self.request.method == 'PUT':
+            return serializers.OrganizationSerializer
+        return serializers.OrganizationDetailSerializer
 
 
 # Assign user

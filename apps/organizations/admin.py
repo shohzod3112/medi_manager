@@ -19,7 +19,6 @@ class OrganizationAdminForm(forms.ModelForm):
         model = Organization
         fields = [
             "name",
-            "slug",
             "description",
             "device_limit",
             "is_active",
@@ -51,15 +50,13 @@ class OrganizationAdmin(admin.ModelAdmin):
     form = OrganizationAdminForm
     list_display = (
         "name",
-        "slug",
         "is_active",
         "device_limit",
         "current_device_count",
         "expiration_date",
     )
     list_filter = ("is_active",)
-    search_fields = ("name", "slug")
-    prepopulated_fields = {"slug": ("name",)}
+    search_fields = ("name",)
     readonly_fields = (
         "created_at",
         "updated_at",
@@ -71,7 +68,7 @@ class OrganizationAdmin(admin.ModelAdmin):
     # Note: The `fields` attribute is mutually exclusive with `fieldsets`.
     # We use `fieldsets` here for a better-structured admin page, which resolves (admin.E005).
     fieldsets = (
-        ("General Information", {"fields": ("name", "slug", "description")}),
+        ("General Information", {"fields": ("name", "description")}),
         (
             "Subscription Details",
             {"fields": ("device_limit", "expiration_date", "is_active")},
@@ -121,7 +118,6 @@ class DeviceAdmin(admin.ModelAdmin):
     list_display = (
         'id',
         "organization_device_id",
-        "full_device_id",
         "name",
         "serial_number",
         "organization",
@@ -162,10 +158,10 @@ class DeviceAdmin(admin.ModelAdmin):
         ),
     )
 
-    def full_device_id(self, obj):
-        return obj.get_full_device_id()
-
-    full_device_id.short_description = "Full Device ID"
+    # def full_device_id(self, obj):
+    #     return obj.get_full_device_id()
+    #
+    # full_device_id.short_description = "Full Device ID"
 
     def get_queryset(self, request):
         return (
@@ -217,6 +213,17 @@ class FileInline(admin.StackedInline):
 class AttachmentAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "file")
     inlines = [FileInline]
+
+    def save_formset(self, request, form, formset, change):
+        instances = formset.save(commit=False)
+        for obj in instances:
+            if isinstance(obj, File):
+                if not obj.owner_id:
+                    obj.owner = request.user
+                if not obj.organization_id:
+                    obj.organization = request.user.profile.organization  # UserProfile orqali
+                obj.save()
+        formset.save_m2m()
 
 
 # @admin.register(File)
