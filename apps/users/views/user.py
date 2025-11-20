@@ -5,7 +5,7 @@ from django.http import JsonResponse
 from django.utils.text import slugify
 from rest_framework import status, generics
 from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework import permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ViewSet
@@ -27,14 +27,14 @@ def get_org_db_name(request):
     org_id = request.GET.get("org_id")
     try:
         org = Organization.objects.get(id=org_id)
-        db_val = org.slug or slugify(org.name)
+        db_val = org.name or slugify(org.name)
         return JsonResponse({"db_name": db_val})
     except Organization.DoesNotExist:
         return JsonResponse({"db_name": ""})
 
 
 class LoginAPIView(generics.GenericAPIView):
-    permission_classes = [AllowAny]
+    permission_classes = [permissions.AllowAny]
     serializer_class = LoginSerializer
 
     def post(self, request, *args, **kwargs):
@@ -73,7 +73,7 @@ class LoginAPIView(generics.GenericAPIView):
 
 
 class MeAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     def get(self, request):
         user = request.user
         # Ensure profile and organization exist for consistent responses
@@ -83,7 +83,7 @@ class MeAPIView(APIView):
 
 
 class WhoAmIAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     def get(self, request):
         user = request.user
         serializer = WhoAmISerializer(user)
@@ -91,7 +91,7 @@ class WhoAmIAPIView(APIView):
 
 
 class UserListCreateAPIView(generics.ListCreateAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     pagination_class = CustomPagination
     queryset = User.objects.all()
 
@@ -102,7 +102,7 @@ class UserListCreateAPIView(generics.ListCreateAPIView):
 
 
 class UserRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     queryset = User.objects.all()
 
     def get_serializer_class(self):
@@ -111,32 +111,6 @@ class UserRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
         return user_serializer.UserUpdateSerializer
 
 
-# class UserProfileListCreateAPIView(generics.ListCreateAPIView):
-#     permission_classes = [IsAuthenticated]
-#     pagination_class = CustomPagination
-#     queryset = UserProfile.objects.select_related("user", "organization")
-#
-#     def get_serializer_class(self):
-#         if self.request.method == "GET":
-#             return user_serializer.UserProfileListSerializer
-#         return user_serializer.UserProfileCreateSerializer
-
-
-# class UserProfileRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
-#     permission_classes = [IsAuthenticated]
-#     pagination_class = CustomPagination
-#     queryset = UserProfile.objects.select_related("user", "organization")
-#
-#     def get_serializer_class(self):
-#         if self.request.method == "GET":
-#             return user_serializer.UserProfileRetrieveSerializer
-#         return user_serializer.UserProfileUpdateSerializer
-
 class UserListForSelectAPIView(generics.ListAPIView):
     queryset = User.objects.all()
     serializer_class = user_serializer.UserListForSelectSerializer
-
-
-# class UserProfileSelectListAPIView(generics.ListAPIView):
-#     queryset = UserProfile.objects.all()
-#     serializer_class = user_serializer.UserProfileSelectList

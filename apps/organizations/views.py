@@ -470,7 +470,7 @@ class FileListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         user = self.request.user
 
-        if user.organization:
+        if not user.organization:
             return File.objects.none()
 
         return File.objects.filter(

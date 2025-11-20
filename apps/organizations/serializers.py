@@ -402,7 +402,6 @@ class OrganizationSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "name",
-            "slug",
             "description",
             "device_limit",
             "expiration_date",
