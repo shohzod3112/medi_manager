@@ -208,6 +208,26 @@ class DeviceUpdateSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
+class DeviceListSerializer(serializers.ModelSerializer):
+    device_type = serializers.SerializerMethodField()
+    username = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Device
+        fields = ["id", "serial_number", "name", "device_type", "username"]
+
+    def get_device_type(self, obj):
+        if obj.device_type:
+            return {
+                "id": obj.device_type.id,
+                "name": obj.device_type.name,
+            }
+    def get_username(self, obj):
+        if obj.user_profile:
+            return obj.user_profile.user.username
+
+
+
 class DeviceSerializer(serializers.ModelSerializer):
     device_type = serializers.SerializerMethodField()
 
@@ -386,21 +406,6 @@ class PlaylistSerializer(serializers.ModelSerializer):
         if devices:
             playlist.devices.set(devices)
         return playlist
-
-
-class DeviceListSerializer(serializers.ModelSerializer):
-    device_type = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Device
-        fields = ["id", "name", "serial_number", "device_type"]
-
-    def get_device_type(self, obj):
-        if obj.device_type:
-            return {
-                "id": obj.device_type.id,
-                "name": obj.device_type.name
-            }
 
 
 class OrganizationListSerializer(serializers.ModelSerializer):

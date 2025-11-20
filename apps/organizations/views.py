@@ -41,7 +41,7 @@ class DeviceListCreateAPIView(generics.ListCreateAPIView):
     def get_serializer_class(self):
         if self.request.method == "POST":
             return serializers.DeviceCreateSerializer
-        return serializers.DeviceSerializer
+        return serializers.DeviceListSerializer
 
     def get_permissions(self):
         if self.request.method == "POST":
