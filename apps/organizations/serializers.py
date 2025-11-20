@@ -176,10 +176,9 @@ class DeviceUpdateSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         # token foydalanuvchi tomonidan berilmagan bo‘lsa
         if validated_data.get('token') in [None, ""]:
-            serial_number = validated_data.get('serial_number', instance.serial_number)
-            raw_token = f"{self.context['request'].user.username}-{serial_number}"
+            # serial_number = validated_data.get('serial_number', instance.serial_number)
+            raw_token = f"{self.context['request'].user.username}-{instance.serial_number}"
             validated_data['token'] = hashlib.sha256(raw_token.encode()).hexdigest()
-
         return super().update(instance, validated_data)
 
 
