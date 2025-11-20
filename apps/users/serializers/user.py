@@ -75,6 +75,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
             "username",
             "organization",
             "email",
+            "role",
             "first_name",
             "last_name",
             "phone_number",
@@ -113,6 +114,7 @@ class UserListSerializer(serializers.ModelSerializer):
             "username",
             "organization",
             "email",
+            "role",
             "first_name",
             "last_name",
             "phone_number",
@@ -143,6 +145,7 @@ class UserRetrieveSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "avatar",
+            "role",
             "last_login",
             "is_superuser",
             "is_staff",
@@ -178,6 +181,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         fields = [
             "username",
             "email",
+            "role",
             "first_name",
             "last_name",
             "phone_number",

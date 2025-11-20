@@ -486,9 +486,6 @@ class FileListCreateView(generics.ListCreateAPIView):
         self.perform_create(serializer)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    def perform_create(self, serializer):
-        serializer.save()
-
 
 class FileDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = serializers.FileSerializer
