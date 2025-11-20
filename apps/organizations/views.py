@@ -288,8 +288,10 @@ class OrganizationListCreateView(generics.ListCreateAPIView):
         if ex_date:
             queryset = queryset.filter(expiration_date=ex_date)
         is_active = self.request.query_params.get("is_active", None)
-        if is_active:
-            queryset = queryset.filter(is_active=is_active)
+        if is_active == "true":
+            queryset = queryset.filter(is_active=True)
+        elif is_active == "false":
+            queryset = queryset.filter(is_active=False)
         name = self.request.query_params.get("name", None)
         if name:
             queryset = queryset.filter(name__icontains=name)
