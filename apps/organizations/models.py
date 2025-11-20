@@ -275,14 +275,6 @@ class Device(PerOrgSequential):
             if not self.organization_device_id:
                 self.organization_device_id = self.organization.get_next_device_id()
 
-            # Generate token if not provided
-            if not self.token:
-                raw_token = f"{self.user_profile.user.username}-{self.serial_number}"
-                self.token = hashlib.sha256(raw_token.encode()).hexdigest()
-
-            # Increment users's device count
-            # self.user_profile.add_device()
-
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):

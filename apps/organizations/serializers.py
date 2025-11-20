@@ -1,3 +1,5 @@
+import hashlib
+
 from django.core.files.base import ContentFile
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -184,6 +186,8 @@ class DeviceCreateSerializer(serializers.ModelSerializer):
 
 
 class DeviceUpdateSerializer(serializers.ModelSerializer):
+    token = serializers.CharField(read_only=True)
+
     class Meta:
         model = Device
         fields = [
@@ -191,7 +195,17 @@ class DeviceUpdateSerializer(serializers.ModelSerializer):
             'name',
             'device_type',
             'exit_password',
+            'token',
         ]
+
+    def update(self, instance, validated_data):
+        # token foydalanuvchi tomonidan berilmagan bo‘lsa
+        if validated_data.get('token') in [None, ""]:
+            serial_number = validated_data.get('serial_number', instance.serial_number)
+            raw_token = f"{self.context['request'].user.username}-{serial_number}"
+            validated_data['token'] = hashlib.sha256(raw_token.encode()).hexdigest()
+
+        return super().update(instance, validated_data)
 
 
 class DeviceSerializer(serializers.ModelSerializer):
