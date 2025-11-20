@@ -7,8 +7,8 @@ app_name = "organizations"
 urlpatterns = [
     path(f"{app_name}", views.OrganizationListCreateView.as_view(), name="organization-list-create"),
     path(f"{app_name}/<int:pk>", views.OrganizationRetrieveUpdateDestroyView.as_view(), name="organization-detail"),
-    path(f"{app_name}/<int:pk>/assign-user", views.AssignUserToOrganizationView.as_view(), name="organization-assign-user"),
-    path(f"{app_name}/<int:pk>/unassign-user", views.UnassignUserFromOrganizationView.as_view(), name="organization-unassign-user"),
+    # path(f"{app_name}/<int:pk>/assign-user", views.AssignUserToOrganizationView.as_view(), name="organization-assign-user"),
+    # path(f"{app_name}/<int:pk>/unassign-user", views.UnassignUserFromOrganizationView.as_view(), name="organization-unassign-user"),
     path(f"{app_name}/select", views.OrganizationSelectListAPIView.as_view()),
 
     path(f"{app_name}/device-select", views.DeviceSelectListAPIView.as_view()),

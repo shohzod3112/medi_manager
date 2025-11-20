@@ -5,16 +5,11 @@ from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.forms import UserChangeForm
 from django.utils.html import format_html
 
-from apps.users.models import User, UserProfile
+from apps.users.models import User
 
 # Ensure idempotent registration to avoid AlreadyRegistered during test discovery
 try:
     admin.site.unregister(User)
-except NotRegistered:
-    pass
-# Also ensure UserProfile is unregistered if previously registered (e.g., during test discovery)
-try:
-    admin.site.unregister(UserProfile)
 except NotRegistered:
     pass
 
@@ -53,7 +48,7 @@ class CustomUserAdmin(UserAdmin):
         (None, {"fields": ("username", "password")}),
         (
             "Personal Info",
-            {"fields": ("role", "first_name", "last_name", "email", "phone_number", "avatar")},
+            {"fields": ("role", "organization", "first_name", "last_name", "email", "phone_number", "avatar")},
         ),
         (
             "Permissions",
@@ -103,56 +98,12 @@ class CustomUserAdmin(UserAdmin):
     full_name.short_description = "Full Name"
 
     def organization_info(self, obj):
-        try:
-            profile = obj.profile
+        if obj.organization:
             return format_html(
                 '<span style="color: green;">{}</span>',
-                profile.organization.name,
+                obj.organization.name,
             )
-        except UserProfile.DoesNotExist:
+        else:
             return format_html('<span style="color: red;">No Organization</span>')
 
     organization_info.short_description = "Organization"
-
-
-@admin.register(UserProfile)
-class UserProfileAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "user",
-        "organization",
-        # "current_device_count",
-        # "remaining_devices",
-        "is_active",
-        "expiration_status",
-    )
-    list_filter = ("is_active", "organization", "expiration_date")
-    readonly_fields = ("created_at", "updated_at")
-
-    fieldsets = (
-        ("User Information", {"fields": ("organization", "user")}),
-        # ("Device Management", {"fields": ("device_limit", "current_device_count")}),
-        ("Status", {"fields": ("is_active", "expiration_date")}),
-        (
-            "Timestamps",
-            {"fields": ("created_at", "updated_at"), "classes": ("collapse",)},
-        ),
-    )
-
-    def remaining_devices(self, obj):
-        return obj.get_remaining_devices()
-
-    remaining_devices.short_description = "Remaining Devices"
-
-    def expiration_status(self, obj):
-        if obj.is_expired():
-            return format_html('<span style="color: red;">Expired</span>')
-        elif obj.expiration_date:
-            return format_html('<span style="color: orange;">Active</span>')
-        else:
-            return format_html('<span style="color: green;">No Expiration</span>')
-
-    expiration_status.short_description = "Expiration Status"
-
-    def get_queryset(self, request):
-        return super().get_queryset(request).select_related("user", "organization")

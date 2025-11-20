@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.users.models import User, UserProfile
+from apps.users.models import User
 
 
 class LoginSerializer(serializers.Serializer):
@@ -73,6 +73,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             "username",
+            "organization",
             "email",
             "first_name",
             "last_name",
@@ -103,12 +104,14 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
 class UserListSerializer(serializers.ModelSerializer):
     avatar = serializers.SerializerMethodField()
+    organization = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = [
             "id",
             "username",
+            "organization",
             "email",
             "first_name",
             "last_name",
@@ -123,9 +126,17 @@ class UserListSerializer(serializers.ModelSerializer):
             request = self.context.get("request")
             return request.build_absolute_uri(obj.avatar.url)
 
+    def get_organization(self, obj):
+        if obj.organization:
+            return {
+                "id": obj.organization.id,
+                "name": obj.organization.name,
+            }
+
 
 class UserRetrieveSerializer(serializers.ModelSerializer):
     avatar = serializers.SerializerMethodField()
+    organization = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -142,12 +153,20 @@ class UserRetrieveSerializer(serializers.ModelSerializer):
             "is_active",
             "date_joined",
             "phone_number",
+            "organization",
         ]
 
     def get_avatar(self, obj):
         if obj.avatar:
             request = self.context.get("request")
             return request.build_absolute_uri(obj.avatar.url)
+
+    def get_organization(self, obj):
+        if obj.organization:
+            return {
+                "id": obj.organization.id,
+                "name": obj.organization.name
+            }
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):
@@ -189,92 +208,92 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         return instance
 
 
-class UserProfileListSerializer(serializers.ModelSerializer):
-    user = serializers.SerializerMethodField()
-    organization = serializers.SerializerMethodField()
-
-    class Meta:
-        model = UserProfile
-        fields = [
-            "id",
-            "user",
-            "organization",
-            # "device_limit",
-            # "current_device_count",
-            "expiration_date",
-        ]
-
-    def get_user(self, obj):
-        if obj.user:
-            return {
-                "id": obj.user.id,
-                "name": obj.user.username,
-            }
-
-    def get_organization(self, obj):
-        if obj.organization:
-            return {
-                "id": obj.organization.id,
-                "name": obj.organization.name,
-            }
-
-
-class UserProfileCreateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = UserProfile
-        fields = "__all__"
-
-
-class UserProfileRetrieveSerializer(serializers.ModelSerializer):
-    user = serializers.SerializerMethodField()
-    organization = serializers.SerializerMethodField()
-
-    class Meta:
-        model = UserProfile
-        fields = [
-            "id",
-            "user",
-            "organization",
-            # "device_limit",
-            # "current_device_count",
-            "expiration_date",
-            "is_active",
-            "created_at",
-            "updated_at",
-        ]
-
-    def get_user(self, obj):
-        if obj.user:
-            return {
-                "id": obj.user.id,
-                "name": obj.user.username,
-            }
-
-    def get_organization(self, obj):
-        if obj.organization:
-            return {
-                "id": obj.organization.id,
-                "name": obj.organization.name,
-            }
-
-
-class UserProfileUpdateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = UserProfile
-        fields = [
-            "user",
-            "organization",
-            # "device_limit",
-            # "current_device_count",
-            "expiration_date",
-            "is_active",
-        ]
-
-    def update(self, instance, validated_data):
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
-        return instance
+# class UserProfileListSerializer(serializers.ModelSerializer):
+#     user = serializers.SerializerMethodField()
+#     organization = serializers.SerializerMethodField()
+#
+#     class Meta:
+#         model = UserProfile
+#         fields = [
+#             "id",
+#             "user",
+#             "organization",
+#             # "device_limit",
+#             # "current_device_count",
+#             "expiration_date",
+#         ]
+#
+#     def get_user(self, obj):
+#         if obj.user:
+#             return {
+#                 "id": obj.user.id,
+#                 "name": obj.user.username,
+#             }
+#
+#     def get_organization(self, obj):
+#         if obj.organization:
+#             return {
+#                 "id": obj.organization.id,
+#                 "name": obj.organization.name,
+#             }
+#
+#
+# class UserProfileCreateSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = UserProfile
+#         fields = "__all__"
+#
+#
+# class UserProfileRetrieveSerializer(serializers.ModelSerializer):
+#     user = serializers.SerializerMethodField()
+#     organization = serializers.SerializerMethodField()
+#
+#     class Meta:
+#         model = UserProfile
+#         fields = [
+#             "id",
+#             "user",
+#             "organization",
+#             # "device_limit",
+#             # "current_device_count",
+#             "expiration_date",
+#             "is_active",
+#             "created_at",
+#             "updated_at",
+#         ]
+#
+#     def get_user(self, obj):
+#         if obj.user:
+#             return {
+#                 "id": obj.user.id,
+#                 "name": obj.user.username,
+#             }
+#
+#     def get_organization(self, obj):
+#         if obj.organization:
+#             return {
+#                 "id": obj.organization.id,
+#                 "name": obj.organization.name,
+#             }
+#
+#
+# class UserProfileUpdateSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = UserProfile
+#         fields = [
+#             "user",
+#             "organization",
+#             # "device_limit",
+#             # "current_device_count",
+#             "expiration_date",
+#             "is_active",
+#         ]
+#
+#     def update(self, instance, validated_data):
+#         for attr, value in validated_data.items():
+#             setattr(instance, attr, value)
+#         instance.save()
+#         return instance
 
 
 class UserListForSelectSerializer(serializers.ModelSerializer):
@@ -294,18 +313,18 @@ class UserListForSelectSerializer(serializers.ModelSerializer):
 
 
 
-class UserProfileSelectList(serializers.ModelSerializer):
-    value = serializers.SerializerMethodField()
-    label = serializers.SerializerMethodField()
-
-    class Meta:
-        model = UserProfile
-        fields = ['value', 'label']
-
-    def get_value(self, obj):
-        return obj.id
-
-    def get_label(self, obj):
-        if obj.user:
-            return obj.user.username
+# class UserProfileSelectList(serializers.ModelSerializer):
+#     value = serializers.SerializerMethodField()
+#     label = serializers.SerializerMethodField()
+#
+#     class Meta:
+#         model = UserProfile
+#         fields = ['value', 'label']
+#
+#     def get_value(self, obj):
+#         return obj.id
+#
+#     def get_label(self, obj):
+#         if obj.user:
+#             return obj.user.username
 

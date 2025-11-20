@@ -5,8 +5,6 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db.models import Count, Sum
 from django.utils.html import format_html
-
-from apps.users.models import UserProfile
 from attachment.models import Attachment
 
 from .models import Device, DeviceType, File, Organization, Playlist
@@ -93,35 +91,34 @@ class OrganizationAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
 
-class DeviceAdminForm(forms.ModelForm):
-    class Meta:
-        model = Device
-        fields = "__all__"
-
-    def clean(self):
-        cleaned_data = super().clean()
-        user_profile = cleaned_data.get("user_profile")
-        organization = cleaned_data.get("organization")
-
-        if user_profile and organization:
-            if user_profile.organization != organization:
-                raise ValidationError(
-                    "User profile must belong to the same organization as the device.",
-                )
-
-        return cleaned_data
+# class DeviceAdminForm(forms.ModelForm):
+#     class Meta:
+#         model = Device
+#         fields = "__all__"
+#
+#     def clean(self):
+#         cleaned_data = super().clean()
+#         user_profile = cleaned_data.get("user_profile")
+#         organization = cleaned_data.get("organization")
+#
+#         if user_profile and organization:
+#             if user_profile.organization != organization:
+#                 raise ValidationError(
+#                     "User profile must belong to the same organization as the device.",
+#                 )
+#
+#         return cleaned_data
 
 
 @admin.register(Device)
 class DeviceAdmin(admin.ModelAdmin):
-    form = DeviceAdminForm
+    # form = DeviceAdminForm
     list_display = (
         'id',
         "organization_device_id",
         "name",
         "serial_number",
         "organization",
-        "user_profile",
         "device_type",
         "is_active",
         "last_seen",
@@ -163,12 +160,12 @@ class DeviceAdmin(admin.ModelAdmin):
     #
     # full_device_id.short_description = "Full Device ID"
 
-    def get_queryset(self, request):
-        return (
-            super()
-            .get_queryset(request)
-            .select_related("organization", "user_profile__user", "device_type")
-        )
+    # def get_queryset(self, request):
+    #     return (
+    #         super()
+    #         .get_queryset(request)
+    #         .select_related("organization", "user_profile__user", "device_type")
+    #     )
 
 
 @admin.register(DeviceType)
@@ -221,7 +218,7 @@ class AttachmentAdmin(admin.ModelAdmin):
                 if not obj.owner_id:
                     obj.owner = request.user
                 if not obj.organization_id:
-                    obj.organization = request.user.profile.organization  # UserProfile orqali
+                    obj.organization = request.user.organization
                 obj.save()
         formset.save_m2m()
 
@@ -292,11 +289,11 @@ class PlaylistAdminForm(forms.ModelForm):
             self.fields["file"].queryset = File.objects.filter(
                 owner=self.current_user,
             )
-            self.fields["devices"].queryset = (
-                Device.objects.filter(user_profile__user=self.current_user)
-                .exclude(name__isnull=True)
-                .exclude(name__exact="")
-            )
+            # self.fields["devices"].queryset = (
+            #     Device.objects.filter(user_profile__user=self.current_user)
+            #     .exclude(name__isnull=True)
+            #     .exclude(name__exact="")
+            # )
         else:
             self.fields["file"].queryset = File.objects.all()
             self.fields["devices"].queryset = Device.objects.exclude(
@@ -368,18 +365,18 @@ class PlaylistAdmin(admin.ModelAdmin):
         return super().get_queryset(request).select_related("organization", "owner")
 
 
-# Inline admin for better organization management
-class UserProfileInline(admin.TabularInline):
-    model = UserProfile
-    extra = 0
-    readonly_fields = ("created_at",)
-    fields = (
-        "user",
-        # "device_limit",
-        # "current_device_count",
-        "is_active",
-        "expiration_date",
-    )
+# # Inline admin for better organization management
+# class UserProfileInline(admin.TabularInline):
+#     model = UserProfile
+#     extra = 0
+#     readonly_fields = ("created_at",)
+#     fields = (
+#         "user",
+#         # "device_limit",
+#         # "current_device_count",
+#         "is_active",
+#         "expiration_date",
+#     )
 
 
 class DeviceInline(admin.TabularInline):
@@ -390,10 +387,9 @@ class DeviceInline(admin.TabularInline):
         "organization_device_id",
         "name",
         "serial_number",
-        "user_profile",
         "is_active",
     )
 
 
 # Add inlines to Organization admin
-OrganizationAdmin.inlines = [UserProfileInline, DeviceInline]
+OrganizationAdmin.inlines = [DeviceInline]

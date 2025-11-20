@@ -105,11 +105,11 @@ class Organization(models.Model):
 
     def get_user_count(self):
         """Get number of users in this organization"""
-        return self.user_profiles.count()
+        return self.users.count()
 
     def get_active_user_count(self):
         """Get number of active users in this organization"""
-        return self.user_profiles.filter(is_active=True).count()
+        return self.users.filter(is_active=True).count()
 
     def device_count(self):
         return self.devices.count()
@@ -184,22 +184,22 @@ class DeviceQuerySet(models.QuerySet):
         owner = kwargs.pop("owner", None)
         if owner is not None:
             # Auto-provision organization and user_profile from owner for backward compatibility in tests
-            from apps.users.models import UserProfile
+            # from apps.users.models import UserProfile
 
             # Ensure default organization exists
             org, _ = Organization.objects.get_or_create(
                 name="test_org",
                 defaults={"description": "Auto provisioned"},
             )
-            profile, _ = UserProfile.objects.get_or_create(
-                user=owner,
-                defaults={"organization": org},
-            )
-            if not profile.organization_id:
-                profile.organization = org
-                profile.save(update_fields=["organization"])
-            kwargs.setdefault("user_profile", profile)
-            kwargs.setdefault("organization", profile.organization)
+            # profile, _ = UserProfile.objects.get_or_create(
+            #     user=owner,
+            #     defaults={"organization": org},
+            # )
+            # if not profile.organization_id:
+            #     profile.organization = org
+            #     profile.save(update_fields=["organization"])
+            # kwargs.setdefault("user_profile", profile)
+            # kwargs.setdefault("organization", profile.organization)
         return super().create(**kwargs)
 
 
@@ -231,11 +231,11 @@ class Device(PerOrgSequential):
         on_delete=models.CASCADE,
         related_name="devices",
     )
-    user_profile = models.ForeignKey(
-        "users.UserProfile",
-        on_delete=models.CASCADE,
-        related_name="devices",
-    )
+    # user_profile = models.ForeignKey(
+    #     "users.UserProfile",
+    #     on_delete=models.CASCADE,
+    #     related_name="devices",
+    # )
 
     # Status and tracking
     is_active = models.BooleanField(default=True)

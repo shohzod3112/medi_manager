@@ -20,6 +20,11 @@ class User(AbstractUser):
     email = models.EmailField(unique=True)
     first_name = models.CharField(max_length=150, blank=True)
     last_name = models.CharField(max_length=150, blank=True)
+    organization = models.ForeignKey(
+        "organizations.Organization",
+        on_delete=models.SET_NULL, null=True,
+        related_name="users",
+    )
     is_active = models.BooleanField(default=True)
     date_joined = models.DateTimeField(auto_now_add=True)
 

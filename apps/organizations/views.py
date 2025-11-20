@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework.permissions import AllowAny, IsAdminUser
 from core.paginations import CustomPagination
-from ..users.models import User, UserProfile
+from ..users.models import User
 from .models import Device, File, Organization, Playlist, DeviceType
 from .permissions import IsOrgAndProfileActive
 from . import serializers
@@ -21,8 +21,8 @@ class DeviceListCreateAPIView(generics.ListCreateAPIView):
     pagination_class = CustomPagination
 
     def get_queryset(self):
-        queryset = Device.objects.filter(user_profile__user=self.request.user).select_related(
-            "user_profile", "organization", 'device_type'
+        queryset = Device.objects.filter(organization=self.request.user.organization).select_related(
+            "organization", 'device_type'
         )
         name = self.request.query_params.get("name", None)
         if name:
@@ -57,7 +57,7 @@ class DeviceListCreateAPIView(generics.ListCreateAPIView):
 
 class DeviceRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAuthenticated]
-    queryset = Device.objects.select_related('user_profile', 'organization', 'device_type')
+    queryset = Device.objects.select_related('organization', 'device_type')
 
     def get_serializer_class(self):
         if self.request.method == "GET":
@@ -71,7 +71,7 @@ class DeviceDetailAPIView(generics.RetrieveDestroyAPIView):
     lookup_field = "serial_number"
 
     def get_queryset(self):
-        return Device.objects.filter(user_profile__user=self.request.user)
+        return Device.objects.filter(organization=self.request.user.organization)
 
     def retrieve(self, request, *args, **kwargs):
         device = self.get_object()
@@ -84,13 +84,12 @@ class DeviceSyncAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, serial_number):
-        device = get_object_or_404(Device, serial_number=serial_number, user_profile__user=request.user)
-        profile = device.user_profile
+        device = get_object_or_404(Device, serial_number=serial_number, organization=request.user.organization)
         org = device.organization
 
         # Profil yoki tashkilot faol emas yoki muddati o'tgan
-        if not profile.is_active or profile.is_expired():
-            return Response({"error": "User profile is inactive or expired"}, status=403)
+        if not request.user.is_active:
+            return Response({"error": "User is inactive or expired"}, status=403)
         if not org.is_active or org.is_expired():
             return Response({"error": "Organization is inactive or expired"}, status=403)
 
@@ -153,15 +152,15 @@ class PlaylistDetailAPIView(APIView):
 
         device = Device.objects.filter(
             serial_number=sn,
-            user_profile__user=user,
+            organization=user.organization,
             token=token,
         ).first()
         if not device:
             return Response({"success": False, "message": "Device Not Found"}, status=404)
 
-        profile, org = device.user_profile, device.organization
-        if not profile.is_active or profile.is_expired():
-            return Response({"success": False, "message": "User profile inactive"}, status=403)
+        org = device.organization
+        if not user.is_active:
+            return Response({"success": False, "message": "User inactive"}, status=403)
         if not org.is_active or org.is_expired():
             return Response({"success": False, "message": "Organization inactive"}, status=403)
 
@@ -317,105 +316,105 @@ class OrganizationRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIVie
 
 
 # Assign user
-class AssignUserToOrganizationView(APIView):
-    permission_classes = [permissions.IsAdminUser]
-
-    def post(self, request, pk):
-        org = generics.get_object_or_404(Organization, pk=pk)
-        user_id = request.data.get("user_id")
-        username = request.data.get("username")
-        device_limit = request.data.get("device_limit")
-        is_active = request.data.get("is_active")
-        expiration_date = request.data.get("expiration_date")
-
-        if not user_id and not username:
-            return Response({"error": "user_id or username is required"},
-                            status=status.HTTP_400_BAD_REQUEST)
-
-        UserModel = get_user_model()
-        try:
-            user = UserModel.objects.get(id=user_id) if user_id else UserModel.objects.get(username=username)
-        except UserModel.DoesNotExist:
-            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-
-        profile, created = UserProfile.objects.get_or_create(
-            user=user, defaults={"organization": org}
-        )
-
-        if not created and profile.organization_id != org.id:
-            if profile.current_device_count > 0:
-                return Response({"error": "Cannot move user with devices"},
-                                status=status.HTTP_400_BAD_REQUEST)
-            profile.organization = org
-
-        # Optional fields
-        if device_limit is not None:
-            try:
-                profile.device_limit = int(device_limit)
-            except (TypeError, ValueError):
-                return Response({"error": "device_limit must be an integer"},
-                                status=status.HTTP_400_BAD_REQUEST)
-
-        if is_active is not None:
-            profile.is_active = (
-                bool(is_active) if isinstance(is_active, bool)
-                else str(is_active).lower() in ["true", "1", "yes"]
-            )
-
-        if expiration_date:
-            parsed = parse_date(expiration_date) if isinstance(expiration_date, str) else expiration_date
-            if not parsed:
-                return Response({"error": "Invalid expiration_date (YYYY-MM-DD)"},
-                                status=status.HTTP_400_BAD_REQUEST)
-            profile.expiration_date = parsed
-
-        try:
-            profile.save()
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-        return Response({
-            "message": "User assigned to organization",
-            "user_id": user.id,
-            "organization": org.id,
-        })
+# class AssignUserToOrganizationView(APIView):
+#     permission_classes = [permissions.IsAdminUser]
+#
+#     def post(self, request, pk):
+#         org = generics.get_object_or_404(Organization, pk=pk)
+#         user_id = request.data.get("user_id")
+#         username = request.data.get("username")
+#         device_limit = request.data.get("device_limit")
+#         is_active = request.data.get("is_active")
+#         expiration_date = request.data.get("expiration_date")
+#
+#         if not user_id and not username:
+#             return Response({"error": "user_id or username is required"},
+#                             status=status.HTTP_400_BAD_REQUEST)
+#
+#         UserModel = get_user_model()
+#         try:
+#             user = UserModel.objects.get(id=user_id) if user_id else UserModel.objects.get(username=username)
+#         except UserModel.DoesNotExist:
+#             return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+#
+#         # profile, created = UserProfile.objects.get_or_create(
+#         #     user=user, defaults={"organization": org}
+#         # )
+#         #
+#         # if not created and profile.organization_id != org.id:
+#         #     if profile.current_device_count > 0:
+#         #         return Response({"error": "Cannot move user with devices"},
+#         #                         status=status.HTTP_400_BAD_REQUEST)
+#         #     profile.organization = org
+#
+#         # # Optional fields
+#         # if device_limit is not None:
+#         #     try:
+#         #         profile.device_limit = int(device_limit)
+#         #     except (TypeError, ValueError):
+#         #         return Response({"error": "device_limit must be an integer"},
+#         #                         status=status.HTTP_400_BAD_REQUEST)
+#
+#         # if is_active is not None:
+#         #     profile.is_active = (
+#         #         bool(is_active) if isinstance(is_active, bool)
+#         #         else str(is_active).lower() in ["true", "1", "yes"]
+#         #     )
+#
+#         # if expiration_date:
+#         #     parsed = parse_date(expiration_date) if isinstance(expiration_date, str) else expiration_date
+#         #     if not parsed:
+#         #         return Response({"error": "Invalid expiration_date (YYYY-MM-DD)"},
+#         #                         status=status.HTTP_400_BAD_REQUEST)
+#         #     profile.expiration_date = parsed
+#         #
+#         # try:
+#         #     profile.save()
+#         # except Exception as e:
+#         #     return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+#         #
+#         # return Response({
+#         #     "message": "User assigned to organization",
+#         #     "user_id": user.id,
+#         #     "organization": org.id,
+#         # })
 
 
 # Unassign user
-class UnassignUserFromOrganizationView(APIView):
-    permission_classes = [permissions.IsAdminUser]
-
-    def post(self, request, pk):
-        org = generics.get_object_or_404(Organization, pk=pk)
-        user_id = request.data.get("user_id")
-        username = request.data.get("username")
-
-        if not user_id and not username:
-            return Response({"error": "user_id or username is required"},
-                            status=status.HTTP_400_BAD_REQUEST)
-
-        UserModel = get_user_model()
-        try:
-            user = UserModel.objects.get(id=user_id) if user_id else UserModel.objects.get(username=username)
-        except UserModel.DoesNotExist:
-            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-
-        try:
-            profile = UserProfile.objects.get(user=user, organization=org)
-        except UserProfile.DoesNotExist:
-            return Response({"error": "User not assigned to this organization"},
-                            status=status.HTTP_404_NOT_FOUND)
-
-        if profile.current_device_count > 0:
-            return Response({"error": "Cannot unassign user with devices"},
-                            status=status.HTTP_400_BAD_REQUEST)
-
-        profile.delete()
-        return Response({
-            "message": "User unassigned from organization",
-            "user_id": user.id,
-            "organization": org.id,
-        })
+# class UnassignUserFromOrganizationView(APIView):
+#     permission_classes = [permissions.IsAdminUser]
+#
+#     def post(self, request, pk):
+#         org = generics.get_object_or_404(Organization, pk=pk)
+#         user_id = request.data.get("user_id")
+#         username = request.data.get("username")
+#
+#         if not user_id and not username:
+#             return Response({"error": "user_id or username is required"},
+#                             status=status.HTTP_400_BAD_REQUEST)
+#
+#         UserModel = get_user_model()
+#         try:
+#             user = UserModel.objects.get(id=user_id) if user_id else UserModel.objects.get(username=username)
+#         except UserModel.DoesNotExist:
+#             return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+#
+#         try:
+#             profile = UserProfile.objects.get(user=user, organization=org)
+#         except UserProfile.DoesNotExist:
+#             return Response({"error": "User not assigned to this organization"},
+#                             status=status.HTTP_404_NOT_FOUND)
+#
+#         if profile.current_device_count > 0:
+#             return Response({"error": "Cannot unassign user with devices"},
+#                             status=status.HTTP_400_BAD_REQUEST)
+#
+#         profile.delete()
+#         return Response({
+#             "message": "User unassigned from organization",
+#             "user_id": user.id,
+#             "organization": org.id,
+#         })
 
 
 class OrganizationSelectListAPIView(generics.ListAPIView):
@@ -430,12 +429,11 @@ class PlaylistListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        profile = getattr(user, "profile", None)
-        if not profile or not profile.organization_id:
+        if not user.organization:
             return Playlist.objects.none()
 
         return Playlist.objects.filter(
-            organization=profile.organization,
+            organization=user.organization,
             owner=user,
         ).order_by("-created_at")
 
@@ -449,12 +447,11 @@ class PlaylistDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        profile = getattr(user, "profile", None)
-        if not profile or not profile.organization_id:
+        if user.organization:
             return Playlist.objects.none()
 
         return Playlist.objects.filter(
-            organization=profile.organization,
+            organization=user.organization,
             owner=user,
         )
 
@@ -472,13 +469,12 @@ class FileListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        profile = getattr(user, "profile", None)
 
-        if not profile or not profile.organization_id:
+        if user.organization:
             return File.objects.none()
 
         return File.objects.filter(
-            organization=profile.organization,
+            organization=user.organization,
             owner=user,
         ).order_by("-created_at")
 
@@ -505,12 +501,11 @@ class FileDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        profile = getattr(user, "profile", None)
 
-        if not profile or not profile.organization_id:
+        if not user.organization:
             return File.objects.none()
 
         return File.objects.filter(
-            organization=profile.organization,
+            organization=user.organization,
             owner=user,
         )

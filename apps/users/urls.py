@@ -19,7 +19,7 @@ urlpatterns = [
     path(f"{app_name}/<int:pk>", user_views.UserRetrieveUpdateDestroyAPIView.as_view()),
     path(f"{app_name}/select", user_views.UserListForSelectAPIView.as_view()),
 
-    path(f"{app_name}/user-profiles", user_views.UserProfileListCreateAPIView.as_view()),
-    path(f"{app_name}/user-profiles/<int:pk>", user_views.UserProfileRetrieveUpdateDestroyAPIView.as_view()),
-    path(f"{app_name}/user-profiles-select", user_views.UserProfileSelectListAPIView.as_view()),
+    # path(f"{app_name}/user-profiles", user_views.UserProfileListCreateAPIView.as_view()),
+    # path(f"{app_name}/user-profiles/<int:pk>", user_views.UserProfileRetrieveUpdateDestroyAPIView.as_view()),
+    # path(f"{app_name}/user-profiles-select", user_views.UserProfileSelectListAPIView.as_view()),
 ]

@@ -5,12 +5,12 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from apps.organizations.models import Device, File, Organization, Playlist, DeviceType
-from apps.users.models import UserProfile, User
+from apps.users.models import User
+from apps.users.serializers.user import UserListSerializer
 
 
 class DeviceRetrieveSerializer(serializers.ModelSerializer):
     organization = serializers.SerializerMethodField()
-    user_profile = serializers.SerializerMethodField()
     device_type = serializers.SerializerMethodField()
 
     class Meta:
@@ -18,7 +18,7 @@ class DeviceRetrieveSerializer(serializers.ModelSerializer):
         fields = (
             "id", "organization_device_id", "name", "serial_number",
             "device_type", "exit_password", "token", "organization",
-            "user_profile", "is_active", "last_seen", "created_at", "updated_at"
+            "is_active", "last_seen", "created_at", "updated_at"
         )
 
     def get_device_type(self, obj):
@@ -35,13 +35,13 @@ class DeviceRetrieveSerializer(serializers.ModelSerializer):
                 "name": obj.organization.name,
             }
 
-    def get_user_profile(self, obj):
-        if obj.user_profile:
-            return {
-                "id": obj.user_profile.id,
-                "name": obj.user_profile.user.get_full_name(),
-                "username": obj.user_profile.user.username,
-            }
+    # def get_user_profile(self, obj):
+    #     if obj.user_profile:
+    #         return {
+    #             "id": obj.user_profile.id,
+    #             "name": obj.user_profile.user.get_full_name(),
+    #             "username": obj.user_profile.user.username,
+    #         }
 
 
 class FileSelectListSerializer(serializers.ModelSerializer):
@@ -105,25 +105,6 @@ class DeviceTypeSelectListSerializer(serializers.ModelSerializer):
         return obj.name
 
 
-def ensure_default_org_profile(user):
-    """Ensure the user has a profile and organization; create defaults if missing."""
-    profile = getattr(user, "profile", None)
-    if profile and profile.organization_id:
-        return profile
-    org, _ = Organization.objects.get_or_create(
-        name="test_org",
-        defaults={"description": "Auto provisioned"},
-    )
-    profile, _ = UserProfile.objects.get_or_create(
-        user=user,
-        defaults={"organization": org},
-    )
-    if not profile.organization_id:
-        profile.organization = org
-        profile.save(update_fields=["organization"])
-    return profile
-
-
 class DeviceCreateSerializer(serializers.ModelSerializer):
     username = serializers.CharField(write_only=True)
 
@@ -151,13 +132,8 @@ class DeviceCreateSerializer(serializers.ModelSerializer):
         except User.DoesNotExist:
             raise serializers.ValidationError({"username": "User not found"})
 
-        # 🔍 UserProfile ni topamiz
-        profile = getattr(user, "profile", None)
-        if not profile:
-            raise serializers.ValidationError({"username": "UserProfile not found"})
-
         # 🔍 Tashkilotni olamiz
-        organization = profile.organization
+        organization = user.organization
         if not organization:
             raise serializers.ValidationError({"organization": "Organization not found"})
 
@@ -167,7 +143,6 @@ class DeviceCreateSerializer(serializers.ModelSerializer):
             name=validated_data.get("name", ""),
             device_type=validated_data.get("device_type"),
             organization=organization,
-            user_profile=profile,
         )
         return device
 
@@ -223,8 +198,9 @@ class DeviceListSerializer(serializers.ModelSerializer):
                 "name": obj.device_type.name,
             }
     def get_username(self, obj):
-        if obj.user_profile:
-            return obj.user_profile.user.username
+        # if obj.created_by:
+        #     return obj.created_by.username
+        return "Ukahon sabr"
 
 
 
@@ -271,12 +247,11 @@ class DeviceSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         request = self.context.get("request")
         user = request.user
-        profile = getattr(user, "profile", None)
-        if not profile or not profile.organization_id:
-            profile = ensure_default_org_profile(user)
-        # Assign user and organization to the device
-        validated_data["user_profile"] = profile
-        validated_data["organization"] = profile.organization
+        if not getattr(user, "organization", None):
+            raise serializers.ValidationError(
+                {"organization": "Logged-in user has no organization assigned."}
+            )
+        validated_data["organization"] = user.organization
         return super().create(validated_data)
 
 
@@ -308,18 +283,14 @@ class FileSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         request = self.context.get("request")
         user = request.user
-        profile = getattr(user, "profile", None)
-        if not profile or not profile.organization_id:
-            profile = ensure_default_org_profile(user)
+        if not getattr(user, "organization", None):
+            raise serializers.ValidationError(
+                {"organization": "Logged-in user has no organization assigned."}
+            )
 
-        org = profile.organization
+        org = user.organization
         validated_data["owner"] = user
         validated_data["organization"] = org
-
-        # # If no file provided (legacy tests), generate a tiny dummy image file
-        # if not validated_data.get("attachment"):
-        #     dummy_content = ContentFile(b"dummy image content", name="placeholder.jpg")
-        #     validated_data["file"] = dummy_content
 
         return super().create(validated_data)
 
@@ -355,7 +326,6 @@ class PlaylistSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         request = self.context.get("request")
         user = request.user
-        profile = getattr(user, "profile", None)
         playlist_type = attrs.get("playlist_type")
         start_date = attrs.get("start_date")
         end_date = attrs.get("end_date")
@@ -369,10 +339,12 @@ class PlaylistSerializer(serializers.ModelSerializer):
                 raise ValidationError(
                     {"detail": "end_date start_date dan oldin bo'lishi mumkin emas!"}
                 )
-        if not profile or not profile.organization_id:
-            profile = ensure_default_org_profile(user)
+        if not getattr(user, "organization", None):
+            raise serializers.ValidationError(
+                {"organization": "Logged-in user has no organization assigned."}
+            )
 
-        org = profile.organization
+        org = user.organization
         # Ensure all media and devices belong to the same organization
         files_list = attrs.get("file", []) or []
         devices_list = attrs.get("devices", []) or []
@@ -391,11 +363,12 @@ class PlaylistSerializer(serializers.ModelSerializer):
         devices = validated_data.pop("devices", [])
         request = self.context.get("request")
         user = request.user
-        profile = getattr(user, "profile", None)
-        if not profile or not profile.organization_id:
-            profile = ensure_default_org_profile(user)
+        if not getattr(user, "organization", None):
+            raise serializers.ValidationError(
+                {"organization": "Logged-in user has no organization assigned."}
+            )
 
-        org = profile.organization
+        org = user.organization
         playlist = Playlist.objects.create(
             owner=user,
             organization=org,
@@ -422,6 +395,8 @@ class OrganizationDetailSerializer(serializers.ModelSerializer):
 
 
 class OrganizationSerializer(serializers.ModelSerializer):
+    users = UserListSerializer(many=True, read_only=True)
+
     class Meta:
         model = Organization
         fields = [
@@ -434,6 +409,7 @@ class OrganizationSerializer(serializers.ModelSerializer):
             "is_active",
             "current_device_count",
             "next_device_id",
+            "users"
         ]
         read_only_fields = ["current_device_count", "next_device_id"]
 
