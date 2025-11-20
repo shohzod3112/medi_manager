@@ -160,12 +160,19 @@ class DeviceAdmin(admin.ModelAdmin):
     #
     # full_device_id.short_description = "Full Device ID"
 
-    # def get_queryset(self, request):
-    #     return (
-    #         super()
-    #         .get_queryset(request)
-    #         .select_related("organization", "user_profile__user", "device_type")
-    #     )
+    def get_queryset(self, request):
+        qs = (
+            super()
+            .get_queryset(request)
+            .select_related("organization", "device_type")
+        )
+
+        # Superuser hamma narsani ko‘ra oladi
+        if request.user.is_superuser:
+            return qs
+
+        # Oddiy user faqat o'zining organizationidagi Device-larni ko'radi
+        return qs.filter(organization=request.user.organization)
 
 
 @admin.register(DeviceType)
