@@ -93,7 +93,7 @@ class WhoAmIAPIView(APIView):
 class UserListCreateAPIView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = CustomPagination
-    queryset = User.objects.all()
+    queryset = User.objects.select_related("organization")
 
     def get_serializer_class(self):
         if self.request.method == "POST":

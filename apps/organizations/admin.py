@@ -1,3 +1,5 @@
+import hashlib
+
 from django import forms
 from django.conf import settings
 from django.contrib import admin
@@ -128,6 +130,7 @@ class DeviceAdmin(admin.ModelAdmin):
     readonly_fields = (
         "organization_device_id",
         "token",
+        "serial_number",
         "last_seen",
         "created_at",
         "updated_at",
@@ -155,10 +158,20 @@ class DeviceAdmin(admin.ModelAdmin):
         ),
     )
 
-    # def full_device_id(self, obj):
-    #     return obj.get_full_device_id()
-    #
-    # full_device_id.short_description = "Full Device ID"
+    def save_model(self, request, obj, form, change):
+        if change:
+            # UPDATE bo‘layapti
+            raw_token = f"{request.user.username}-{obj.serial_number}"
+            obj.token = hashlib.sha256(raw_token.encode()).hexdigest()
+        else:
+            # CREATE bo‘layapti
+            if obj.organization.has_reached_device_limit():
+                raise ValidationError("Device soni limitdan oshib ketti!")
+
+        super().save_model(request, obj, form, change)
+
+    def has_add_permission(self, request, obj=None):
+        return False
 
     def get_queryset(self, request):
         qs = (
@@ -201,13 +214,20 @@ class FileInline(admin.StackedInline):
     extra = 0
     max_num = 1
     can_delete = True
-
-    fields = ('name',)
+    fields = ("name",)
     readonly_fields = ()
 
+    # Faqat user.organization ga tegishli File-lar ko‘rsatiladi
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+
+        if request.user.is_superuser:
+            return qs
+
+        return qs.filter(organization=request.user.organization)
+
+    # Bitta Attachmentda faqat 1 File bo‘lishi (agar related_name = "files" bo‘lsa)
     def has_add_permission(self, request, obj):
-        # Attachment’da shundoq ham max 1 ta File bo'ladi,
-        # shuning uchun qo‘shimcha File qo‘shish tugmasi YO‘QILSIN
         if obj and obj.files.exists():
             return False
         return True
@@ -215,9 +235,19 @@ class FileInline(admin.StackedInline):
 
 @admin.register(Attachment)
 class AttachmentAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "file")
+    list_display = ("id", "name")
     inlines = [FileInline]
 
+    # Attachment ro‘yxati ham user.organization bo‘yicha cheklanadi
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+
+        if request.user.is_superuser:
+            return qs
+
+        return qs.filter(files__organization=request.user.organization).distinct()
+
+    # File saqlanganda owner va organization avtomatik qo‘yiladi
     def save_formset(self, request, form, formset, change):
         instances = formset.save(commit=False)
         for obj in instances:
@@ -230,47 +260,6 @@ class AttachmentAdmin(admin.ModelAdmin):
         formset.save_m2m()
 
 
-# @admin.register(File)
-# class FileAdmin(admin.ModelAdmin):
-#     list_display = (
-#         "file_id",
-#         "local_id",
-#         "attachment",
-#         "type",
-#         "organization",
-#         "owner",
-#         "duration",
-#         "created_at",
-#     )
-#     list_filter = ("type", "organization", "created_at")
-#     search_fields = ("organization__name",)
-#     readonly_fields = ("file_id", "duration", "created_at", "updated_at")
-#     ordering = ("-created_at",)
-#
-#     fieldsets = (
-#         ("File Information", {"fields": ("type", "duration")}),
-#         (
-#             "Timestamps",
-#             {"fields": ("created_at", "updated_at"), "classes": ("collapse",)},
-#         ),
-#     )
-#
-#     def save_model(self, request, obj, form, change):
-#         # 1. Faylni saqlashdan oldin owner va organizationni to‘ldiramiz
-#         if not obj.owner_id:
-#             obj.owner = request.user
-#
-#         if not obj.organization_id and hasattr(request.user, "profile"):
-#             obj.organization = request.user.profile.organization
-#
-#         # 2. Endi PerOrgSequential.save() chaqiriladi va organization mavjud bo‘ladi
-#         super().save_model(request, obj, form, change)
-#
-#     def get_queryset(self, request):
-#         return super().get_queryset(request).select_related("organization", "owner")
-
-
-# Playlist Admin
 class PlaylistAdminForm(forms.ModelForm):
     file = forms.ModelMultipleChoiceField(
         queryset=File.objects.none(),
@@ -297,7 +286,7 @@ class PlaylistAdminForm(forms.ModelForm):
                 owner=self.current_user,
             )
             # self.fields["devices"].queryset = (
-            #     Device.objects.filter(user_profile__user=self.current_user)
+            #     Device.objects.filter(user=self.current_user)
             #     .exclude(name__isnull=True)
             #     .exclude(name__exact="")
             # )
@@ -358,6 +347,18 @@ class PlaylistAdmin(admin.ModelAdmin):
         ),
     )
 
+    def save_model(self, request, obj, form, change):
+        if change:
+            pass
+        else:
+            obj.owner = request.user
+            if request.user.organization:
+                obj.organization = request.user.organization
+            else:
+                raise ValidationError("Sizga organization biriktirilmagan")
+
+        super().save_model(request, obj, form, change)
+
     def file_count(self, obj):
         return obj.file.count()
 
@@ -370,20 +371,6 @@ class PlaylistAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related("organization", "owner")
-
-
-# # Inline admin for better organization management
-# class UserProfileInline(admin.TabularInline):
-#     model = UserProfile
-#     extra = 0
-#     readonly_fields = ("created_at",)
-#     fields = (
-#         "user",
-#         # "device_limit",
-#         # "current_device_count",
-#         "is_active",
-#         "expiration_date",
-#     )
 
 
 class DeviceInline(admin.TabularInline):

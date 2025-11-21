@@ -14,9 +14,20 @@ from attachment.models import Attachment
 
 
 class BaseModel(models.Model):
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="%(class)s_created",
+    )
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="%(class)s_updated",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     class Meta:
         abstract = True
@@ -231,11 +242,6 @@ class Device(PerOrgSequential):
         on_delete=models.CASCADE,
         related_name="devices",
     )
-    # user_profile = models.ForeignKey(
-    #     "users.UserProfile",
-    #     on_delete=models.CASCADE,
-    #     related_name="devices",
-    # )
 
     # Status and tracking
     is_active = models.BooleanField(default=True)
@@ -255,7 +261,7 @@ class Device(PerOrgSequential):
 
     def clean(self):
         # """Validate device creation"""
-        # if not self.pk:  # New device
+        if not self.pk:  # New device
         #     # Check if users can add more devices
         #     if not self.user_profile.can_add_device():
         #         raise DeviceLimitReached(
@@ -323,8 +329,10 @@ class File(PerOrgSequential):
 
     def save(self, *args, **kwargs):
 
-        if not self.owner_id or not self.organization_id:
+        if not self.owner_id:
             raise ValueError("Owner va organization bo‘lishi kerak")
+        else:
+            self.organization = self.owner.organization
 
         # Detect file type by file extension
         ext = os.path.splitext(self.attachment.file.name)[1].lower()

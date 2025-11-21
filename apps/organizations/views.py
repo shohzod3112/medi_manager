@@ -53,6 +53,15 @@ class DeviceListCreateAPIView(generics.ListCreateAPIView):
         return super().get_authenticators()
 
     def create(self, request, *args, **kwargs):
+        username = request.data.get('username', None)
+        if username:
+            try:
+                user = User.objects.get(username=username)
+                org = user.organization
+                if org.has_reached_device_limit():
+                    return Response({"detail": "Device soni limitdan oshib ketti!"}, status=status.HTTP_400_BAD_REQUEST)
+            except User.DoesNotExist:
+                return Response({"detail": "Username not found"}, status=status.HTTP_400_BAD_REQUEST)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         device = serializer.save()
@@ -256,7 +265,7 @@ class DeviceSelectListAPIView(generics.ListAPIView):
 class DeviceTypeListCreateView(generics.ListCreateAPIView):
     permission_classes = [AllowAny]
     pagination_class = CustomPagination
-    queryset = DeviceType.objects.all()
+    queryset = DeviceType.objects.all().order_by("-created_at")
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
@@ -299,8 +308,6 @@ class OrganizationListCreateView(generics.ListCreateAPIView):
         if name:
             queryset = queryset.filter(name__icontains=name)
         return queryset
-
-
 
     def get_serializer_class(self):
         if self.request.method == 'POST':

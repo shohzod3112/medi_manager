@@ -259,7 +259,7 @@ class FileListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = File
-        fields = ["file_id", "name", "type", "attachment", "duration", "owner"]
+        fields = ["file_id", "name", "type", "attachment", "duration", "owner", "organization"]
 
     def get_attachment(self, obj):
         request = self.context.get("request")
@@ -387,15 +387,22 @@ class OrganizationListSerializer(serializers.ModelSerializer):
 
 
 class OrganizationDetailSerializer(serializers.ModelSerializer):
+    users = UserListSerializer(many=True, read_only=True)
     devices = DeviceListSerializer(many=True, read_only=True)
     class Meta:
         model = Organization
-        fields = ["id", "name", "description", "device_limit", "current_device_count", 'next_device_id', "expiration_date", "is_active", "created_by", "created_at", 'updated_at', "devices"]
+        fields = [
+            "id", "name",
+            "description", "device_limit",
+            "current_device_count", 'next_device_id',
+            "expiration_date", "is_active",
+            "created_by", "created_at",
+            'updated_at', "devices",
+            "users"
+        ]
 
 
 class OrganizationSerializer(serializers.ModelSerializer):
-    users = UserListSerializer(many=True, read_only=True)
-
     class Meta:
         model = Organization
         fields = [
@@ -407,7 +414,6 @@ class OrganizationSerializer(serializers.ModelSerializer):
             "is_active",
             "current_device_count",
             "next_device_id",
-            "users"
         ]
         read_only_fields = ["current_device_count", "next_device_id"]
 
