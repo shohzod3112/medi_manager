@@ -33,7 +33,7 @@ class BaseModel(models.Model):
         abstract = True
 
 
-class Organization(models.Model):
+class Organization(BaseModel):
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField(blank=True)
 
@@ -62,16 +62,6 @@ class Organization(models.Model):
         default=True,
         help_text="Whether this organization is active",
     )
-
-    # Metadata
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name="organizations_created",
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         app_label = "organizations"
@@ -172,13 +162,12 @@ class PerOrgSequential(models.Model):
             counter.save(update_fields=['last'])
 
 
-class DeviceType(models.Model):
+class DeviceType(BaseModel):
     """Device type model for categorizing devices"""
 
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = "device_types"
@@ -214,7 +203,7 @@ class DeviceQuerySet(models.QuerySet):
         return super().create(**kwargs)
 
 
-class Device(PerOrgSequential):
+class Device(PerOrgSequential, BaseModel):
     # Use custom queryset/manager to support legacy create(owner=...) paths in tests
     objects = DeviceQuerySet.as_manager()
 
@@ -246,8 +235,6 @@ class Device(PerOrgSequential):
     # Status and tracking
     is_active = models.BooleanField(default=True)
     last_seen = models.DateTimeField(auto_now=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = "devices"
@@ -262,12 +249,6 @@ class Device(PerOrgSequential):
     def clean(self):
         # """Validate device creation"""
         if not self.pk:  # New device
-        #     # Check if users can add more devices
-        #     if not self.user_profile.can_add_device():
-        #         raise DeviceLimitReached(
-        #             f"User {self.user_profile.user.username} has reached their device limit of {self.user_profile.device_limit}",
-        #         )
-
             # Check if organization can add more devices
             if not self.organization.can_add_device():
                 raise ValidationError(
@@ -293,7 +274,7 @@ class Device(PerOrgSequential):
     #     return f"{self.organization.slug}-{self.organization_device_id}"
 
 
-class File(PerOrgSequential):
+class File(PerOrgSequential, BaseModel):
     """Media model for storing video and image files"""
 
     FILE_TYPES = (("video", "Video"), ("image", "Image"))
@@ -314,9 +295,6 @@ class File(PerOrgSequential):
         on_delete=models.CASCADE,
         related_name="files",
     )
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = "media"
@@ -377,7 +355,7 @@ class File(PerOrgSequential):
         super().delete(*args, **kwargs)
 
 
-class Playlist(PerOrgSequential):
+class Playlist(PerOrgSequential, BaseModel):
     PLAYLIST_TYPE_CHOICES = [
         ("event", "Event"),
         ("permanent", "Permanent"),
@@ -413,8 +391,6 @@ class Playlist(PerOrgSequential):
 
     # Status
     is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = "playlists"

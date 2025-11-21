@@ -23,5 +23,5 @@ class Attachment(models.Model):
 
     class Meta:
         db_table = 'attachments'
-        verbose_name = "Attachment"
-        verbose_name_plural = "Attachments"
+        verbose_name = "File"
+        verbose_name_plural = "Files"

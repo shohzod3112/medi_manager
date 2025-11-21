@@ -3,7 +3,7 @@ import hashlib
 from django.db.models import Q, F
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from rest_framework.permissions import AllowAny, IsAdminUser
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from core.paginations import CustomPagination
 from ..users.models import User
 from .models import Device, File, Organization, Playlist, DeviceType
@@ -76,6 +76,11 @@ class DeviceRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
         if self.request.method == "GET":
             return serializers.DeviceRetrieveSerializer
         return serializers.DeviceUpdateSerializer
+
+    def perform_update(self, serializer):
+        serializer.save(
+            updated_by=self.request.user
+        )
 
 
 class DeviceDetailAPIView(generics.RetrieveDestroyAPIView):
@@ -263,7 +268,7 @@ class DeviceSelectListAPIView(generics.ListAPIView):
 
 
 class DeviceTypeListCreateView(generics.ListCreateAPIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     pagination_class = CustomPagination
     queryset = DeviceType.objects.all().order_by("-created_at")
 
@@ -271,6 +276,9 @@ class DeviceTypeListCreateView(generics.ListCreateAPIView):
         if self.request.method == 'POST':
             return serializers.DeviceTypeSerializer
         return serializers.DeviceTypeListSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
 
 
 class DeviceTypeRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
@@ -281,6 +289,9 @@ class DeviceTypeRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIVi
         if self.request.method == 'PUT':
             return serializers.DeviceTypeSerializer
         return serializers.DeviceTypeListSerializer
+
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)
 
 
 class DeviceTypeSelectListAPIView(generics.ListAPIView):
@@ -314,6 +325,11 @@ class OrganizationListCreateView(generics.ListCreateAPIView):
             return serializers.OrganizationSerializer
         return serializers.OrganizationListSerializer
 
+    def perform_create(self, serializer):
+        serializer.save(
+            created_by=self.request.user
+        )
+
 
 class OrganizationRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Organization.objects.all()
@@ -324,6 +340,11 @@ class OrganizationRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIVie
         if self.request.method == 'PUT':
             return serializers.OrganizationSerializer
         return serializers.OrganizationDetailSerializer
+
+    def perform_update(self, serializer):
+        serializer.save(
+            updated_by=self.request.user
+        )
 
 
 # Assign user
@@ -466,6 +487,9 @@ class PlaylistDetailView(generics.RetrieveUpdateDestroyAPIView):
             owner=user,
         )
 
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)
+
 
 
 class FileListCreateView(generics.ListCreateAPIView):
@@ -497,6 +521,9 @@ class FileListCreateView(generics.ListCreateAPIView):
         self.perform_create(serializer)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
 
 class FileDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = serializers.FileSerializer
@@ -517,3 +544,6 @@ class FileDetailView(generics.RetrieveUpdateDestroyAPIView):
             organization=user.organization,
             owner=user,
         )
+
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)
