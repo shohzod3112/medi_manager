@@ -150,7 +150,7 @@ class DeviceCreateSerializer(serializers.ModelSerializer):
         """Response formatini moslab chiqaramiz"""
         return {
             "id": instance.id,
-            "organization": instance.organization.name,
+            "organization": instance.organization.name if instance.organization else None,
             "organization_device_id": instance.organization_device_id,
             "name": instance.name,
             "serial_number": instance.serial_number,

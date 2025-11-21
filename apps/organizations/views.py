@@ -17,7 +17,6 @@ from django.utils.dateparse import parse_date
 
 
 class DeviceListCreateAPIView(generics.ListCreateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     pagination_class = CustomPagination
 
     def get_queryset(self):
@@ -47,6 +46,11 @@ class DeviceListCreateAPIView(generics.ListCreateAPIView):
         if self.request.method == "POST":
             return [permissions.AllowAny()]
         return [permissions.IsAuthenticated()]
+
+    def get_authenticators(self):
+        if self.request.method == "POST":
+            return []  # POST uchun autentifikatsiya tekshiruvini o'chiradi
+        return super().get_authenticators()
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
