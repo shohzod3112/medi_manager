@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     "corsheaders",
 
     # APPS
+    "core",
     # "mediaa",
     "users",
     "organizations",

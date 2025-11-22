@@ -6,6 +6,7 @@ from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db.models import Count, Sum
+from django.utils import timezone
 from django.utils.html import format_html
 from attachment.models import Attachment
 
@@ -91,6 +92,10 @@ class OrganizationAdmin(admin.ModelAdmin):
         """
         if change:
             obj.created_by = request.user
+            if obj.expiration_date < timezone.now().date():
+                obj.is_active = False
+            else:
+                obj.is_active = True
 
         if not obj.pk:  # If the object is being created
             obj.created_by = request.user

@@ -72,6 +72,7 @@ class CustomUserAdmin(UserAdmin):
                 "classes": ("wide",),
                 "fields": (
                     "username",
+                    "role",
                     "email",
                     "password1",
                     "password2",

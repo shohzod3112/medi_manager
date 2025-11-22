@@ -6,11 +6,13 @@ from django.utils.text import slugify
 from rest_framework import status, generics
 from rest_framework.decorators import action
 from rest_framework import permissions
+from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils import timezone
+from core.permissions import OrganizationActivePermission
 
 from apps.users.models.user import User
 from apps.organizations.models import Organization
@@ -55,6 +57,15 @@ class LoginAPIView(generics.GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        if getattr(user, "role", None) != "superadmin":
+            org = getattr(user, "organization", None)
+            if not org:
+                raise AuthenticationFailed("Tashkilot biriktirilmagan!")
+            if not org.is_active:
+                raise AuthenticationFailed("Tashkilot faol emas!")
+            if org.expiration_date and org.expiration_date < timezone.now().date():
+                raise AuthenticationFailed("Tashkilotning obuna muddati tugagan!")
+
         refresh = RefreshToken.for_user(user)
         access = str(refresh.access_token)
 
@@ -73,7 +84,7 @@ class LoginAPIView(generics.GenericAPIView):
 
 
 class MeAPIView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [OrganizationActivePermission]
     def get(self, request):
         user = request.user
         # Ensure profile and organization exist for consistent responses
@@ -83,7 +94,7 @@ class MeAPIView(APIView):
 
 
 class WhoAmIAPIView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [OrganizationActivePermission]
     def get(self, request):
         user = request.user
         serializer = WhoAmISerializer(user)
@@ -91,7 +102,7 @@ class WhoAmIAPIView(APIView):
 
 
 class UserListCreateAPIView(generics.ListCreateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAdminUser]
     pagination_class = CustomPagination
     queryset = User.objects.select_related("organization")
 
@@ -102,7 +113,7 @@ class UserListCreateAPIView(generics.ListCreateAPIView):
 
 
 class UserRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAdminUser]
     queryset = User.objects.all()
 
     def get_serializer_class(self):
@@ -112,5 +123,6 @@ class UserRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class UserListForSelectAPIView(generics.ListAPIView):
+    permission_classes = [permissions.IsAdminUser]
     queryset = User.objects.all()
     serializer_class = user_serializer.UserListForSelectSerializer

@@ -1,19 +1,15 @@
-import hashlib
-
 from django.db.models import Q, F
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from core.paginations import CustomPagination
 from ..users.models import User
 from .models import Device, File, Organization, Playlist, DeviceType
 from .permissions import IsOrgAndProfileActive
+from core.permissions import OrganizationActivePermission
 from . import serializers
 from rest_framework import generics, permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from django.contrib.auth import get_user_model
-from django.utils.dateparse import parse_date
 
 
 class DeviceListCreateAPIView(generics.ListCreateAPIView):
@@ -45,7 +41,7 @@ class DeviceListCreateAPIView(generics.ListCreateAPIView):
     def get_permissions(self):
         if self.request.method == "POST":
             return [permissions.AllowAny()]
-        return [permissions.IsAuthenticated()]
+        return [OrganizationActivePermission()]
 
     def get_authenticators(self):
         if self.request.method == "POST":
@@ -69,7 +65,7 @@ class DeviceListCreateAPIView(generics.ListCreateAPIView):
 
 
 class DeviceRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [OrganizationActivePermission]
     queryset = Device.objects.select_related('organization', 'device_type')
 
     def get_serializer_class(self):
@@ -85,7 +81,7 @@ class DeviceRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
 
 class DeviceDetailAPIView(generics.RetrieveDestroyAPIView):
     serializer_class = serializers.DeviceSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [OrganizationActivePermission]
     lookup_field = "serial_number"
 
     def get_queryset(self):
@@ -99,7 +95,7 @@ class DeviceDetailAPIView(generics.RetrieveDestroyAPIView):
 
 
 class DeviceSyncAPIView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [OrganizationActivePermission]
 
     def get(self, request, serial_number):
         device = get_object_or_404(Device, serial_number=serial_number, organization=request.user.organization)
@@ -151,7 +147,7 @@ class DeviceSyncAPIView(APIView):
 
 
 class PlaylistDetailAPIView(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [OrganizationActivePermission]
 
     def get(self, request):
         sn = request.query_params.get("sn")
@@ -257,18 +253,26 @@ class PlaylistDetailAPIView(APIView):
 
 
 class FileSelectListAPIView(generics.ListAPIView):
-    queryset = File.objects.all()
+    permission_classes = [OrganizationActivePermission]
     serializer_class = serializers.FileSelectListSerializer
+
+    def get_queryset(self):
+        queryset = File.objects.filter(organization=self.request.user.organization)
+        return queryset
 
 
 class DeviceSelectListAPIView(generics.ListAPIView):
-    queryset = Device.objects.all()
+    permission_classes = [OrganizationActivePermission]
     serializer_class = serializers.DeviceSelectListSerializer
+
+    def get_queryset(self):
+        queryset = Device.objects.filter(organization=self.request.user.organization)
+        return queryset
 
 
 
 class DeviceTypeListCreateView(generics.ListCreateAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAdminUser]
     pagination_class = CustomPagination
     queryset = DeviceType.objects.all().order_by("-created_at")
 
@@ -282,7 +286,7 @@ class DeviceTypeListCreateView(generics.ListCreateAPIView):
 
 
 class DeviceTypeRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [permissions.IsAdminUser]
     queryset = DeviceType.objects.all()
 
     def get_serializer_class(self):
@@ -295,6 +299,7 @@ class DeviceTypeRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIVi
 
 
 class DeviceTypeSelectListAPIView(generics.ListAPIView):
+    permission_classes = [OrganizationActivePermission]
     queryset = DeviceType.objects.all()
     serializer_class = serializers.DeviceTypeSelectListSerializer
 
@@ -302,7 +307,7 @@ class DeviceTypeSelectListAPIView(generics.ListAPIView):
 # CRUD for Organization
 class OrganizationListCreateView(generics.ListCreateAPIView):
     queryset = Organization.objects.all()
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [OrganizationActivePermission]
     pagination_class = CustomPagination
 
     def get_queryset(self):
@@ -334,7 +339,7 @@ class OrganizationListCreateView(generics.ListCreateAPIView):
 class OrganizationRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Organization.objects.all()
     serializer_class = serializers.OrganizationSerializer
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [OrganizationActivePermission]
 
     def get_serializer_class(self):
         if self.request.method == 'PUT':
@@ -450,13 +455,14 @@ class OrganizationRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIVie
 
 
 class OrganizationSelectListAPIView(generics.ListAPIView):
+    permission_classes = [permissions.IsAdminUser]
     queryset = Organization.objects.all()
     serializer_class = serializers.OrganizationSelectSerializer
 
 
 class PlaylistListCreateView(generics.ListCreateAPIView):
     serializer_class = serializers.PlaylistSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = [OrganizationActivePermission]
     pagination_class = CustomPagination
 
     def get_queryset(self):
@@ -475,7 +481,7 @@ class PlaylistListCreateView(generics.ListCreateAPIView):
 
 class PlaylistDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = serializers.PlaylistSerializer
-    permission_classes = (permissions.IsAuthenticated, IsOrgAndProfileActive)
+    permission_classes = [OrganizationActivePermission]
 
     def get_queryset(self):
         user = self.request.user
@@ -494,7 +500,7 @@ class PlaylistDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 class FileListCreateView(generics.ListCreateAPIView):
     serializer_class = serializers.FileSerializer
-    permission_classes = (IsOrgAndProfileActive,)
+    permission_classes = [OrganizationActivePermission]
     pagination_class = CustomPagination
 
     def get_serializer_class(self):
@@ -527,7 +533,7 @@ class FileListCreateView(generics.ListCreateAPIView):
 
 class FileDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = serializers.FileSerializer
-    permission_classes = (IsOrgAndProfileActive,)
+    permission_classes = [OrganizationActivePermission]
 
     def get_serializer_class(self):
         if self.request.method == "GET":

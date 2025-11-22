@@ -13,39 +13,19 @@ from .tasks import deactivate_organization
 
 @receiver(post_save, sender=Organization)
 def schedule_expiration_date(sender, instance, created, **kwargs):
+    if not created:
+        return
+
     if not instance.expiration_date:
         return
 
     run_at = datetime.combine(instance.expiration_date, time(23, 59, 59))
-
-    # Tizim vaqtiga o'tkazamiz
     run_at = timezone.make_aware(run_at)
 
-    # Celery taskni rejalashtiramiz
     deactivate_organization.apply_async(
         args=[instance.id],
         eta=run_at
     )
-
-
-# @receiver(post_delete, sender=File)
-# def delete_empty_folder(sender, instance, **kwargs):
-#     """Delete the file's folder if empty, then check and delete the users's folder."""
-#     if not instance.file:
-#         return
-#
-#     file_path = instance.file.path
-#     folder_path = os.path.dirname(file_path)
-#     user_folder = os.path.dirname(folder_path)
-#
-#     if os.path.exists(file_path):
-#         os.remove(file_path)
-#
-#     if os.path.exists(folder_path) and not os.listdir(folder_path):
-#         shutil.rmtree(folder_path)
-#
-#     if os.path.exists(user_folder) and not os.listdir(user_folder):
-#         shutil.rmtree(user_folder)
 
 
 @receiver(post_save, sender=File)
