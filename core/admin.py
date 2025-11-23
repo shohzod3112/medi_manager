@@ -8,6 +8,12 @@ class CustomAdminAuthenticationForm(AuthenticationForm):
     def confirm_login_allowed(self, user):
         super().confirm_login_allowed(user)
 
+        if user.is_active and user.is_staff and user.role == "superadmin":
+            return
+
+        if user.is_superuser:
+            return
+
         # 1️⃣ Organization tekshirish
         if not user.organization:
             raise ValidationError(

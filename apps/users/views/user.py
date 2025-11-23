@@ -111,6 +111,16 @@ class UserListCreateAPIView(generics.ListCreateAPIView):
             return user_serializer.UserCreateSerializer
         return user_serializer.UserListSerializer
 
+    def perform_create(self, serializer):
+        role = self.request.data.get("role")
+
+        if role == "superadmin":
+            serializer.save(is_superuser=True, is_staff=True)
+        elif role == "admin":
+            serializer.save(is_superuser=False, is_staff=True)
+        else:
+            serializer.save(is_superuser=False, is_staff=True)
+
 
 class UserRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAdminUser]

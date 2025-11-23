@@ -83,6 +83,19 @@ class CustomUserAdmin(UserAdmin):
         ),
     )
 
+    def save_model(self, request, obj, form, change):
+        if obj.role == "superadmin":
+            obj.is_superuser = True
+            obj.is_staff = True
+        elif obj.role == "admin":
+            obj.is_superuser = False
+            obj.is_staff = True
+        else:  # operator
+            obj.is_superuser = False
+            obj.is_staff = True
+
+        super().save_model(request, obj, form, change)
+
     def clickable_username(self, obj):
         return format_html(
             '<a href="{}">{}</a>',
