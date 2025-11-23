@@ -295,7 +295,9 @@ class AttachmentAdmin(admin.ModelAdmin):
         ),
     )
 
-    readonly_fields = ("file_name", "file_type")
+    readonly_fields = (
+        "file_name", "file_type", "name"
+    )
 
     # Attachment ro‘yxati ham user.organization bo‘yicha cheklanadi
     def get_queryset(self, request):
@@ -324,20 +326,27 @@ class AttachmentAdmin(admin.ModelAdmin):
         if change:
             obj.updated_by = request.user
         else:
+            obj.name = obj.file.name.split("/")[-1]
             obj.created_by = request.user
         super().save_model(request, obj, form, change)
 
     # --- Custom READONLY fields ---
 
     def file_name(self, obj):
-        file_obj = obj.files.first()
-        return file_obj.name if file_obj else "-"
+        try:
+            file_obj = File.objects.get(attachment=obj)
+        except File.DoesNotExist:
+            return "-"
+        return file_obj.name
 
     file_name.short_description = "File Name"
 
     def file_type(self, obj):
-        file_obj = obj.files.first()
-        return file_obj.type if file_obj else "-"
+        try:
+            file_obj = File.objects.get(attachment=obj)
+        except File.DoesNotExist:
+            return "-"
+        return file_obj.type
 
     file_type.short_description = "File Type"
 
