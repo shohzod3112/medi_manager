@@ -4,12 +4,10 @@ from django.contrib.auth import authenticate
 from django.http import JsonResponse
 from django.utils.text import slugify
 from rest_framework import status, generics
-from rest_framework.decorators import action
 from rest_framework import permissions
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.viewsets import ViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils import timezone
 from core.permissions import OrganizationActivePermission

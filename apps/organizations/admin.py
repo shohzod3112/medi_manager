@@ -1,45 +1,16 @@
 import hashlib
 
 from django import forms
-from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from django.db.models import Count, Sum
 from django.utils import timezone
-from django.utils.html import format_html
 from attachment.models import Attachment
+from .forms import AttachmentForm, PlaylistAdminForm, OrganizationAdminForm
 
 from .models import Device, DeviceType, File, Organization, Playlist
 
 User = get_user_model()
-
-
-class OrganizationAdminForm(forms.ModelForm):
-    class Meta:
-        model = Organization
-        fields = [
-            "name",
-            "description",
-            "device_limit",
-            "is_active",
-            "expiration_date",
-        ]
-
-    def clean(self):
-        cleaned_data = super().clean()
-        device_limit = cleaned_data.get("device_limit")
-
-        if device_limit and self.instance.pk:
-            # Check if reducing device limit would affect existing users
-            total_used = self.instance.get_total_used_devices()
-            if device_limit < total_used:
-                raise ValidationError(
-                    f"Cannot reduce device limit to {device_limit}. "
-                    f"Organization currently has {total_used} devices in use.",
-                )
-
-        return cleaned_data
 
 
 @admin.register(Organization)
@@ -102,25 +73,6 @@ class OrganizationAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
 
-# class DeviceAdminForm(forms.ModelForm):
-#     class Meta:
-#         model = Device
-#         fields = "__all__"
-#
-#     def clean(self):
-#         cleaned_data = super().clean()
-#         user_profile = cleaned_data.get("user_profile")
-#         organization = cleaned_data.get("organization")
-#
-#         if user_profile and organization:
-#             if user_profile.organization != organization:
-#                 raise ValidationError(
-#                     "User profile must belong to the same organization as the device.",
-#                 )
-#
-#         return cleaned_data
-
-
 @admin.register(Device)
 class DeviceAdmin(admin.ModelAdmin):
     # form = DeviceAdminForm
@@ -134,8 +86,48 @@ class DeviceAdmin(admin.ModelAdmin):
         "is_active",
         "last_seen",
     )
+    # Dinamik list_display
+    def get_list_display(self, request):
+        user = request.user
+
+        if user.is_superuser:
+            # Superuser hamma maydonlarni ko‘rsin
+            return self.list_display
+        elif user.role == "admin":
+            # Manager uchun ayrim maydonlar
+            return (
+                "organization_device_id",
+                "name",
+                "serial_number",
+                "device_type",
+                "is_active",
+            )
+        return ("id",)
     list_filter = ("is_active", "device_type", "organization", "created_at")
+    def get_list_filter(self, request):
+        user = request.user
+        if user.is_superuser:
+            return self.list_filter
+        elif user.role == "admin":
+            return (
+                "is_active",
+                "device_type",
+                "serial_number",
+                "created_at"
+            )
+        return ("is_active",)
+
     search_fields = ("name", "serial_number", "organization__name")
+    def get_search_fields(self, request):
+        user = request.user
+        if user.is_superuser:
+            return self.search_fields
+        elif user.role == "admin":
+            return (
+                "name", "serial_number"
+            )
+        return ("name",)
+
     readonly_fields = (
         "organization_device_id",
         "token",
@@ -146,7 +138,18 @@ class DeviceAdmin(admin.ModelAdmin):
         "created_by",
         "updated_by",
     )
-    ordering = ("organization", "organization_device_id")
+    def get_readonly_fields(self, request, obj=None):
+        user = request.user
+        if user.role == "admin":
+            return (
+                "organization_device_id",
+                "token",
+                "serial_number",
+                "last_seen",
+            )
+        return self.readonly_fields
+
+    ordering = ("organization_device_id",)
 
     fieldsets = (
         (
@@ -160,14 +163,35 @@ class DeviceAdmin(admin.ModelAdmin):
                 ),
             },
         ),
-        # ("Organization & User", {"fields": ("organization", "user_profile")}),
         ("Security", {"fields": ("exit_password", "token")}),
         ("Status", {"fields": ("is_active", "last_seen")}),
-        (
-            "Timestamps",
-            {"fields": ("created_at", "updated_at", "created_by", "updated_by"), "classes": ("collapse",)},
-        ),
     )
+
+    def get_fieldsets(self, request, obj=None):
+        user = request.user
+        if user.is_superuser:
+            fieldsets = (
+                (
+                    "Device Information",
+                    {
+                        "fields": (
+                            "organization_device_id",
+                            "name",
+                            "serial_number",
+                            "device_type",
+                        ),
+                    },
+                ),
+                ("Organization & User", {"fields": ("organization",)}),
+                ("Security", {"fields": ("exit_password", "token")}),
+                ("Status", {"fields": ("is_active", "last_seen")}),
+                (
+                    "Timestamps",
+                    {"fields": ("created_at", "updated_at", "created_by", "updated_by"), "classes": ("collapse",)},
+                ),
+            )
+            return fieldsets
+        return self.fieldsets
 
     def save_model(self, request, obj, form, change):
         if change:
@@ -246,169 +270,72 @@ class DeviceTypeAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
 
-class FileInline(admin.StackedInline):
-    model = File
-    extra = 0
-    max_num = 1
-    can_delete = True
-    fields = ("name", "type")
-    readonly_fields = ('type',)
-
-    # Faqat user.organization ga tegishli File-lar ko‘rsatiladi
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        if request.user.is_superuser:
-            return qs
-        return qs.filter(organization=request.user.organization)
-
-    # Bitta Attachmentga faqat 1 File
-    def has_add_permission(self, request, obj):
-        if obj and obj.files.exists():
-            return False
-        return True
-
-    def save_formset(self, request, form, formset, change):
-        instances = formset.save(commit=False)
-
-        for obj in instances:
-            if obj.pk:
-                obj.updated_by = request.user
-            else:
-                obj.created_by = request.user
-                obj.owner = request.user
-                obj.organization = request.user.organization
-
-            obj.save()
-
-        formset.save_m2m()
-
-
 @admin.register(Attachment)
 class AttachmentAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "file_name", "file_type")
-    inlines = [FileInline]
+    form = AttachmentForm
+    list_display = ("id", "file_name", "file_type")
 
     fieldsets = (
-        (
-            "Attachment Information",
-            {"fields": ("name","file")}
-        ),
+        ("File Upload", {"fields": ("file", "file_name", "file_type")}),
     )
 
-    readonly_fields = (
-        "file_name", "file_type", "name"
-    )
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
 
-    # Attachment ro‘yxati ham user.organization bo‘yicha cheklanadi
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
+        if obj:
+            # Eski File ni to'ldiramiz
+            file_obj = File.objects.filter(attachment=obj).first()
+            if file_obj:
+                form.base_fields["file_name"].initial = file_obj.name
+                form.base_fields["file_type"].initial = file_obj.type
 
-        if request.user.is_superuser:
-            return qs
-
-        return qs.filter(files__organization=request.user.organization).distinct()
-
-    # INLINE orqali yaratilgan File-ga owner & organization berish
-    def save_formset(self, request, form, formset, change):
-        instances = formset.save(commit=False)
-
-        for obj in instances:
-            if isinstance(obj, File):
-                if not obj.owner_id:
-                    obj.owner = request.user
-                if not obj.organization_id:
-                    obj.organization = request.user.organization
-            obj.save()
-
-        formset.save_m2m()
+        return form
 
     def save_model(self, request, obj, form, change):
         if change:
             obj.updated_by = request.user
         else:
-            obj.name = obj.file.name.split("/")[-1]
             obj.created_by = request.user
+
+        # Attachmentni saqlaymiz
         super().save_model(request, obj, form, change)
 
-    # --- Custom READONLY fields ---
+        # File obyektini yaratamiz yoki yangilaymiz
+        # FILE update/create
+        if change:
+            file_obj = File.objects.filter(attachment=obj).first()
 
+            if file_obj:  # mavjud bo'lsa
+                file_obj.name = form.cleaned_data["file_name"]
+                file_obj.organization = request.user.organization
+                file_obj.updated_by = request.user
+                file_obj.save()
+            else:
+                # agar yo'q boʻlsa, yangisi yaratiladi
+                File.objects.create(
+                    attachment=obj,
+                    name=form.cleaned_data["file_name"],
+                    organization=request.user.organization,
+                    created_by=request.user,
+                    owner=request.user,
+                )
+        else:
+            file_obj = File.objects.create(
+                attachment=obj,
+                name=form.cleaned_data["file_name"],
+                owner=request.user,
+                organization=request.user.organization,
+                created_by=request.user,
+            )
+
+    # --- Custom columns ---
     def file_name(self, obj):
-        try:
-            file_obj = File.objects.get(attachment=obj)
-        except File.DoesNotExist:
-            return "-"
-        return file_obj.name
-
-    file_name.short_description = "File Name"
+        file = File.objects.filter(attachment=obj).first()
+        return file.name if file else "-"
 
     def file_type(self, obj):
-        try:
-            file_obj = File.objects.get(attachment=obj)
-        except File.DoesNotExist:
-            return "-"
-        return file_obj.type
-
-    file_type.short_description = "File Type"
-
-
-class PlaylistAdminForm(forms.ModelForm):
-    file = forms.ModelMultipleChoiceField(
-        queryset=File.objects.none(),
-        widget=admin.widgets.FilteredSelectMultiple("File", is_stacked=False),
-        required=False,
-    )
-    devices = forms.ModelMultipleChoiceField(
-        queryset=Device.objects.none(),
-        widget=admin.widgets.FilteredSelectMultiple("Devices", is_stacked=False),
-        required=False,
-    )
-
-    class Meta:
-        model = Playlist
-        fields = "__all__"
-
-    def __init__(self, *args, current_user=None, **kwargs):
-        self.current_user = current_user
-        super().__init__(*args, **kwargs)
-
-        # FILELAR
-        if self.current_user and not self.current_user.is_superuser:
-            self.fields["file"].queryset = File.objects.filter(owner=self.current_user)
-        else:
-            self.fields["file"].queryset = File.objects.all()
-
-        # DEVICELAR
-        if self.current_user and not self.current_user.is_superuser:
-            self.fields["devices"].queryset = (
-                Device.objects.filter(organization=self.current_user.organization)
-                .exclude(name__isnull=True)
-                .exclude(name__exact="")
-            )
-        else:
-            self.fields["devices"].queryset = (
-                Device.objects.exclude(name__isnull=True)
-                .exclude(name__exact="")
-            )
-
-    def clean(self):
-        cleaned_data = super().clean()
-
-        # faqat update payti majburiy
-        if self.instance.pk:
-            if not cleaned_data.get("file"):
-                raise ValidationError({"file": "At least one file is required."})
-            if not cleaned_data.get("devices"):
-                raise ValidationError({"devices": "At least one device is required."})
-
-        return cleaned_data
-
-    def save(self, commit=True):
-        instance = super().save(commit=False)
-        if commit:
-            instance.save()
-            instance.file.set(self.cleaned_data["file"])
-            instance.devices.set(self.cleaned_data["devices"])
-        return instance
+        file = File.objects.filter(attachment=obj).first()
+        return file.type if file else "-"
 
 
 @admin.register(Playlist)
@@ -419,8 +346,35 @@ class PlaylistAdmin(admin.ModelAdmin):
         "start_time", "end_time", "is_active",
         "file_count", "device_count",
     )
+    def get_list_display(self, request):
+        user = request.user
+        if user.role == "admin":
+            return (
+                "playlist_id", "name",
+                "start_time", "end_time", "is_active",
+                "file_count", "device_count",
+            )
+        return self.list_display
+
     list_filter = ("is_active", "organization", "created_at")
+    def get_list_filter(self, request):
+        user = request.user
+        if user.role == "admin":
+            return (
+                "is_active",
+                "created_at"
+            )
+        return self.list_filter
+
     search_fields = ("name", "organization__name")
+    def get_search_fields(self, request):
+        user = request.user
+        if user.role == "admin":
+            return (
+                "name",
+            )
+        return self.search_fields
+
     readonly_fields = ("playlist_id", "created_at", "updated_at", "created_by", "updated_by")
     ordering = ("-created_at",)
 
@@ -429,11 +383,27 @@ class PlaylistAdmin(admin.ModelAdmin):
         ("Timing", {"fields": ("playlist_type", "start_date", "end_date","start_time", "end_time")}),
         ("Content", {"fields": ("file", "devices")}),
         ("Status", {"fields": ("is_active",)}),
+        ("Organization & Owner", {"fields": ("organization", "owner")}),
         ("Timestamps",
          {"fields": ("created_at", "updated_at", "created_by", "updated_by"),
           "classes": ("collapse",)}
          ),
     )
+
+    def get_fieldsets(self, request, obj=None):
+        user = request.user
+        if user.role == "admin":
+            return (
+                ("Playlist Information", {"fields": ("name", "description")}),
+                ("Timing", {"fields": ("playlist_type", "start_date", "end_date","start_time", "end_time")}),
+                ("Content", {"fields": ("file", "devices")}),
+                ("Status", {"fields": ("is_active",)}),
+                ("Timestamps",
+                 {"fields": ("created_at", "updated_at", "created_by", "updated_by"),
+                  "classes": ("collapse",)}
+                 ),
+            )
+        return self.fieldsets
 
     # 🔥 CURRENT USER ni FORM ga uzatish
     def get_form(self, request, obj=None, **kwargs):

@@ -3,6 +3,7 @@ from django.contrib import admin
 from django.contrib.admin.sites import NotRegistered
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.forms import UserChangeForm
+from django.contrib.auth.hashers import make_password
 from django.utils.html import format_html
 
 from apps.users.models import User
@@ -84,6 +85,10 @@ class CustomUserAdmin(UserAdmin):
     )
 
     def save_model(self, request, obj, form, change):
+        if change:
+            password = form.cleaned_data.get("password")
+            if password and not password.startswith("pbkdf2_"):
+                obj.password = make_password(password)
         if obj.role == "superadmin":
             obj.is_superuser = True
             obj.is_staff = True

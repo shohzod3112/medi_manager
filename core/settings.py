@@ -178,4 +178,15 @@ JAZZMIN_SETTINGS = {
     "custom_js": [
         "admin/js/admin_m2m_fix.js",
     ],
+    "theme": "cosmo",  # Bu yerda oldindan mavjud rangli theme tanlanadi
+    "colors": {
+        "primary": "#4a90e2",   # asosiy rang
+        "secondary": "#f39c12",
+        "success": "#28a745",
+        "warning": "#ffc107",
+        "danger": "#dc3545",
+        "info": "#17a2b8",
+        "dark": "#343a40",
+        "light": "#f8f9fa",
+    }
 }
