@@ -185,7 +185,6 @@ class DeviceUpdateSerializer(serializers.ModelSerializer):
 class DeviceListSerializer(serializers.ModelSerializer):
     device_type = serializers.SerializerMethodField()
     username = serializers.SerializerMethodField()
-    playlists = serializers.SerializerMethodField()
 
     class Meta:
         model = Device
