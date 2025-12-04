@@ -283,6 +283,8 @@ class File(PerOrgSequential, BaseModel):
     name = models.CharField(max_length=255, null=True)
     type = models.CharField(max_length=10, choices=FILE_TYPES)
     attachment = models.ForeignKey(Attachment, on_delete=models.SET_NULL, null=True, related_name="files")
+    is_widget = models.BooleanField(default=False)
+    config = models.JSONField(null=True, blank=True)
     duration = models.IntegerField(null=True, blank=True)
 
     organization = models.ForeignKey(

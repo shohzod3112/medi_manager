@@ -14,7 +14,7 @@ def disable_expired_staff():
     """
     now = timezone.now()
     organizations = Organization.objects.filter(
-        is_staff=True,
+        is_active=True,
         expiration_date__isnull=False,
         expiration_date__lt=now,
     )

@@ -185,6 +185,7 @@ class DeviceUpdateSerializer(serializers.ModelSerializer):
 class DeviceListSerializer(serializers.ModelSerializer):
     device_type = serializers.SerializerMethodField()
     username = serializers.SerializerMethodField()
+    playlists = serializers.SerializerMethodField()
 
     class Meta:
         model = Device
@@ -200,6 +201,11 @@ class DeviceListSerializer(serializers.ModelSerializer):
         # if obj.created_by:
         #     return obj.created_by.username
         return "Ukahon sabr"
+
+
+
+class GetTokenSerializer(serializers.Serializer):
+    token = serializers.CharField(read_only=True)
 
 
 
@@ -259,7 +265,7 @@ class FileListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = File
-        fields = ["file_id", "name", "type", "attachment", "duration", "owner", "organization"]
+        fields = ["file_id", "name", "type", "attachment", "is_widget", "config", "duration", "owner", "organization"]
 
     def get_attachment(self, obj):
         request = self.context.get("request")
@@ -276,7 +282,7 @@ class FileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = File
-        fields = ["file_id", "name", "type", "attachment", "duration", "owner"]
+        fields = ["file_id", "name", "type", "attachment", "is_widget", "config", "duration", "owner"]
         read_only_fields = ["owner", "duration", "type"]
 
     def create(self, validated_data):

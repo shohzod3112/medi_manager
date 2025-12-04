@@ -1,6 +1,9 @@
 from django.db.models import Q, F
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import AllowAny
+
 from core.paginations import CustomPagination
 from ..users.models import User
 from .models import Device, File, Organization, Playlist, DeviceType
@@ -79,18 +82,17 @@ class DeviceRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
         )
 
 
-class DeviceDetailAPIView(generics.RetrieveDestroyAPIView):
-    serializer_class = serializers.DeviceSerializer
-    permission_classes = [OrganizationActivePermission]
+class DeviceDetailAPIView(generics.RetrieveAPIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    queryset = Device.objects.all()
+    serializer_class = serializers.GetTokenSerializer
     lookup_field = "serial_number"
-
-    def get_queryset(self):
-        return Device.objects.filter(organization=self.request.user.organization)
 
     def retrieve(self, request, *args, **kwargs):
         device = self.get_object()
-        if not device.token:
-            return Response({"error": "Token not found"}, status=404)
+        if not device or not device.token:
+            return Response({"error": "Device or Token not found"}, status=404)
         return Response({"token": device.token}, status=200)
 
 
