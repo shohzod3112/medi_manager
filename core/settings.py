@@ -114,17 +114,6 @@ REST_FRAMEWORK = {
     # "PAGE_SIZE": 20,
 }
 
-CORS_ALLOW_CREDENTIALS = True
-
-
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "https://localhost:3000",
-    "http://localhost:5173",
-    "https://localhost:5173",
-    "http://127.0.0.1:3000",
-]
-
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
@@ -162,6 +151,59 @@ STATICFILES_DIRS = [
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+
+CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOWED_ORIGINS = [
+    "https://media-manager.uz",
+    "http://media-manager.uz",
+    "http://10.170.100.11",
+    "https://10.170.100.11",
+    "http://192.168.1.82",
+    "http://192.168.1.82:3000",
+    "http://127.7.7.7",
+    "http://127.7.7.7:3000",
+    "http://localhost:3000",
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://media-manager.uz",
+    "http://media-manager.uz",
+    "http://10.170.100.11",
+    "https://10.170.100.11",
+    "http://192.168.1.82",
+    "http://192.168.1.82:3000",
+    "http://127.7.7.7",
+    "http://127.7.7.7:3000",
+    "http://localhost:3000",
+]
+
+CORS_EXPOSE_HEADERS = ['Content-Type', 'X-CSRFToken', 'Access-Control-Allow-Origin']
+
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'Authorization',
+    'Refresh',
+    'authorizations',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
