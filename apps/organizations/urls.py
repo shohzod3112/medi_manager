@@ -21,6 +21,7 @@ urlpatterns = [
 
     path(f"{app_name}/playlists", views.PlaylistListCreateView.as_view(), name="playlist-list-create"),
     path(f"{app_name}/playlists/<int:pk>", views.PlaylistDetailView.as_view(), name="playlist-detail"),
+    path(f"{app_name}/playlists/set-devices/<int:pk>", views.PlaylistSetDevicesAPIView.as_view(), name="playlist-detail"),
 
     path(f"{app_name}/file-select", views.FileSelectListAPIView.as_view()),
     path(f"{app_name}/file", views.FileListCreateView.as_view(), name="file-list-create"),

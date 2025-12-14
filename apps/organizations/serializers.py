@@ -423,6 +423,23 @@ class OrganizationSerializer(serializers.ModelSerializer):
         read_only_fields = ["current_device_count", "next_device_id"]
 
 
+class PlaylistDevicesSerializer(serializers.ModelSerializer):
+    devices = serializers.PrimaryKeyRelatedField(
+        queryset=Device.objects.all(),
+        many=True,
+        required=True
+    )
+
+    def validate_devices(self, value):
+        # Har bir elementni int ga o'tkazamiz
+        return [int(v) if isinstance(v, str) else v for v in value]
+
+    class Meta:
+        model = Playlist
+        fields = ['devices']  # name yoki boshqa fieldlarni qo'shmadik
+
+
+
 class OrganizationSelectSerializer(serializers.ModelSerializer):
     value = serializers.SerializerMethodField()
     label = serializers.SerializerMethodField()

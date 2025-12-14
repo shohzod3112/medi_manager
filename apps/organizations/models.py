@@ -315,14 +315,25 @@ class File(PerOrgSequential, BaseModel):
             self.organization = self.owner.organization
 
         # Detect file type by file extension
-        ext = os.path.splitext(self.attachment.file.name)[1].lower()
-        if ext in [".jpg", ".jpeg", ".png", ".gif", ".webm", ".wmv"]:
-            self.type = "image"
-            self.duration = None  # Images don't have duration
-        elif ext in [".mp4", ".mov", ".avi", ".mkv"]:
-            self.type = "video"
-        else:
-            raise ValidationError(f"Unsupported file type: {ext}")
+        if self.attachment:
+            ext = os.path.splitext(self.attachment.file.name)[1].lower()
+            if ext in [
+                ".m4v", ".mp4", ".m4p", ".mov", ".qt", ".wmv", ".avi", ".mkv",
+                " .webm", ".flv", ".f4v", ".f4p", ".f4a" ,".f4b", ".3gp", ".3g2",
+                ".mpg", ".mp2", ".mpeg", ".mpe", ".mpv", ".m2v", ".vob", ".ts",
+                ".mts", ".m2ts", ".ogv", ".ogg", ".gifv", ".mng", ".yuv", ".rm",
+                ".rmvb", ".viv", ".asf", ".amv", ".svi", ".mxf", ".roq", ".nsv", ".rrc", "mod"
+            ]:
+                self.type = "image"
+                self.duration = None  # Images don't have duration
+            elif ext in [
+                ".apng", ".png", ".avif", ".gif", ".jpg", ".jpeg",
+                ".jfif", ".pjpeg", ".pjp", ".png", ".svg", ".webp",
+                ".bmp", ".ico", ".cur", ".tif", ".tiff", ".heif", ".heic"
+            ]:
+                self.type = "video"
+            else:
+                raise ValidationError(f"Unsupported file type: {ext}")
 
         super().save(*args, **kwargs)
 

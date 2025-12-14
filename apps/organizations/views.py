@@ -517,6 +517,19 @@ class PlaylistDetailView(generics.RetrieveUpdateDestroyAPIView):
         serializer.save(updated_by=self.request.user)
 
 
+class PlaylistSetDevicesAPIView(generics.UpdateAPIView):
+    serializer_class = serializers.PlaylistDevicesSerializer  # serializer faqat devices uchun bo'lishi mumkin
+    queryset = Playlist.objects.all()
+
+    def perform_update(self, serializer):
+        playlist = serializer.instance  # existing playlist
+        # shetta device larni bittalab tekshirish kerak
+        devices = self.request.data.get("devices")
+        if devices:
+            playlist.devices.add(*devices)
+
+
+
 
 class FileListCreateView(generics.ListCreateAPIView):
     serializer_class = serializers.FileSerializer
