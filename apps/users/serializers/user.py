@@ -133,6 +133,7 @@ class UserListSerializer(serializers.ModelSerializer):
             return {
                 "id": obj.organization.id,
                 "name": obj.organization.name,
+                "expiration_date": obj.organization.expiration_date,
             }
 
 
