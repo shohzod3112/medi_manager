@@ -181,14 +181,34 @@ class DeviceUpdateSerializer(serializers.ModelSerializer):
             validated_data['token'] = hashlib.sha256(raw_token.encode()).hexdigest()
         return super().update(instance, validated_data)
 
+class FileNowSerializer(serializers.ModelSerializer):
+    file = serializers.SerializerMethodField()
+
+    class Meta:
+        model = File
+        fields = ["file_id", "file"]
+
+    def get_file(self, obj):
+        if obj.attachment:
+            request = self.context.get("request")
+            return request.build_absolute_uri(obj.attachment.file.url)
+        return None
+
+class PlaylistNowSerializer(serializers.ModelSerializer):
+    file = FileNowSerializer(many=True, read_only=True)
+    class Meta:
+        model = Playlist
+        fields = ["playlist_id", "name", "file"]
+
 
 class DeviceListSerializer(serializers.ModelSerializer):
     device_type = serializers.SerializerMethodField()
     username = serializers.SerializerMethodField()
+    playlists = PlaylistNowSerializer(many=True, read_only=True)
 
     class Meta:
         model = Device
-        fields = ["id", "serial_number", "name", "device_type", "username"]
+        fields = ["id", "serial_number", "name", "device_type", "username", "playlists"]
 
     def get_device_type(self, obj):
         if obj.device_type:
