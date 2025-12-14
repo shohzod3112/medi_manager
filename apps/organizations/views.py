@@ -511,13 +511,14 @@ class FileListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         user = self.request.user
+        if user.role != "superadmin":
+            if not user.organization:
+                return File.objects.none()
 
-        if not user.organization:
-            return File.objects.none()
-
-        return File.objects.filter(
-            organization=user.organization
-        ).order_by("-created_at")
+            return File.objects.filter(
+                organization=user.organization
+            ).order_by("-created_at")
+        return File.objects.all()
 
     def create(self, request, *args, **kwargs):
         if request.data.get("attachment") is None:
