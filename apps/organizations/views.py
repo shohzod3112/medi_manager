@@ -19,21 +19,32 @@ class DeviceListCreateAPIView(generics.ListCreateAPIView):
     pagination_class = CustomPagination
 
     def get_queryset(self):
-        queryset = Device.objects.filter(organization=self.request.user.organization).select_related(
+        name = self.request.query_params.get("name", None)
+        serial_number = self.request.query_params.get("serial_number", None)
+        device_type = self.request.query_params.get("device_type", None)
+        organization = self.request.query_params.get("organization", None)
+
+        queryset = Device.objects.select_related(
             "organization", 'device_type'
         )
-        name = self.request.query_params.get("name", None)
+
         if name:
             queryset = queryset.filter(name__icontains=name)
-        serial_number = self.request.query_params.get("serial_number", None)
+
         if serial_number:
             queryset = queryset.filter(serial_number__icontains=serial_number)
-        device_type = self.request.query_params.get("device_type", None)
+
         if device_type:
             queryset = queryset.filter(device_type=device_type)
-        organization = self.request.query_params.get("organization", None)
+
         if organization:
             queryset = queryset.filter(organization=organization)
+
+        if self.request.user.role == "superadmin":
+            return queryset
+
+        queryset = queryset.filter(organization=self.request.user.organization)
+
         return queryset
 
     def get_serializer_class(self):
@@ -259,6 +270,8 @@ class FileSelectListAPIView(generics.ListAPIView):
     serializer_class = serializers.FileSelectListSerializer
 
     def get_queryset(self):
+        if self.request.user.is_superuser:
+            return File.objects.all()
         queryset = File.objects.filter(organization=self.request.user.organization)
         return queryset
 
@@ -268,6 +281,9 @@ class DeviceSelectListAPIView(generics.ListAPIView):
     serializer_class = serializers.DeviceSelectListSerializer
 
     def get_queryset(self):
+        if self.request.user.role == "superadmin":
+            queryset = Device.objects.all()
+            return queryset
         queryset = Device.objects.filter(organization=self.request.user.organization)
         return queryset
 
@@ -469,13 +485,14 @@ class PlaylistListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        if not user.organization:
-            return Playlist.objects.none()
+        if user.role != "superadmin":
+            if not user.organization:
+                return Playlist.objects.none()
 
-        return Playlist.objects.filter(
-            organization=user.organization,
-            owner=user,
-        ).order_by("-created_at")
+            return Playlist.objects.filter(
+                organization=user.organization
+            ).order_by("-created_at")
+        return Playlist.objects.all()
 
     def perform_create(self, serializer):
         serializer.save()
@@ -487,12 +504,14 @@ class PlaylistDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        if user.organization:
-            return Playlist.objects.none()
+        if user.role != "superadmin":
+            if not user.organization:
+                return Playlist.objects.none()
 
-        return Playlist.objects.filter(
-            organization=user.organization
-        )
+            return Playlist.objects.filter(
+                organization=user.organization
+            )
+        return Playlist.objects.all()
 
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
@@ -544,13 +563,15 @@ class FileDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         user = self.request.user
 
-        if not user.organization:
-            return File.objects.none()
+        if user.role != "superadmin":
 
-        return File.objects.filter(
-            organization=user.organization,
-            owner=user,
-        )
+            if not user.organization:
+                return File.objects.none()
+
+            return File.objects.filter(
+                organization=user.organization
+            )
+        return File.objects.all()
 
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
