@@ -1,6 +1,7 @@
 # users/views.py
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import authenticate
+from django.db.models import Q
 from django.http import JsonResponse
 from django.utils.text import slugify
 from rest_framework import status, generics
@@ -108,6 +109,26 @@ class UserListCreateAPIView(generics.ListCreateAPIView):
         if self.request.method == "POST":
             return user_serializer.UserCreateSerializer
         return user_serializer.UserListSerializer
+
+    def get_queryset(self):
+        organization = self.request.query_params.get("organization")
+        name = self.request.query_params.get("name")
+        login = self.request.query_params.get("login")
+        is_active = self.request.query_params.get("is_active")
+
+        queryset = self.queryset
+
+        if organization:
+            queryset = queryset.filter(organization=organization)
+        if name:
+            queryset = queryset.filter(
+                Q(first_name__icontains=name) | Q(last_name__icontains=name)
+            )
+        if login:
+            queryset = queryset.filter(username__icontains=login)
+        if is_active:
+            queryset = queryset.filter(is_active=is_active)
+        return queryset
 
     def perform_create(self, serializer):
         role = self.request.data.get("role")
