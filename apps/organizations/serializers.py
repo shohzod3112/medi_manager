@@ -186,7 +186,7 @@ class FileNowSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = File
-        fields = ["file_id", "file"]
+        fields = ["file_id", "file", "type", "duration"]
 
     def get_file(self, obj):
         if obj.attachment:
