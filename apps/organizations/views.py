@@ -491,8 +491,7 @@ class PlaylistDetailView(generics.RetrieveUpdateDestroyAPIView):
             return Playlist.objects.none()
 
         return Playlist.objects.filter(
-            organization=user.organization,
-            owner=user,
+            organization=user.organization
         )
 
     def perform_update(self, serializer):
@@ -517,8 +516,7 @@ class FileListCreateView(generics.ListCreateAPIView):
             return File.objects.none()
 
         return File.objects.filter(
-            organization=user.organization,
-            owner=user,
+            organization=user.organization
         ).order_by("-created_at")
 
     def create(self, request, *args, **kwargs):
