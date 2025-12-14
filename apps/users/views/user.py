@@ -126,8 +126,9 @@ class UserListCreateAPIView(generics.ListCreateAPIView):
             )
         if login:
             queryset = queryset.filter(username__icontains=login)
-        if is_active:
-            queryset = queryset.filter(is_active=is_active)
+
+        queryset = queryset.filter(is_active=True) if is_active == "true" else queryset.filter(is_active=False) if is_active == "false" else queryset
+
         return queryset
 
     def perform_create(self, serializer):
