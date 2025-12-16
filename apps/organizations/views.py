@@ -196,7 +196,7 @@ class PlaylistDetailAPIView(APIView):
         event_playlists = Playlist.objects.filter(
             devices=device,
             is_active=True,
-            type="event",
+            playlist_type="event",
             start_date__lte=now.date(),
             end_date__gte=now.date(),
         ).filter(
@@ -213,7 +213,7 @@ class PlaylistDetailAPIView(APIView):
             active_playlists = Playlist.objects.filter(
                 devices=device,
                 is_active=True,
-                type="permanent",
+                playlist_type="permanent",
             ).filter(
                 Q(start_time__lte=now.time(), end_time__gte=now.time()) |
                 (
@@ -231,7 +231,7 @@ class PlaylistDetailAPIView(APIView):
                 {
                     "id": media.file_id,
                     "name": media.name,
-                    "url": request.build_absolute_uri(media.file.url),
+                    "url": request.build_absolute_uri(media.attachment.file.url),
                     "type": media.type,
                     "duration": media.duration,
                 }
@@ -243,8 +243,14 @@ class PlaylistDetailAPIView(APIView):
                     "id": playlist.playlist_id,
                     "name": playlist.name,
                     "type": playlist.playlist_type,
-                    "start_time": timezone.localtime(playlist.start_time).strftime("%Y-%m-%d %H:%M:%S"),
-                    "end_time": timezone.localtime(playlist.end_time).strftime("%Y-%m-%d %H:%M:%S"),
+                    # "start_date": timezone.localtime(playlist.start_date).strftime("%Y-%m-%d %H:%M:%S"),
+                    # "end_date": timezone.localtime(playlist.end_date).strftime("%Y-%m-%d %H:%M:%S"),
+                    # "start_time": timezone.localtime(playlist.start_time).strftime("%H:%M:%S"),
+                    # "end_time": timezone.localtime(playlist.end_time).strftime("%H:%M:%S"),
+                    "start_date": playlist.start_date.strftime("%Y-%m-%d") if playlist.start_date else None,
+                    "end_date": playlist.end_date.strftime("%Y-%m-%d") if playlist.end_date else None,
+                    "start_time": playlist.start_time.strftime("%H:%M:%S"),
+                    "end_time": playlist.end_time.strftime("%H:%M:%S"),
                     "medias": media_list,
                 }
             )
