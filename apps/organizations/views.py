@@ -160,7 +160,7 @@ class DeviceSyncAPIView(APIView):
 
 
 class PlaylistDetailAPIView(APIView):
-    permission_classes = [OrganizationActivePermission]
+    permission_classes = [AllowAny]
 
     def get(self, request):
         sn = request.query_params.get("sn")
