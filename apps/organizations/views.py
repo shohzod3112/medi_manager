@@ -160,6 +160,7 @@ class DeviceSyncAPIView(APIView):
 
 
 class PlaylistDetailAPIView(APIView):
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     def get(self, request):
@@ -234,6 +235,8 @@ class PlaylistDetailAPIView(APIView):
                     "url": request.build_absolute_uri(media.attachment.file.url),
                     "type": media.type,
                     "duration": media.duration,
+                    "is_widget": media.is_widget,
+                    "config": media.config,
                 }
                 for media in playlist.file.all()
             ]
