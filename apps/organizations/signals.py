@@ -1,15 +1,36 @@
 import os
 from django.conf import settings
 
-from apps.organizations.models import File
+from apps.organizations.models import File, Device
 
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.utils import timezone
 from datetime import datetime, time
 from .models import Organization
 from .tasks import deactivate_organization
 from celery.result import AsyncResult
+
+
+@receiver(post_save, sender=Device)
+def device_created(sender, instance, created, **kwargs):
+    if not created:
+        return
+
+    Organization.objects.filter(pk=instance.organization_id).update(
+        current_device_count=Device.objects.filter(
+            organization_id=instance.organization_id
+        ).count()
+    )
+
+
+@receiver(post_delete, sender=Device)
+def device_deleted(sender, instance, **kwargs):
+    Organization.objects.filter(pk=instance.organization_id).update(
+        current_device_count=Device.objects.filter(
+            organization_id=instance.organization_id
+        ).count()
+    )
 
 
 @receiver(post_save, sender=Organization)
@@ -37,6 +58,8 @@ def schedule_expiration_date(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=File)
 def generate_video_preview(sender, instance, **kwargs):
+
+
     if instance.type != "video":
         return
 
