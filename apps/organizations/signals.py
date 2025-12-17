@@ -9,22 +9,29 @@ from django.utils import timezone
 from datetime import datetime, time
 from .models import Organization
 from .tasks import deactivate_organization
+from celery.result import AsyncResult
 
 
 @receiver(post_save, sender=Organization)
 def schedule_expiration_date(sender, instance, created, **kwargs):
-    if not created:
-        return
-
     if not instance.expiration_date:
         return
+
+    # eski taskni bekor qil
+    if instance.expiration_task_id:
+        AsyncResult(instance.expiration_task_id).revoke(terminate=True)
 
     run_at = datetime.combine(instance.expiration_date, time(23, 59, 59))
     run_at = timezone.make_aware(run_at)
 
-    deactivate_organization.apply_async(
+    result = deactivate_organization.apply_async(
         args=[instance.id],
         eta=run_at
+    )
+
+    # yangi task ID ni saqlash
+    Organization.objects.filter(pk=instance.pk).update(
+        expiration_task_id=result.id
     )
 
 
