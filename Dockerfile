@@ -57,9 +57,9 @@ RUN useradd --create-home --shell /bin/bash app && \
     chmod +x /app/entrypoint.sh
 
 # Create necessary directories with proper permissions
-RUN mkdir -p /app/static /app/media /tmp && \
-    chown -R app:app /app/static /app/media /tmp && \
-    chmod -R 755 /app/static /app/media
+RUN mkdir -p /app/staticfiles /app/static /app/media /tmp && \
+    chown -R app:app /app/staticfiles /app/static /app/media /tmp && \
+    chmod -R 755 /app/staticfiles /app/static /app/media
 
 USER app
 
