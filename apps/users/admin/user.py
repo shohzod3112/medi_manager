@@ -96,13 +96,9 @@ class CustomUserAdmin(UserAdmin):
         elif obj.role == "admin":
             obj.is_superuser = False
             obj.is_staff = True
-            group, created = Group.objects.get_or_create(name='user_gr')
-            obj.groups.add(group)
         else:  # operator
             obj.is_superuser = False
             obj.is_staff = True
-            group, created = Group.objects.get_or_create(name='user_gr')
-            obj.groups.add(group)
 
         super().save_model(request, obj, form, change)
 
