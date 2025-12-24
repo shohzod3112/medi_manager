@@ -106,6 +106,11 @@ class CustomUserAdmin(UserAdmin):
 
         super().save_model(request, obj, form, change)
 
+        if obj.role in ["admin", "operator"]:
+            group_name = "user_gr"
+            group, created = Group.objects.get_or_create(name=group_name)
+            obj.groups.add(group)
+
     def clickable_username(self, obj):
         return format_html(
             '<a href="{}">{}</a>',
