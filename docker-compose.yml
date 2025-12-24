@@ -35,6 +35,7 @@ services:
     build: .
     command: python3 manage.py runsslserver --certificate ./localhost+2.pem --key ./localhost+2-key.pem 0.0.0.0:8000
     volumes:
+      - ./static:/app/static
       - static_volume:/app/staticfiles
       - media_volume:/app/media
     env_file:
