@@ -4,6 +4,7 @@ from django.contrib.admin.sites import NotRegistered
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.forms import UserChangeForm
 from django.contrib.auth.hashers import make_password
+from django.contrib.auth.models import Group
 from django.utils.html import format_html
 
 from apps.users.models import User
@@ -95,9 +96,13 @@ class CustomUserAdmin(UserAdmin):
         elif obj.role == "admin":
             obj.is_superuser = False
             obj.is_staff = True
+            group, created = Group.objects.get_or_create(name='user_gr')
+            obj.groups.add(group)
         else:  # operator
             obj.is_superuser = False
             obj.is_staff = True
+            group, created = Group.objects.get_or_create(name='user_gr')
+            obj.groups.add(group)
 
         super().save_model(request, obj, form, change)
 
