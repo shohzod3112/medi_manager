@@ -1,6 +1,7 @@
 # users/views.py
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import authenticate
+from django.contrib.auth.models import Group
 from django.db.models import Q
 from django.http import JsonResponse
 from django.utils.text import slugify
@@ -134,12 +135,18 @@ class UserListCreateAPIView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         role = self.request.data.get("role")
 
-        if role == "superadmin":
-            serializer.save(is_superuser=True, is_staff=True)
-        elif role == "admin":
-            serializer.save(is_superuser=False, is_staff=True)
+        user = serializer.save(
+            is_superuser=True if role == "superadmin" else False,
+            is_staff=True
+        )
+
+        if role == "admin":
+            group_name = "user_gr"
         else:
-            serializer.save(is_superuser=False, is_staff=True)
+            group_name = "user_gr"
+
+        group, created = Group.objects.get_or_create(name=group_name)
+        user.groups.add(group)
 
 
 class UserRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):

@@ -4,6 +4,7 @@ from django.contrib.admin.sites import NotRegistered
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.forms import UserChangeForm
 from django.contrib.auth.hashers import make_password
+from django.contrib.auth.models import Group
 from django.utils.html import format_html
 
 from apps.users.models import User
@@ -100,6 +101,11 @@ class CustomUserAdmin(UserAdmin):
             obj.is_staff = True
 
         super().save_model(request, obj, form, change)
+
+        if obj.role in ["admin", "operator"]:
+            group_name = "user_gr"
+            group, created = Group.objects.get_or_create(name=group_name)
+            obj.groups.add(group)
 
     def clickable_username(self, obj):
         return format_html(
