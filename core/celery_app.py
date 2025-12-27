@@ -15,14 +15,6 @@ app.config_from_object("django.conf:settings", namespace="CELERY")
 # Load task modules from all registered Django apps.
 app.autodiscover_tasks()
 
-# Configure Celery Beat schedule
-app.conf.beat_schedule = {
-    "disable_expired_staff": {
-        "task": "organizations.tasks.disable_expired_staff",
-        "schedule": crontab(hour=0, minute=0),
-    },
-}
-
 # Optional: Configure Celery settings
 app.conf.update(
     task_serializer="json",
