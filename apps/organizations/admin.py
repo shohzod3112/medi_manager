@@ -62,13 +62,9 @@ class OrganizationAdmin(admin.ModelAdmin):
         Automatically set the creator of the organization to the current user upon creation.
         """
         if change:
-            obj.created_by = request.user
-            if obj.expiration_date < timezone.now().date():
-                obj.is_active = False
-            else:
-                obj.is_active = True
+            obj.updated_by = request.user
 
-        if not obj.pk:  # If the object is being created
+        else:
             obj.created_by = request.user
         super().save_model(request, obj, form, change)
 
