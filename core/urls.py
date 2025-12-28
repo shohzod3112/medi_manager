@@ -61,9 +61,11 @@ urlpatterns = [
     path("health/", health_check, name="health_check"),
     path("api/attachments/", include("attachment.urls")),
     path("api/", include("apps.urls")),  # Authentication APIs
-
-    re_path(r"^.*$", frontend_view),
 ]
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+urlpatterns += [
+    re_path(r"^.*$", frontend_view),
+]
