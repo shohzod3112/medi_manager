@@ -156,10 +156,6 @@ CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOWED_ORIGINS = [
-    "https://backend.media-manager.uz",
-    "http://backend.media-manager.uz",
-    "https://media-manager.uz",
-    "http://media-manager.uz",
     "http://10.170.100.11",
     "https://10.170.100.11",
     "http://10.170.100.11:8000",
@@ -172,10 +168,6 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://backend.media-manager.uz",
-    "http://backend.media-manager.uz",
-    "https://media-manager.uz",
-    "http://media-manager.uz",
     "http://10.170.100.11",
     "https://10.170.100.11",
     "http://10.170.100.11:8000",
