@@ -222,7 +222,6 @@ class Device(PerOrgSequential, BaseModel):
         DeviceType,
         on_delete=models.SET_NULL,
         null=True,
-        blank=True,
         related_name="devices",
     )
 
