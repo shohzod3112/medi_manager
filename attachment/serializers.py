@@ -12,7 +12,7 @@ class AttachmentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Attachment
-        fields = ["id", "name", "file"]
+        fields = ["id", "name", "file", "gif"]
 
     def get_file(self, obj):
         request = self.context.get("request")

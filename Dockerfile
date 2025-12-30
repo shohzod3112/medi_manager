@@ -41,6 +41,7 @@ RUN apt-get update && apt-get install -y \
     libwebp7 \
     netcat-openbsd \
     curl \
+    ffmpeg \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 

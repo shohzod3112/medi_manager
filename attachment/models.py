@@ -1,6 +1,8 @@
 import os
+import subprocess
 
 from django.db import models
+
 
 class Attachment(models.Model):
     name = models.CharField(
@@ -9,10 +11,42 @@ class Attachment(models.Model):
         null=False,
     )
     file = models.FileField(upload_to='attachments/')
+    gif = models.FileField(upload_to='attachments/gifs/', blank=True, null=True)
 
     def __str__(self):
         return self.name
 
+    def create_gif(self, duration=5, fps=10, width=320):
+        """
+        Video fayldan GIF yaratish (maks 5 sekund, kichik hajm)
+        """
+        video_path = self.file.path
+        gif_name = os.path.splitext(os.path.basename(video_path))[0] + '.gif'
+        gif_path = os.path.join(os.path.dirname(video_path), 'gifs', gif_name)
+
+        # 'gifs' papka borligini tekshiramiz
+        os.makedirs(os.path.dirname(gif_path), exist_ok=True)
+
+        # ffmpeg orqali GIF yaratish
+        command = [
+            'ffmpeg',
+            '-ss', '0',  # 0 sekunddan boshlaymiz
+            '-t', str(duration),  # davomiylik
+            '-i', video_path,  # input video
+            '-vf', f'fps={fps},scale={width}:-1:flags=lanczos',  # fps va width
+            '-y', gif_path  # output fayl
+        ]
+        subprocess.run(command, check=True)
+
+        # GIFni modelga bog'laymiz
+        relative_gif_path = os.path.relpath(gif_path, os.path.join(os.path.dirname(video_path), '../'))
+        self.gif.name = os.path.join('attachments/gifs/', gif_name)
+        super().save(update_fields=['gif'])
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)  # avvalo faylni saqlaymiz
+        if self.file:
+            self.create_gif()  # GIF yaratamiz
 
     def delete(self, *args, **kwargs):
         # Faylni media papkadan o‘chiramiz
