@@ -44,9 +44,21 @@ class Attachment(models.Model):
         super().save(update_fields=['gif'])
 
     def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)  # avvalo faylni saqlaymiz
-        if self.file:
-            self.create_gif()  # GIF yaratamiz
+        is_new = self.pk is None
+        super().save(*args, **kwargs)
+
+        if (
+                is_new and
+                self.file and
+                self.file.name.lower().endswith(('.m4v', '.mp4', '.m4p', '.mov', '.qt', '.wmv', '.avi',
+                                                 '.mkv', '.webm', '.flv', '.f4v', '.f4p', '.f4a' '.f4b',
+                                                 '.3gp', '.3g2', '.mpg', '.mp2', '.mpeg','.mpe', '.mpv',
+                                                 '.m2v', '.vob', '.ts', '.mts', '.m2ts', '.ogv', '.ogg',
+                                                 '.gifv', '.mng', '.yuv', '.rm', '.rmvb', '.viv', '.asf',
+                                                 '.amv', '.svi', '.mxf', '.roq', '.nsv', '.rrc', '.mod')) and
+                not self.gif
+        ):
+            self.create_gif()
 
     def delete(self, *args, **kwargs):
         # Faylni media papkadan o‘chiramiz
