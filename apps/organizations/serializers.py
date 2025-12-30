@@ -189,10 +189,23 @@ class FileNowSerializer(serializers.ModelSerializer):
         fields = ["file_id", "file", "type", "duration"]
 
     def get_file(self, obj):
-        if obj.attachment:
-            request = self.context.get("request")
-            return request.build_absolute_uri(obj.attachment.gif.url) if obj.attachment.gif else obj.attachment.file.url
-        return None
+        attachment = getattr(obj, "attachment", None)
+        if not attachment:
+            return None
+
+        request = self.context.get("request")
+
+        if attachment.gif:
+            url = attachment.gif.url
+        elif attachment.file:
+            url = attachment.file.url
+        else:
+            return None
+
+        if request:
+            return request.build_absolute_uri(url)
+        return url
+
 
 class PlaylistNowSerializer(serializers.ModelSerializer):
     file = FileNowSerializer(many=True, read_only=True)
