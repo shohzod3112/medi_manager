@@ -191,7 +191,7 @@ class FileNowSerializer(serializers.ModelSerializer):
     def get_file(self, obj):
         if obj.attachment:
             request = self.context.get("request")
-            return request.build_absolute_uri(obj.attachment.file.url)
+            return request.build_absolute_uri(obj.attachment.gif.url) if obj.attachment.gif else obj.attachment.file.url
         return None
 
 class PlaylistNowSerializer(serializers.ModelSerializer):
