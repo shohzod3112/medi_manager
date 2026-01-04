@@ -37,6 +37,12 @@ class User(AbstractUser):
     def __str__(self):
         return self.username
 
+    def save(self, *args, **kwargs):
+        if not self.pk:
+            if self.is_superuser:
+                self.role = "superadmin"
+        super().save(*args, **kwargs)
+
     def get_full_name(self):
         """Return the first_name plus the last_name, with a space in between."""
         full_name = f"{self.first_name} {self.last_name}"
