@@ -17,7 +17,7 @@ except NotRegistered:
 
 
 class CustomUserChangeForm(UserChangeForm):
-    class Meta:
+    class Meta(UserChangeForm.Meta):
         model = User
         fields = "__all__"
 
@@ -30,7 +30,7 @@ class UserAdminForm(forms.ModelForm):
 
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
-    form = UserAdminForm
+    form = CustomUserChangeForm
     list_display = (
         "id",
         "role",
@@ -86,10 +86,6 @@ class CustomUserAdmin(UserAdmin):
     )
 
     def save_model(self, request, obj, form, change):
-        if change:
-            password = form.cleaned_data.get("password")
-            if password and not password.startswith("pbkdf2_"):
-                obj.password = make_password(password)
         if obj.role == "superadmin":
             obj.is_superuser = True
             obj.is_staff = True
@@ -103,8 +99,7 @@ class CustomUserAdmin(UserAdmin):
         super().save_model(request, obj, form, change)
 
         if obj.role in ["admin", "operator"]:
-            group_name = "user_gr"
-            group, created = Group.objects.get_or_create(name=group_name)
+            group, _ = Group.objects.get_or_create(name="user_gr")
             obj.groups.add(group)
 
     def clickable_username(self, obj):

@@ -45,9 +45,9 @@ services:
       - DATABASE=postgres
       - DB_HOST=db
       - DB_PORT=5432
-      - DJANGO_SUPERUSER_USERNAME=admin
+      - DJANGO_SUPERUSER_USERNAME=shoh
       - DJANGO_SUPERUSER_EMAIL=admin@example.com
-      - DJANGO_SUPERUSER_PASSWORD=admin123
+      - DJANGO_SUPERUSER_PASSWORD=SuperSecretP@ss123$
     ports:
       - "8000:8000"
     depends_on:

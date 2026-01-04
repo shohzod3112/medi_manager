@@ -57,7 +57,7 @@ class LoginAPIView(generics.GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if getattr(user, "role", None) != "superadmin":
+        if getattr(user, "role", None) != "superadmin" and not user.is_superuser:
             org = getattr(user, "organization", None)
             if not org:
                 raise AuthenticationFailed("Tashkilot biriktirilmagan!")
