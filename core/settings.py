@@ -156,6 +156,10 @@ CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOWED_ORIGINS = [
+    "https://192.168.10.179",
+    "http://192.168.10.179",
+    "https://192.168.10.179:8000",
+    "http://192.168.10.179:8000",
     "http://10.170.100.11",
     "https://10.170.100.11",
     "http://10.170.100.11:8000",
@@ -168,6 +172,10 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 CSRF_TRUSTED_ORIGINS = [
+    "https://192.168.10.179",
+    "http://192.168.10.179",
+    "https://192.168.10.179:8000",
+    "http://192.168.10.179:8000",
     "http://10.170.100.11",
     "https://10.170.100.11",
     "http://10.170.100.11:8000",
