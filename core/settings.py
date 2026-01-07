@@ -227,7 +227,7 @@ CELERY_ENABLE_UTC = False
 CELERY_BEAT_SCHEDULE = {
     "deactivate-expired-organizations-daily": {
         "task": "apps.organizations.tasks.disable_expired_staff",  # ⚠ to‘g‘ri nom
-        "schedule": crontab(minute="*/1"),  # test uchun har 1 daqiqada
+        "schedule": crontab(hour=0, minute=0),  # test uchun har 1 daqiqada
     },
 }
 
