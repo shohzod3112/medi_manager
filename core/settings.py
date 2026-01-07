@@ -3,6 +3,7 @@ import sys
 from datetime import timedelta
 from pathlib import Path
 
+from celery.schedules import crontab
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -218,6 +219,17 @@ CORS_ALLOW_HEADERS = [
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CELERY_BROKER_URL = "redis://redis:6379/0"
+CELERY_RESULT_BACKEND = "redis://redis:6379/0"
+
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_ENABLE_UTC = False
+
+CELERY_BEAT_SCHEDULE = {
+    "deactivate-expired-organizations-daily": {
+        "task": "apps.organizations.tasks.disable_expired_staff",  # ⚠ to‘g‘ri nom
+        "schedule": crontab(minute="*/1"),  # test uchun har 1 daqiqada
+    },
+}
 
 JAZZMIN_SETTINGS = {
     "site_title": "Media Manager",
