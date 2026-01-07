@@ -193,38 +193,46 @@ class PlaylistDetailAPIView(APIView):
             return Response({"success": False, "message": "Organization inactive"}, status=403)
 
         now = timezone.localtime()
+        #
+        # event_playlists = Playlist.objects.filter(
+        #     devices=device,
+        #     is_active=True,
+        #     playlist_type="event",
+        #     start_date__lte=now.date(),
+        #     end_date__gte=now.date(),
+        # ).filter(
+        #     Q(start_time__lte=now.time(), end_time__gte=now.time()) |
+        #     (
+        #         Q(start_time__gt=F("end_time")) &
+        #         (Q(start_time__lte=now.time()) | Q(end_time__gte=now.time()))
+        #     )
+        # )
+        #
+        # if event_playlists.exists():
+        #     active_playlists = event_playlists
+        # else:
+        #     active_playlists = Playlist.objects.filter(
+        #         devices=device,
+        #         is_active=True,
+        #         playlist_type="permanent",
+        #     ).filter(
+        #         Q(start_time__lte=now.time(), end_time__gte=now.time()) |
+        #         (
+        #             Q(start_time__gt=F("end_time")) &
+        #             (Q(start_time__lte=now.time()) | Q(end_time__gte=now.time()))
+        #         )
+        #     ).order_by("-created_at")
+        #
+        # if not active_playlists.exists():
+        #     return Response({"success": False, "message": "Playlist Not Found"}, status=404)
 
-        event_playlists = Playlist.objects.filter(
+        active_playlists = Playlist.objects.filter(
             devices=device,
             is_active=True,
-            playlist_type="event",
-            start_date__lte=now.date(),
-            end_date__gte=now.date(),
         ).filter(
-            Q(start_time__lte=now.time(), end_time__gte=now.time()) |
-            (
-                Q(start_time__gt=F("end_time")) &
-                (Q(start_time__lte=now.time()) | Q(end_time__gte=now.time()))
-            )
+            Q(playlist_type="permanent") |
+            Q(playlist_type="event", end_date__gte=now.date()),
         )
-
-        if event_playlists.exists():
-            active_playlists = event_playlists
-        else:
-            active_playlists = Playlist.objects.filter(
-                devices=device,
-                is_active=True,
-                playlist_type="permanent",
-            ).filter(
-                Q(start_time__lte=now.time(), end_time__gte=now.time()) |
-                (
-                    Q(start_time__gt=F("end_time")) &
-                    (Q(start_time__lte=now.time()) | Q(end_time__gte=now.time()))
-                )
-            ).order_by("-created_at")
-
-        if not active_playlists.exists():
-            return Response({"success": False, "message": "Playlist Not Found"}, status=404)
 
         playlists_data = []
         for playlist in active_playlists.order_by("start_time"):
@@ -246,10 +254,6 @@ class PlaylistDetailAPIView(APIView):
                     "id": playlist.playlist_id,
                     "name": playlist.name,
                     "type": playlist.playlist_type,
-                    # "start_date": timezone.localtime(playlist.start_date).strftime("%Y-%m-%d %H:%M:%S"),
-                    # "end_date": timezone.localtime(playlist.end_date).strftime("%Y-%m-%d %H:%M:%S"),
-                    # "start_time": timezone.localtime(playlist.start_time).strftime("%H:%M:%S"),
-                    # "end_time": timezone.localtime(playlist.end_time).strftime("%H:%M:%S"),
                     "start_date": playlist.start_date.strftime("%Y-%m-%d") if playlist.start_date else None,
                     "end_date": playlist.end_date.strftime("%Y-%m-%d") if playlist.end_date else None,
                     "start_time": playlist.start_time.strftime("%H:%M:%S"),
