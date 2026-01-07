@@ -230,9 +230,10 @@ class PlaylistDetailAPIView(APIView):
             devices=device,
             is_active=True,
         ).filter(
-            Q(playlist_type="permanent") |
-            Q(playlist_type="event", end_date__gte=now.date()),
-        )
+                Q(playlist_type="permanent") |
+                (Q(playlist_type="event") &
+                 (Q(end_date__gt=now.date()) | Q(end_date=now.date(), end_time__gte=now.time())))
+            )
 
         playlists_data = []
         for playlist in active_playlists.order_by("start_time"):
