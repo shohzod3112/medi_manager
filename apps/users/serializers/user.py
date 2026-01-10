@@ -202,16 +202,34 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         return attrs
 
     def update(self, instance, validated_data):
+        request_user = self.context["request"].user
+
         password = validated_data.pop("password", None)
         validated_data.pop("password_confirm", None)
+        role = validated_data.pop("role", None)
 
+        # Oddiy user faqat ruxsat berilgan fieldlarni update qiladi
+        if not request_user.is_superuser:
+            allowed_fields = ["first_name", "last_name", "phone_number", "avatar", "password", "password_confirm"]
+            validated_data = {k: v for k, v in validated_data.items() if k in allowed_fields}
+
+        # Superuser role va organization update qilishi mumkin
+        if request_user.is_superuser:
+            if role:
+                instance.role = role
+                instance.is_superuser = role == "superadmin"
+
+        # Passwordni set qilish
+        if password:
+            instance.set_password(password)
+
+        # Qolgan fieldlarni update qilish
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
 
-        if password:
-            instance.set_password(password)
         instance.save()
         return instance
+
 
 
 class UserListForSelectSerializer(serializers.ModelSerializer):

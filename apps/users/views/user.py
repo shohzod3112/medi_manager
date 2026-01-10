@@ -4,6 +4,7 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.models import Group
 from django.db.models import Q
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 from django.utils.text import slugify
 from rest_framework import status, generics
 from rest_framework import permissions
@@ -150,13 +151,28 @@ class UserListCreateAPIView(generics.ListCreateAPIView):
 
 
 class UserRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [permissions.IsAuthenticated]  # superuser check serializer ichida
     queryset = User.objects.all()
 
     def get_serializer_class(self):
         if self.request.method == "GET":
             return user_serializer.UserRetrieveSerializer
         return user_serializer.UserUpdateSerializer
+
+    def patch(self, request, pk=None):
+        user = get_object_or_404(User, pk=pk)
+
+        if not user.is_superuser:
+            if pk != request.user.pk:
+                return Response({"message": "Siz faqat o'zi ma'lumotlaringizni yangilay olasiz!"}, status=status.HTTP_400_BAD_REQUEST)
+            elif request.get('username') or request.get('email') or request.get('role') or request.get('organization'):
+                return Response({"message": "Sizda imkoniyat cheklangan"}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = self.get_serializer(user, data=request.data, partial=True, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class UserListForSelectAPIView(generics.ListAPIView):

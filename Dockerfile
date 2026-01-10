@@ -1,13 +1,12 @@
-# Multi-stage build for smaller final image
+# 🔹 Builder stage
 FROM python:3.11-slim as builder
 
-# Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     DEBIAN_FRONTEND=noninteractive
 
-# Install build dependencies
-RUN apt-get update && apt-get install -y \
+# Build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     g++ \
     libpq-dev \
@@ -16,13 +15,14 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
+WORKDIR /app
 COPY pyproject.toml poetry.lock ./
 RUN pip install --no-cache-dir poetry && \
     poetry config virtualenvs.create false && \
     poetry install --only main --no-root && \
     pip uninstall -y poetry
 
-# Production stage
+# 🔹 Production stage
 FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -31,36 +31,34 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Install only runtime dependencies (much smaller set)
-RUN apt-get update && apt-get install -y \
+# Runtime dependencies only
+RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
     libffi8 \
     libssl3 \
     libjpeg62-turbo \
     libpng16-16 \
     libwebp7 \
-    netcat-openbsd \
     curl \
     ffmpeg \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    netcat-openbsd \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Copy Python packages from builder
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-# Copy the project
+# Copy project files
 COPY . .
 
-# Create non-root users
+# Create non-root user and set permissions
 RUN useradd --create-home --shell /bin/bash app && \
     chown -R app:app /app && \
     chmod +x /app/entrypoint.sh
 
-# Create necessary directories with proper permissions
-RUN mkdir -p /app/staticfiles /app/static /app/media /tmp && \
-    chown -R app:app /app/staticfiles /app/static /app/media /tmp && \
-    chmod -R 755 /app/staticfiles /app/static /app/media
+RUN mkdir -p /app/static /app/staticfiles /app/media /app/logs /tmp && \
+    chown -R app:app /app/static /app/staticfiles /app/media /app/logs /tmp && \
+    chmod -R 755 /app/static /app/staticfiles /app/media
 
 USER app
 
@@ -70,4 +68,11 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8000/health/ || exit 1
 
+# 🔹 Single entrypoint
+# ENTRYPOINT shuningdek CMD ni ham boshqaradi
 ENTRYPOINT ["/app/entrypoint.sh"]
+
+# CMD ni docker-compose da override qilamiz:
+# web: "python manage.py runserver 0.0.0.0:8000"
+# worker: "celery -A core worker --loglevel=INFO"
+# beat: "celery -A core beat --loglevel=INFO"

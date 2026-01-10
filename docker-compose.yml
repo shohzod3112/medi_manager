@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   db:
     image: postgres:15-alpine
@@ -12,7 +14,7 @@ services:
     ports:
       - "5433:5432"
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${SUPERUSER_DB_USER} -d ${SUPERUSER_DB_NAME}" ]
+      test: ["CMD-SHELL", "pg_isready -U ${SUPERUSER_DB_USER} -d ${SUPERUSER_DB_NAME}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -24,7 +26,7 @@ services:
     ports:
       - "6379:6379"
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -38,7 +40,7 @@ services:
       - ./static:/app/static
       - static_volume:/app/staticfiles
       - media_volume:/app/media
-      - ./logs:/app/logs
+      - logs_volume:/app/logs
     env_file:
       - .env
     environment:
@@ -64,7 +66,7 @@ services:
     command: celery -A core worker --loglevel=info
     volumes:
       - media_volume:/app/media
-      - ./logs:/app/logs
+      - logs_volume:/app/logs
     env_file:
       - .env
     environment:
@@ -83,6 +85,9 @@ services:
   celery_beat:
     build: .
     command: celery -A core beat --loglevel=info
+    volumes:
+      - media_volume:/app/media
+      - logs_volume:/app/logs
     env_file:
       - .env
     environment:
@@ -99,6 +104,7 @@ services:
     restart: unless-stopped
 
 volumes:
+  logs_volume:
   postgres_data:
   static_volume:
   media_volume:

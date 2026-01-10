@@ -24,9 +24,9 @@ create_superuser() {
     log "Checking for superuser..."
 
     # Set default values if environment variables are not set
-    export DJANGO_SUPERUSER_USERNAME=${DJANGO_SUPERUSER_USERNAME:-admin}
-    export DJANGO_SUPERUSER_EMAIL=${DJANGO_SUPERUSER_EMAIL:-admin@example.com}
-    export DJANGO_SUPERUSER_PASSWORD=${DJANGO_SUPERUSER_PASSWORD:-admin123}
+    export DJANGO_SUPERUSER_USERNAME=${DJANGO_SUPERUSER_USERNAME:-shosh}
+    export DJANGO_SUPERUSER_EMAIL=${DJANGO_SUPERUSER_EMAIL:-shoh@example.com}
+    export DJANGO_SUPERUSER_PASSWORD=${DJANGO_SUPERUSER_PASSWORD:-SuperSecretP@ss123$}
 
     # Temporarily disable exit on error for this function
     set +e
