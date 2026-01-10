@@ -21,7 +21,6 @@ media/
 staticfiles/
 static/
 templates/
-frontend/
 local_settings.py
 instance/
 

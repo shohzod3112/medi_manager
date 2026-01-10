@@ -67,7 +67,6 @@ celerybeat-schedule
 media/
 static/
 staticfiles/
-frontend/
 
 # Logs
 logs/

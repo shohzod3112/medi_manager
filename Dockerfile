@@ -1,4 +1,6 @@
+# -------------------
 # 🔹 Builder stage
+# -------------------
 FROM python:3.11-slim as builder
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -22,7 +24,9 @@ RUN pip install --no-cache-dir poetry && \
     poetry install --only main --no-root && \
     pip uninstall -y poetry
 
+# -------------------
 # 🔹 Production stage
+# -------------------
 FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -56,10 +60,16 @@ RUN useradd --create-home --shell /bin/bash app && \
     chown -R app:app /app && \
     chmod +x /app/entrypoint.sh
 
-RUN mkdir -p /app/static /app/staticfiles /app/media /app/logs /app/frontend /app/frontend/templates /app/frontend/static /tmp && \
-    chown -R app:app /app/static /app/staticfiles /app/media /app/logs /app/frontend /app/frontend/templates /app/frontend/static /tmp && \
+# Create directories with permissions
+RUN mkdir -p /app/static /app/staticfiles /app/media /app/logs /tmp && \
+    chown -R app:app /app/static /app/staticfiles /app/media /app/logs /tmp && \
     chmod -R 755 /app/static /app/staticfiles /app/media
 
+# Make frontend build script executable and run it
+RUN chmod +x /app/frontend/build_post.sh && \
+    /app/frontend/build_post.sh
+
+# Switch to non-root user
 USER app
 
 EXPOSE 8000
@@ -68,11 +78,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8000/health/ || exit 1
 
-# 🔹 Single entrypoint
-# ENTRYPOINT shuningdek CMD ni ham boshqaradi
+# Single entrypoint
 ENTRYPOINT ["/app/entrypoint.sh"]
-
-# CMD ni docker-compose da override qilamiz:
-# web: "python manage.py runserver 0.0.0.0:8000"
-# worker: "celery -A core worker --loglevel=INFO"
-# beat: "celery -A core beat --loglevel=INFO"
