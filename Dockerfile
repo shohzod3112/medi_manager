@@ -56,8 +56,8 @@ RUN useradd --create-home --shell /bin/bash app && \
     chown -R app:app /app && \
     chmod +x /app/entrypoint.sh
 
-RUN mkdir -p /app/static /app/staticfiles /app/media /app/logs /tmp && \
-    chown -R app:app /app/static /app/staticfiles /app/media /app/logs /tmp && \
+RUN mkdir -p /app/static /app/staticfiles /app/media /app/logs /app/frontend /app/frontend/templates /app/frontend/static /tmp && \
+    chown -R app:app /app/static /app/staticfiles /app/media /app/logs /app/frontend /app/frontend/templates /app/frontend/static /tmp && \
     chmod -R 755 /app/static /app/staticfiles /app/media
 
 USER app
