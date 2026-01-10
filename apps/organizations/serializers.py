@@ -357,6 +357,7 @@ class PlaylistSerializer(serializers.ModelSerializer):
             "end_time",
             "file",
             "devices",
+            "is_active",
         ]
         read_only_fields = ["owner"]
 
