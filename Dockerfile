@@ -16,13 +16,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
 WORKDIR /app
-COPY pyproject.toml poetry.lock ./
-RUN pip install --no-cache-dir poetry && \
-    poetry config virtualenvs.create false && \
-    poetry install --only main --no-root && \
-    pip uninstall -y poetry
+
+# Copy only requirements to leverage Docker cache
+COPY requirements.txt .
+
+# Install dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 
 # -------------------
 # 🔹 Production stage
@@ -55,21 +55,14 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Copy project files
 COPY . .
 
-# Create non-root user and set permissions
+# Create non-root user
 RUN useradd --create-home --shell /bin/bash app && \
     chown -R app:app /app && \
-    chmod +x /app/entrypoint.sh
+    chmod -R 755 /app
 
-# Create directories with permissions
-RUN mkdir -p /app/static /app/staticfiles /app/media /app/logs /tmp && \
-    chown -R app:app /app/static /app/staticfiles /app/media /app/logs /tmp && \
-    chmod -R 755 /app/static /app/staticfiles /app/media
+# Make frontend build script executable if exists
+RUN if [ -f /app/frontend/build_post.sh ]; then chmod +x /app/frontend/build_post.sh && /app/frontend/build_post.sh; fi
 
-# Make frontend build script executable and run it
-RUN chmod +x /app/frontend/build_post.sh && \
-    /app/frontend/build_post.sh
-
-# Switch to non-root user
 USER app
 
 EXPOSE 8000
@@ -78,5 +71,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8000/health/ || exit 1
 
-# Single entrypoint
-ENTRYPOINT ["/app/entrypoint.sh"]
+# Run server directly
+CMD ["python3", "manage.py", "runsslserver", "--certificate", "./localhost+2.pem", "--key", "./localhost+2-key.pem", "0.0.0.0:8000"]
