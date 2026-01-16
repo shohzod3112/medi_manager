@@ -1,54 +1,47 @@
+version: "3.9"
+
 services:
   db:
     image: postgres:15-alpine
-    env_file:
-      - .env
-    volumes:
-      - postgres_data:/var/lib/postgresql/data/
+    container_name: medi_manager_db
+    env_file: .env
     environment:
-      - POSTGRES_USER=${SUPERUSER_DB_USER}
-      - POSTGRES_PASSWORD=${SUPERUSER_DB_PASSWORD}
-      - POSTGRES_DB=${SUPERUSER_DB_NAME}
-    ports:
-      - "5433:5432"
+      POSTGRES_DB: ${SUPERUSER_DB_NAME}
+      POSTGRES_USER: ${SUPERUSER_DB_USER}
+      POSTGRES_PASSWORD: ${SUPERUSER_DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${SUPERUSER_DB_USER} -d ${SUPERUSER_DB_NAME}"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
       interval: 10s
       timeout: 5s
       retries: 5
-    container_name: medi_manager_db
     restart: unless-stopped
 
   redis:
     image: redis:7-alpine
-    ports:
-      - "6379:6379"
+    container_name: medi_manager_redis
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
-    container_name: medi_manager_redis
     restart: unless-stopped
 
   web:
-    build: .
-    command: python3 manage.py runsslserver --certificate ./localhost+2.pem --key ./localhost+2-key.pem 0.0.0.0:8000
+    build:
+      context: .
+    container_name: medi_manager_web
+    env_file: .env
+    command: >
+      gunicorn core.wsgi:application
+      --bind 0.0.0.0:8000
+      --workers 3
+      --timeout 60
     volumes:
-      - ./static:/app/static
       - static_volume:/app/staticfiles
       - media_volume:/app/media
       - logs_volume:/app/logs
-    env_file:
-      - .env
-    environment:
-      - TZ=Asia/Tashkent
-      - DATABASE=postgres
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DJANGO_SUPERUSER_USERNAME=shoh
-      - DJANGO_SUPERUSER_EMAIL=admin@example.com
-      - DJANGO_SUPERUSER_PASSWORD=SuperSecretP@ss123$
     ports:
       - "8000:8000"
     depends_on:
@@ -56,53 +49,39 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    container_name: medi_manager_web
     restart: unless-stopped
 
   celery_worker:
     build: .
-    command: celery -A core worker --loglevel=info
+    container_name: medi_manager_celery_worker
+    env_file: .env
+    command: celery -A core worker -l info
     volumes:
       - media_volume:/app/media
       - logs_volume:/app/logs
-    env_file:
-      - .env
-    environment:
-      - TZ=Asia/Tashkent
-      - DATABASE=postgres
-      - DB_HOST=db
-      - DB_PORT=5432
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
-    container_name: medi_manager_celery_worker
     restart: unless-stopped
 
   celery_beat:
     build: .
-    command: celery -A core beat --loglevel=info
+    container_name: medi_manager_celery_beat
+    env_file: .env
+    command: celery -A core beat -l info
     volumes:
-      - media_volume:/app/media
       - logs_volume:/app/logs
-    env_file:
-      - .env
-    environment:
-      - TZ=Asia/Tashkent
-      - DATABASE=postgres
-      - DB_HOST=db
-      - DB_PORT=5432
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
-    container_name: medi_manager_celery_beat
     restart: unless-stopped
 
 volumes:
-  logs_volume:
   postgres_data:
   static_volume:
   media_volume:
+  logs_volume:
