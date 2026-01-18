@@ -65,11 +65,11 @@ celerybeat-schedule
 
 # Media and static files (will be mounted as volumes)
 media/
+frontend/
 static/
 staticfiles/
 
 # Logs
-logs/
 *.log
 
 # Temporary files

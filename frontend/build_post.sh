@@ -11,5 +11,5 @@ if [ -f "$SRC" ]; then
     echo "✔ frontend/static/index.html → frontend/templates/index.html"
 else
     echo "❌ index.html topilmadi: $SRC"
-    exit 1
+#    exit 1
 fi

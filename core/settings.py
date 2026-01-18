@@ -265,7 +265,6 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 500 * 1024 * 1024  # 500 MB
 FILE_UPLOAD_MAX_MEMORY_SIZE = 500 * 1024 * 1024
 
 LOG_DIR = BASE_DIR / "logs"
-os.makedirs(LOG_DIR, exist_ok=True)  # papkani yaratadi agar mavjud bo'lmasa
 
 LOGGING = {
     "version": 1,

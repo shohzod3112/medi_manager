@@ -1,5 +1,5 @@
 # =========================
-# Builder
+# BUILDER STAGE
 # =========================
 FROM python:3.11-slim AS builder
 
@@ -8,53 +8,66 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Build uchun kerakli paketlar
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
     gcc \
+    g++ \
     libpq-dev \
+    libffi-dev \
+    libssl-dev \
  && rm -rf /var/lib/apt/lists/*
 
-# Virtualenv
-RUN python -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-
-# Dependencies
+# Poetry o‘rnatamiz
 COPY pyproject.toml poetry.lock ./
+
 RUN pip install --no-cache-dir poetry \
  && poetry config virtualenvs.create false \
- && poetry install --only main --no-root \
- && pip uninstall -y poetry
-
+ && poetry install --only main --no-root
 
 # =========================
-# Runtime
+# RUNTIME STAGE
 # =========================
 FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PATH="/opt/venv/bin:$PATH"
+    PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Runtime uchun kerakli kutubxonalar
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
     libpq5 \
-    ffmpeg \
+    libffi8 \
+    libssl3 \
+    libjpeg62-turbo \
+    libpng16-16 \
+    libwebp7 \
     netcat-openbsd \
-    curl \
+ && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
-# Copy venv
-COPY --from=builder /opt/venv /opt/venv
+# Builder’dan python paketlarni ko‘chiramiz
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
 
-# Copy project
+# Loyiha fayllari
 COPY . .
 
-# Non-root user
-RUN useradd -m app \
+# User
+RUN useradd --create-home --shell /bin/bash app \
  && chown -R app:app /app
 
 USER app
 
-ENTRYPOINT ["/app/entrypoint.sh"]
+# Papkalar
+RUN mkdir -p /app/static /app/staticfiles /app/media /app/logs /tmp /app/frontend/static /app/frontend/templates
 
-EXPOSE 8000
+# Frontend scriptini ishga tushirish
+RUN if [ -f frontend/build_post.sh ]; then \
+        chmod +x frontend/build_post.sh && ./frontend/build_post.sh; \
+    fi
+
+# Default command (web uchun)
+CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000"]
