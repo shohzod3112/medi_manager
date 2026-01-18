@@ -33,7 +33,7 @@ services:
 
   web:
     build: .
-    image: media_manager:web
+    image: media_manager:latest
     command: python3 manage.py runsslserver --certificate ./localhost+2.pem --key ./localhost+2-key.pem 0.0.0.0:8000
     volumes:
       - ./frontend:/app/frontend
@@ -62,8 +62,7 @@ services:
     restart: unless-stopped
 
   celery_worker:
-    build: .
-    image: media_manager:celery
+    image: media_manager:latest
     pull_policy: never
     command: celery -A core worker --loglevel=info
     volumes:
@@ -80,8 +79,7 @@ services:
     restart: unless-stopped
 
   celery_beat:
-    build: .
-    image: media_manager:celery
+    image: media_manager:latest
     pull_policy: never
     command: celery -A core beat --loglevel=info
     volumes:
