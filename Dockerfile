@@ -27,7 +27,7 @@ WORKDIR /app
 # Runtime paketlar
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
-    libpq5 libffi8 libssl3 libjpeg62-turbo libpng16-16 libwebp7 netcat-openbsd \
+    ffmpeg libpq5 libffi8 libssl3 libjpeg62-turbo libpng16-16 libwebp7 netcat-openbsd \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 

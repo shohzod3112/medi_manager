@@ -16,7 +16,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    container_name: medi_manager_db
+    container_name: media_manager_db
     restart: unless-stopped
 
   redis:
@@ -28,7 +28,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    container_name: medi_manager_redis
+    container_name: media_manager_redis
     restart: unless-stopped
 
   web:
@@ -58,7 +58,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    container_name: medi_manager_web
+    container_name: media_manager_web
     restart: unless-stopped
 
   celery_worker:
@@ -76,7 +76,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    container_name: medi_manager_celery_worker
+    container_name: media_manager_celery_worker
     restart: unless-stopped
 
   celery_beat:
@@ -94,13 +94,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    container_name: medi_manager_celery_beat
-    restart: unless-stopped
-  ffmpeg:
-    image: jrottenberg/ffmpeg:6.0-ubuntu
-    container_name: medi_manager_ffmpeg
-    volumes:
-      - media_volume:/app/media
+    container_name: media_manager_celery_beat
     restart: unless-stopped
 
 volumes:
