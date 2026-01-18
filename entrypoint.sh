@@ -1,6 +1,26 @@
 #!/bin/bash
 set -e
 
+FRONTEND_DIR="/app/frontend/static"
+
+# ========================
+# Papkalarni tekshirish/yaratish
+# ========================
+mkdir -p /app/static /app/staticfiles /app/media /app/logs /app/frontend/static /app/frontend/templates /tmp
+
+# ========================
+# Frontendni tekshirish va index.html ko'chirish
+# ========================
+SRC="$FRONTEND_DIR/index.html"
+DST="/app/frontend/templates/index.html"
+
+if [ -f "$SRC" ]; then
+    cp "$SRC" "$DST"
+    echo "✔ $SRC → $DST"
+else
+    echo "❌ index.html topilmadi: $SRC"
+fi
+
 # Simple logging
 log() { echo "[$(date +'%H:%M:%S')] $1"; }
 error() { echo "ERROR: $1" >&2; exit 1; }
