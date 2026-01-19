@@ -11,32 +11,14 @@ services:
       - POSTGRES_DB=${SUPERUSER_DB_NAME}
     ports:
       - "5433:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${SUPERUSER_DB_USER} -d ${SUPERUSER_DB_NAME}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
     container_name: media_manager_db
-    restart: unless-stopped
-
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    container_name: media_manager_redis
-    restart: unless-stopped
+    restart: always
 
   web:
     build: .
     image: media_manager:latest
     command: python3 manage.py runsslserver --certificate ./localhost+2.pem --key ./localhost+2-key.pem 0.0.0.0:8000
     volumes:
-      - ./frontend:/app/frontend
       - ./static:/app/static
       - static_volume:/app/staticfiles
       - media_volume:/app/media
@@ -55,45 +37,48 @@ services:
       - "8000:8000"
     depends_on:
       db:
-        condition: service_healthy
+        condition: service_started
       redis:
-        condition: service_healthy
+        condition: service_started
     container_name: media_manager_web
-    restart: unless-stopped
+    restart: always
+
+  redis:
+    image: redis:7-alpine
+    container_name: media_manager_redis
+    ports:
+      - "6379:6379"
+    restart: always
 
   celery_worker:
-    image: media_manager:latest
-    pull_policy: never
+    image:  media_manager:latest
     command: celery -A core worker --loglevel=info
     volumes:
-      - media_volume:/app/media
       - logs_volume:/app/logs
     env_file:
       - .env
     depends_on:
       db:
-        condition: service_healthy
+        condition: service_started
       redis:
-        condition: service_healthy
+        condition: service_started
     container_name: media_manager_celery_worker
-    restart: unless-stopped
+    restart: always
 
   celery_beat:
     image: media_manager:latest
-    pull_policy: never
     command: celery -A core beat --loglevel=info
     volumes:
-      - media_volume:/app/media
       - logs_volume:/app/logs
     env_file:
       - .env
     depends_on:
       db:
-        condition: service_healthy
+        condition: service_started
       redis:
-        condition: service_healthy
+        condition: service_started
     container_name: media_manager_celery_beat
-    restart: unless-stopped
+    restart: always
 
 volumes:
   logs_volume:
