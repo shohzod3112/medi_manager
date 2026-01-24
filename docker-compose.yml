@@ -16,6 +16,7 @@ services:
 
   web:
     build: .
+    privileged: true
     image: media_manager:latest
     command: python3 manage.py runsslserver --certificate ./localhost+2.pem --key ./localhost+2-key.pem 0.0.0.0:8000
     volumes:
@@ -44,6 +45,7 @@ services:
     restart: always
 
   nginx:
+    privileged: true
     image: nginx:alpine
     container_name: nginx
     ports:
