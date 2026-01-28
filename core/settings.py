@@ -156,6 +156,9 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOW_CREDENTIALS = True
 
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+
 CORS_ALLOWED_ORIGINS = [
     "https://192.168.10.179",
     "http://192.168.10.179",
@@ -195,6 +198,9 @@ CSRF_TRUSTED_ORIGINS = [
     "http://127.7.7.7:3000",
     "http://localhost:3000",
 ]
+
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
 
 CORS_EXPOSE_HEADERS = ['Content-Type', 'X-CSRFToken', 'Access-Control-Allow-Origin']
 
