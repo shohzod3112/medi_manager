@@ -18,7 +18,7 @@ services:
     build: .
     privileged: true
     image: media_manager:latest
-    command: python3 manage.py runsslserver --certificate ./localhost+2.pem --key ./localhost+2-key.pem 0.0.0.0:8000
+    command: python3 manage.py runserver 0.0.0.0:8000
     volumes:
       - ./static:/app/static
       - static_volume:/app/staticfiles
