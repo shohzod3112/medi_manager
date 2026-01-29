@@ -27,7 +27,6 @@ from drf_yasg.views import get_schema_view
 from rest_framework import permissions
 
 from apps.users import views as user_views
-from .views import frontend_view
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -66,8 +65,3 @@ urlpatterns = [
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
-# 🔴 ENG OXIRIDA frontend
-urlpatterns += [
-    re_path(r"^.*$", frontend_view),
-]
