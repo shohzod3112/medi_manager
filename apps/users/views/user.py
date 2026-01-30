@@ -165,7 +165,7 @@ class UserRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
         if not user.is_superuser:
             if pk != request.user.pk:
                 return Response({"message": "Siz faqat o'zi ma'lumotlaringizni yangilay olasiz!"}, status=status.HTTP_400_BAD_REQUEST)
-            elif request.get('username') or request.get('email') or request.get('role') or request.get('organization'):
+            elif request.get('username') or request.get('email') or request.get('role') or request.get('organization') or request.get('is_active'):
                 return Response({"message": "Sizda imkoniyat cheklangan"}, status=status.HTTP_400_BAD_REQUEST)
 
         serializer = self.get_serializer(user, data=request.data, partial=True, context={"request": request})

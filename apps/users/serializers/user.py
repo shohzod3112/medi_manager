@@ -182,6 +182,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         fields = [
             "username",
             "email",
+            "is_active",
             "role",
             "organization",
             "first_name",
