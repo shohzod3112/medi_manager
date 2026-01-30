@@ -162,9 +162,9 @@ class UserRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
     def patch(self, request, pk=None):
         user = get_object_or_404(User, pk=pk)
 
-        if not user.is_superuser:
+        if not self.request.user.is_superuser:
             if pk != request.user.pk:
-                return Response({"message": "Siz faqat o'zi ma'lumotlaringizni yangilay olasiz!"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"message": "Siz faqat o'z ma'lumotlaringizni yangilay olasiz!"}, status=status.HTTP_400_BAD_REQUEST)
             elif request.get('username') or request.get('email') or request.get('role') or request.get('organization') or request.get('is_active'):
                 return Response({"message": "Sizda imkoniyat cheklangan"}, status=status.HTTP_400_BAD_REQUEST)
 
