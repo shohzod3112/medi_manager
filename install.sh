@@ -5,7 +5,7 @@ HWID=$(cat /etc/machine-id | sha256sum | awk '{print $1}')
 echo "Server HWID: $HWID"
 
 # Licence kutish
-while [ ! -f ./backend/licence.json ]; do
+while [ ! -f ./licence.json ]; do
     echo "Waiting for licence.json..."
     sleep 2
 done
