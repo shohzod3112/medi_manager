@@ -11,7 +11,7 @@ while [ ! -f ./licence.json ]; do
 done
 
 echo "Licence found, starting docker..."
-docker compose -f backend/docker-compose.yml up -d
+docker compose -f docker-compose.yml up -d
 
 # Wait for web HEALTHY
 until [ "$(docker inspect --format='{{.State.Health.Status}}' media-manager-web)" == "healthy" ]; do
