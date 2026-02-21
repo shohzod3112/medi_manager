@@ -14,8 +14,8 @@ echo "Licence found, starting docker..."
 docker compose -f docker-compose.yml up -d
 
 # Wait for web HEALTHY
-until [ "$(docker inspect --format='{{.State.Health.Status}}' media_manager_web)" == "healthy" ]; do
-    echo "Waiting for web container..."
+until [ "$(docker inspect --format='{{.State.Status}}' media_manager_web)" == "running" ]; do
+    echo "Waiting for web container to be running..."
     sleep 2
 done
 
