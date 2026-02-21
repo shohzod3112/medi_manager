@@ -10,11 +10,12 @@ echo "Licence found, starting docker..."
 # 2. Docker compose up
 docker compose up -d
 
-# 3. Web container healthcheck
-until [ "$(docker inspect --format='{{.State.Health.Status}}' media_manager_web 2>/dev/null)" == "healthy" ]; do
-    echo "Waiting for web container..."
+# Wait for web HEALTHY
+until [ "$(docker inspect --format='{{.State.Status}}' media_manager_web)" == "running" ]; do
+    echo "Waiting for web container to be running..."
     sleep 2
 done
+
 echo "Web container is healthy!"
 
 # 4. Source backup
@@ -28,4 +29,3 @@ rm -rf apps core manage.py requirements.txt pyproject.toml
 echo "Source deleted!"
 
 # Shu bilan skript tayyor
-
