@@ -24,6 +24,7 @@ services:
       - static_volume:/app/staticfiles
       - media_volume:/app/media
       - logs_volume:/app/logs
+      - ./licence.json:/licence/licence.json:ro
     env_file:
       - .env
     environment:
