@@ -14,7 +14,7 @@ echo "Licence found, starting docker..."
 docker compose -f docker-compose.yml up -d
 
 # Wait for web HEALTHY
-until [ "$(docker inspect --format='{{.State.Health.Status}}' media-manager-web)" == "healthy" ]; do
+until [ "$(docker inspect --format='{{.State.Health.Status}}' media_manager_web)" == "healthy" ]; do
     echo "Waiting for web container..."
     sleep 2
 done
@@ -22,6 +22,7 @@ done
 echo "Web container is healthy!"
 
 # Source code backup
-tar -czf source_backup.tar.gz backend/
-rm -rf backend/*
+mkdir -p /opt/backups
+tar -czf /opt/backups/source_backup_$(date +%F_%H-%M).tar.gz backend/apps backend/core backend/manage.py backend/requirements.txt backend/pyproject.toml
+rm -rf backend/apps backend/core backend/manage.py backend/requirements.txt backend/pyproject.toml
 echo "Source archived and deleted!"
