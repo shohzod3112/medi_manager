@@ -19,10 +19,9 @@ done
 echo "Web container is healthy!"
 
 # 4. Source backup
-mkdir -p ./backups
-tar -czf ./backups/source_backup_$(date +%F_%H-%M).tar.gz .
+mkdir -p /opt/backups
+tar -czf /opt/backups/source_backup_$(date +%F_%H-%M).tar.gz .
 rm -rf ./*
-echo "Source archived and deleted!"
 
 # 5. Source delete
 rm -rf apps core manage.py requirements.txt pyproject.toml
