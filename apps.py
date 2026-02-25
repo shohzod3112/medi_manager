@@ -1,8 +1,8 @@
 from django.apps import AppConfig
+from core.licence import check_license
 
 class CoreConfig(AppConfig):
     name = "core"
 
     def ready(self):
-        from core.license import get_hwid
-        get_hwid()
+        check_license()

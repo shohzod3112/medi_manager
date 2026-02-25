@@ -1,30 +1,16 @@
-#!/bin/bash
+# 1. Build
+docker compose build
 
-# 1. Licence tekshirish (siz allaqachon qo‘ygan)
-if [ ! -f ./licence.json ]; then
-    echo "Waiting for licence.json..."
-    while [ ! -f ./licence.json ]; do sleep 2; done
-fi
-echo "Licence found, starting docker..."
-
-# 2. Docker compose up
+# 2. Run
 docker compose up -d
 
-# Wait for web HEALTHY
-until [ "$(docker inspect --format='{{.State.Status}}' media_manager_web)" == "running" ]; do
-    echo "Waiting for web container to be running..."
-    sleep 2
-done
-
-echo "Web container is healthy!"
-
-# 4. Source backup
+# 3. Backup
 mkdir -p /opt/backups
-tar -czf /opt/backups/source_backup_$(date +%F_%H-%M).tar.gz .
-rm -rf ./*
+tar -czf /opt/backups/source_$(date +%F_%H-%M).tar.gz .
 
-# 5. Source delete
-rm -rf apps core manage.py requirements.txt pyproject.toml
-echo "Source deleted!"
-
-# Shu bilan skript tayyor
+# 4. Delete source (compose va envdan tashqari)
+find . -mindepth 1 -maxdepth 1 \
+! -name docker-compose.yml \
+! -name .env \
+! -name licence.json \
+-exec rm -rf {} +
