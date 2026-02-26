@@ -48,13 +48,13 @@ ARCHIVE="$PROJECT_ROOT/protected.7z"
 PASS="MediaManager@123"
 
 mkdir -p "$PROTECTED"
-cp -r backend/apps backend/core backend/manage.py backend/hwid.py backend/check_licence.py "$PROTECTED/"
+cp -r apps core manage.py hwid.py check_licence.py "$PROTECTED/"
 cp -r "$LICENCE_DIR" "$PROTECTED/licence"
 
 7z a -t7z "$ARCHIVE" "$PROTECTED/*" -p"$PASS" -mhe=on >/dev/null
 
 log "Wiping source"
-rm -rf backend/apps backend/core backend/manage.py backend/hwid.py backend/check_licence.py
+rm -rf apps core manage.py hwid.py check_licence.py
 
 log "DONE 🔒"
 echo "Archive: protected.7z"
