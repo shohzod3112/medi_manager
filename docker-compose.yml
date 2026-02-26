@@ -43,10 +43,10 @@ services:
         condition: service_started
     container_name: media_manager_web
     restart: always
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8000/health/" ]
-      interval: 5s
-      retries: 5
+#    healthcheck:
+#      test: [ "CMD", "curl", "-f", "http://localhost:8000/health/" ]
+#      interval: 5s
+#      retries: 5
 
   nginx:
     image: nginx:alpine
