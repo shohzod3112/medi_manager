@@ -2,7 +2,7 @@
 set -e
 
 PROJECT_ROOT="$(pwd)"
-BACKEND_DIR="$PROJECT_ROOT/backend"
+BACKEND_DIR="$PROJECT_ROOT"
 COMPOSE_FILE="$BACKEND_DIR/docker-compose.yml"
 LICENCE_DIR="/opt/media-manager/licence"
 LOG_FILE="$PROJECT_ROOT/install.log"
