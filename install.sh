@@ -35,7 +35,7 @@ docker compose -f "$COMPOSE_FILE" up -d --build
 
 log "Waiting for backend HEALTHY"
 for i in {1..30}; do
-  STATUS=$(docker inspect --format='{{.State.Health.Status}}' backend-web-1 2>/dev/null || true)
+  STATUS=$(docker inspect --format='{{.State.Health.Status}}' media_manager_web 2>/dev/null || true)
   [ "$STATUS" = "healthy" ] && break
   sleep 2
 done
