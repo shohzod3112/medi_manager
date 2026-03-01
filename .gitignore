@@ -8,6 +8,7 @@ venv/
 env/
 *.env
 *.venv
+generate_licence.py
 
 # Poetry
 poetry.lock

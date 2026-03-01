@@ -75,3 +75,5 @@ staticfiles/
 # Temporary files
 tmp/
 temp/
+
+generate_licence.py
