@@ -22,8 +22,8 @@ services:
     volumes:
       - ./static:/app/static
       - static_volume:/app/staticfiles
-      - media_volume:/app/media
-      - logs_volume:/app/logs
+      - /opt/media-manager/media:/app/media
+      - /opt/media-manager/logs:/app/logs
     env_file:
       - .env
     environment:
