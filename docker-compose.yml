@@ -16,7 +16,7 @@ services:
 
   web:
     build: .
-    privileged: true
+#    privileged: true
     image: media_manager:latest
     command: python3 manage.py runserver 0.0.0.0:8000
     volumes:
@@ -62,6 +62,7 @@ services:
       - media_volume:/media
     depends_on:
       - web
+    restart: always
 
   redis:
     image: redis:7-alpine
