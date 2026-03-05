@@ -77,8 +77,12 @@ services:
     image:  media_manager:latest
     command: celery -A core worker --loglevel=info
     volumes:
-      - logs_volume:/app/logs
+      - ./static:/app/static
+      - static_volume:/app/staticfiles
+      - /opt/media-manager/media:/app/media
+      - /opt/media-manager/logs:/app/logs
       - /opt/media-manager/licence:/opt/media-manager/licence
+      - /etc/machine-id:/etc/machine-id:ro
     env_file:
       - .env
     depends_on:
@@ -93,8 +97,12 @@ services:
     image: media_manager:latest
     command: celery -A core beat --loglevel=info
     volumes:
-      - logs_volume:/app/logs
+      - ./static:/app/static
+      - static_volume:/app/staticfiles
+      - /opt/media-manager/media:/app/media
+      - /opt/media-manager/logs:/app/logs
       - /opt/media-manager/licence:/opt/media-manager/licence
+      - /etc/machine-id:/etc/machine-id:ro
     env_file:
       - .env
     depends_on:
