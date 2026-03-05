@@ -24,6 +24,7 @@ services:
       - static_volume:/app/staticfiles
       - /opt/media-manager/media:/app/media
       - /opt/media-manager/logs:/app/logs
+      - /opt/media-manager/licence:/opt/media-manager/licence
     env_file:
       - .env
     environment:
