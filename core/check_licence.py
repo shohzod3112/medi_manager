@@ -1,34 +1,40 @@
-import json, hmac, hashlib, sys
-from hwid import generate_hwid
-from datetime import date
+import json
+import hmac
+import hashlib
+from datetime import datetime
 
 SECRET = b"LOCAL_MEDIA_MANAGER_SECRET"
-LICENCE_FILE = "/licence/licence.json"
+LICENCE_PATH = "/opt/media-manager/licence/licence.json"
 
-def _verify(data):
-    sig = data.pop("signature", None)
+
+def verify_signature(data, signature):
     raw = json.dumps(data, sort_keys=True).encode()
-    exp = hmac.new(SECRET, raw, hashlib.sha256).hexdigest()
-    return sig and hmac.compare_digest(sig, exp)
+    expected = hmac.new(SECRET, raw, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(expected, signature)
 
-def check_or_exit():
-    try:
-        lic = json.load(open(LICENCE_FILE))
-    except Exception:
-        print("❌ Licence not found")
-        sys.exit(1)
 
-    if lic.get("hwid") != generate_hwid():
-        print("❌ HWID mismatch")
-        sys.exit(1)
+def get_hwid():
+    with open("/etc/machine-id") as f:
+        mid = f.read().strip()
 
-    if not _verify(dict(lic)):
-        print("❌ Invalid licence signature")
-        sys.exit(1)
+    return hashlib.sha256(mid.encode()).hexdigest()
 
-    if "expires" in lic:
-        if date.fromisoformat(lic["expires"]) < date.today():
-            print("❌ Licence expired")
-            sys.exit(1)
 
-    print("✅ Licence OK")
+def check_licence():
+    with open(LICENCE_PATH) as f:
+        lic = json.load(f)
+
+    signature = lic.pop("signature")
+
+    if not verify_signature(lic, signature):
+        raise Exception("Invalid licence signature")
+
+    if lic["hwid"] != get_hwid():
+        raise Exception("HWID mismatch")
+
+    exp = datetime.strptime(lic["expires"], "%Y-%m-%d").date()
+
+    if exp < datetime.now().date():
+        raise Exception("Licence expired")
+
+    return True

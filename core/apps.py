@@ -4,5 +4,5 @@ class CoreConfig(AppConfig):
     name = "core"
 
     def ready(self):
-        # Licence check is triggered via Django system checks
-        pass
+        from .check_licence import check_licence
+        check_licence()
