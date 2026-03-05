@@ -21,7 +21,7 @@ mkdir -p "$LICENCE_DIR"
 chmod 755 "$LICENCE_DIR"
 
 log "Generating HWID"
-HWID=$(cat /etc/machine-id | sha256sum | awk '{print $1}')
+HWID=$(tr -d '\n' < /etc/machine-id | sha256sum | awk '{print $1}')
 echo "HWID: $HWID"
 
 echo "👉 Generate licence.json on DEV machine"
