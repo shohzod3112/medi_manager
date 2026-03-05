@@ -78,6 +78,7 @@ services:
     command: celery -A core worker --loglevel=info
     volumes:
       - logs_volume:/app/logs
+      - /opt/media-manager/licence:/opt/media-manager/licence
     env_file:
       - .env
     depends_on:
@@ -93,6 +94,7 @@ services:
     command: celery -A core beat --loglevel=info
     volumes:
       - logs_volume:/app/logs
+      - /opt/media-manager/licence:/opt/media-manager/licence
     env_file:
       - .env
     depends_on:
