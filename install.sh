@@ -34,9 +34,19 @@ log "Starting containers"
 docker compose -f "$COMPOSE_FILE" up -d --build
 
 log "Waiting for backend HEALTHY"
+
 for i in {1..30}; do
   STATUS=$(docker inspect --format='{{.State.Health.Status}}' media_manager_web 2>/dev/null || true)
-  [ "$STATUS" = "healthy" ] && break
+
+  echo "Attempt $i - Health: $STATUS"
+
+  docker logs media_manager_web --tail 5
+
+  if [ "$STATUS" = "healthy" ]; then
+    echo "Backend is healthy!"
+    break
+  fi
+
   sleep 2
 done
 
