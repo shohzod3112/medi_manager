@@ -31,7 +31,7 @@ read -p "Press ENTER when ready..."
 [ -f "$LICENCE_DIR/licence.json" ] || fail "licence.json missing"
 
 log "Starting containers"
-docker compose -f "$COMPOSE_FILE" up -d --build
+sudo docker compose -f "$COMPOSE_FILE" up -d --build
 
 log "Waiting for backend HEALTHY"
 

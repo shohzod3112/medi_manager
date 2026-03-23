@@ -23,7 +23,6 @@ services:
       - ./static:/app/static
       - static_volume:/app/staticfiles
       - /opt/media-manager/media:/app/media
-      - /opt/media-manager/logs:/app/logs
       - /opt/media-manager/licence:/opt/media-manager/licence
       - /etc/machine-id:/etc/machine-id:ro
     env_file:
@@ -80,7 +79,6 @@ services:
       - ./static:/app/static
       - static_volume:/app/staticfiles
       - /opt/media-manager/media:/app/media
-      - /opt/media-manager/logs:/app/logs
       - /opt/media-manager/licence:/opt/media-manager/licence
       - /etc/machine-id:/etc/machine-id:ro
     env_file:
@@ -100,7 +98,6 @@ services:
       - ./static:/app/static
       - static_volume:/app/staticfiles
       - /opt/media-manager/media:/app/media
-      - /opt/media-manager/logs:/app/logs
       - /opt/media-manager/licence:/opt/media-manager/licence
       - /etc/machine-id:/etc/machine-id:ro
     env_file:
@@ -114,7 +111,6 @@ services:
     restart: always
 
 volumes:
-  logs_volume:
   postgres_data:
   static_volume:
   media_volume:

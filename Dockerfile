@@ -42,7 +42,7 @@ COPY . .
 RUN useradd --create-home --shell /bin/bash app
 
 # Root ostida papkalarni yaratish va huquq berish
-RUN mkdir -p /app/static /app/staticfiles /app/media /app/logs /tmp \
+RUN mkdir -p /app/static /app/staticfiles /app/media /tmp \
  && chown -R app:app /app
 
 

@@ -177,6 +177,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.7.7.7",
     "http://127.7.7.7:3000",
     "http://localhost:3000",
+    "http://10.70.13.5",
+    "https://10.70.13.5"
 ]
 
 CSRF_TRUSTED_ORIGINS = [
@@ -197,6 +199,8 @@ CSRF_TRUSTED_ORIGINS = [
     "http://127.7.7.7",
     "http://127.7.7.7:3000",
     "http://localhost:3000",
+    "http://10.70.13.5",
+    "https://10.70.13.5"
 ]
 
 SESSION_COOKIE_SECURE = True
@@ -269,57 +273,3 @@ JAZZMIN_SETTINGS = {
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 500 * 1024 * 1024  # 500 MB
 FILE_UPLOAD_MAX_MEMORY_SIZE = 500 * 1024 * 1024
-
-LOG_DIR = BASE_DIR / "logs"
-
-LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-
-    "formatters": {
-        "verbose": {
-            "format": (
-                "[{asctime}] {levelname} "
-                "user={user} method={method} "
-                "path={path} status={status} "
-                "message={message}"
-            ),
-            "style": "{",
-        },
-    },
-
-    "handlers": {
-        # 🔵 INFO loglar
-        "info_file": {
-            "class": "logging.handlers.RotatingFileHandler",
-            "filename": str(LOG_DIR / "app.log"),  # str ga o'tkazdik
-            "maxBytes": 1024 * 1024,  # 1 MB
-            "backupCount": 8,
-            "level": "INFO",
-            "formatter": "verbose",
-        },
-
-        # 🔴 ERROR loglar
-        "error_file": {
-            "class": "logging.handlers.RotatingFileHandler",
-            "filename": str(LOG_DIR / "errors.log"),  # str ga o'tkazdik
-            "maxBytes": 1024 * 1024,
-            "backupCount": 8,
-            "level": "ERROR",
-            "formatter": "verbose",
-        },
-    },
-
-    "loggers": {
-        "app": {
-            "handlers": ["info_file", "error_file"],
-            "level": "INFO",
-            "propagate": False,
-        },
-        "django.request": {
-            "handlers": ["error_file"],
-            "level": "ERROR",
-            "propagate": False,
-        },
-    },
-}
