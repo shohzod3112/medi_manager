@@ -61,7 +61,7 @@ services:
       - ./nginx/certs:/etc/nginx/certs
       - ../frontend/dist:/frontend/dist
       - static_volume:/static
-      - media_volume:/media
+      - /opt/media-manager/media:/app/media
     depends_on:
       - web
     restart: always
