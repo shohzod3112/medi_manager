@@ -5,6 +5,10 @@ set -e
 # ========================
 mkdir -p /app/static /app/staticfiles /app/media /app/logs /tmp
 
+# Ruxsatlarni tuzatish
+chown -R app:app /app/static /app/staticfiles /app/media /app/logs
+chmod -R 755 /app/static /app/staticfiles /app/media /app/logs
+
 
 # Simple logging
 log() { echo "[$(date +'%H:%M:%S')] $1"; }
