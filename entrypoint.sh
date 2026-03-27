@@ -14,7 +14,7 @@ if [ "$(id -u)" = "0" ]; then
 
     log "Switching to app user..."
     # Endi exec bilan CMD ni ishga tushiramiz
-    exec su-exec app "$@"
+    exec app "$@"
 else
     log "Running as $(whoami)"
     exec "$@"
