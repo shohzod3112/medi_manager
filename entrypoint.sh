@@ -1,9 +1,22 @@
 #!/bin/bash
 set -e
 
-# Papkalarni tekshirish/yaratish
-# ========================
-mkdir -p /app/static /app/staticfiles /app/media /app/logs /tmp
+#!/bin/bash
+set -e
+
+# Agar root bo‘lsa — ruxsatlarni to‘g‘rilaymiz
+if [ "$(id -u)" = "0" ]; then
+    log "Fixing permissions..."
+
+    mkdir -p /app/media /app/static /app/staticfiles /app/logs
+
+    chown -R app:app /app/media /app/static /app/staticfiles /app/logs
+
+    log "Switching to app user..."
+    exec su-exec app "$0" "$@"
+fi
+
+# ---- endi app user ichidamiz ----
 
 # Simple logging
 log() { echo "[$(date +'%H:%M:%S')] $1"; }
