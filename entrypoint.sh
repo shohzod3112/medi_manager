@@ -12,9 +12,6 @@ if [ "$(id -u)" = "0" ]; then
     mkdir -p /app/media /app/static /app/staticfiles /app/logs /tmp
     chown -R app:app /app/media /app/static /app/staticfiles /app/logs /tmp
 
-    log "Switching to app user..."
-    # Endi exec bilan CMD ni ishga tushiramiz
-    exec app "$@"
 else
     log "Running as $(whoami)"
     exec "$@"
