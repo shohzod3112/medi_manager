@@ -1,8 +1,9 @@
 #!/bin/bash
 set -e
 
-#!/bin/bash
-set -e
+log() {
+    echo "[ENTRYPOINT] $1"
+}
 
 # Agar root bo‘lsa — ruxsatlarni to‘g‘rilaymiz
 if [ "$(id -u)" = "0" ]; then
