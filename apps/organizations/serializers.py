@@ -419,6 +419,48 @@ class PlaylistSerializer(serializers.ModelSerializer):
         return playlist
 
 
+class DeviceListByPlaylistSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Device
+        fields = ["id", "name", "device_type"]
+
+
+class PlaylistListSerializer(serializers.ModelSerializer):
+    file = serializers.SerializerMethodField()
+    devices = DeviceListByPlaylistSerializer(many=True, read_only=True)
+    owner = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Playlist
+        fields = [
+            "playlist_id",
+            "name",
+            "playlist_type"
+            "start_date",
+            "end_date",
+            "start_time",
+            "end_time",
+            "file",
+            "devices",
+            "is_active",
+            "owner",
+        ]
+
+    def get_file(self, obj):
+        return obj.file.count()
+
+    def get_owner(self, obj):
+        if obj.owner:
+            return {
+                "id": obj.owner.id,
+                "full_name": obj.owner.full_name,
+                "organization": obj.owner.organization.name if obj.owner.organization else None,
+            }
+        return None
+
+
+
+
 class OrganizationListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Organization

@@ -508,6 +508,11 @@ class PlaylistListCreateView(generics.ListCreateAPIView):
             ).order_by("-created_at")
         return Playlist.objects.all()
 
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return serializers.PlaylistSerializer
+        return serializers.PlaylistListSerializer
+
     def perform_create(self, serializer):
         serializer.save()
 
