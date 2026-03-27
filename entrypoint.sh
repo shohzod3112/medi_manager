@@ -8,12 +8,15 @@ set -e
 if [ "$(id -u)" = "0" ]; then
     log "Fixing permissions..."
 
-    mkdir -p /app/media /app/static /app/staticfiles /app/logs
-
-    chown -R app:app /app/media /app/static /app/staticfiles /app/logs
+    mkdir -p /app/media /app/static /app/staticfiles /app/logs /tmp
+    chown -R app:app /app/media /app/static /app/staticfiles /app/logs /tmp
 
     log "Switching to app user..."
-    exec su-exec app "$0" "$@"
+    # Endi exec bilan CMD ni ishga tushiramiz
+    exec su-exec app "$@"
+else
+    log "Running as $(whoami)"
+    exec "$@"
 fi
 
 # ---- endi app user ichidamiz ----

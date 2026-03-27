@@ -41,12 +41,15 @@ COPY . .
 # App user
 RUN useradd --create-home --shell /bin/bash app
 
+# Papkalarni yaratish (build vaqtida)
 RUN mkdir -p /app/static /app/staticfiles /app/media \
  && chown -R app:app /app
 
 USER app
 
-# Entrypoint scriptni ishga tushirish
+# Entrypoint script
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 ENTRYPOINT ["/app/entrypoint.sh"]
 
 CMD ["gunicorn", "core.wsgi:application", "--bind", "0.0.0.0:8000"]
