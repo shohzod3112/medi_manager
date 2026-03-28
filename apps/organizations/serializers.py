@@ -435,7 +435,7 @@ class PlaylistListSerializer(serializers.ModelSerializer):
         fields = [
             "playlist_id",
             "name",
-            "playlist_type"
+            "playlist_type",
             "start_date",
             "end_date",
             "start_time",
