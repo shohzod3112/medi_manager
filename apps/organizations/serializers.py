@@ -211,7 +211,15 @@ class PlaylistNowSerializer(serializers.ModelSerializer):
     file = FileNowSerializer(many=True, read_only=True)
     class Meta:
         model = Playlist
-        fields = ["playlist_id", "name", "file"]
+        fields = [
+            "playlist_id",
+            "name",
+            "file",
+            "start_date",
+            "end_date",
+            "start_time",
+            "end_time",
+        ]
 
 
 class DeviceListSerializer(serializers.ModelSerializer):
