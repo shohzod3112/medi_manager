@@ -453,7 +453,7 @@ class PlaylistListSerializer(serializers.ModelSerializer):
         if obj.owner:
             return {
                 "id": obj.owner.id,
-                "full_name": obj.owner.full_name,
+                "full_name": obj.owner.get_full_name(),
                 "organization": obj.owner.organization.name if obj.owner.organization else None,
             }
         return None
