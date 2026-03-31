@@ -38,3 +38,14 @@ def check_licence():
         raise Exception("Licence expired")
 
     return True
+
+if __name__ == "__main__":
+    import sys
+
+    try:
+        check_licence()
+        print("✅ License OK")
+        sys.exit(0)
+    except Exception as e:
+        print(f"❌ {e}")
+        sys.exit(1)

@@ -37,17 +37,17 @@ wait_for_redis() {
     log "Redis ready"
 }
 
-# Create superuser if it doesn't exist
-create_superuser() {
-    log "Checking for superuser..."
-
-    # Set default values if environment variables are not set
-    export DJANGO_SUPERUSER_USERNAME=${DJANGO_SUPERUSER_USERNAME:-shosh}
-    export DJANGO_SUPERUSER_EMAIL=${DJANGO_SUPERUSER_EMAIL:-shoh@example.com}
-    export DJANGO_SUPERUSER_PASSWORD=${DJANGO_SUPERUSER_PASSWORD:-SuperSecretP@ss123$}
-
-    # Temporarily disable exit on error for this function
-    set +e
+## Create superuser if it doesn't exist
+#create_superuser() {
+#    log "Checking for superuser..."
+#
+#    # Set default values if environment variables are not set
+#    export DJANGO_SUPERUSER_USERNAME=${DJANGO_SUPERUSER_USERNAME:-shosh}
+#    export DJANGO_SUPERUSER_EMAIL=${DJANGO_SUPERUSER_EMAIL:-shoh@example.com}
+#    export DJANGO_SUPERUSER_PASSWORD=${DJANGO_SUPERUSER_PASSWORD:-SuperSecretP@ss123$}
+#
+#    # Temporarily disable exit on error for this function
+#    set +e
 
     # Check if superuser already exists
     check_result=$(python manage.py shell -c "
