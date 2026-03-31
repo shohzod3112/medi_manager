@@ -6,8 +6,8 @@ log() { echo "[ENTRYPOINT] $1"; }
 log "Checking licence before starting..."
 python3 /app/core/check_licence.py || { log "Licence invalid, exiting"; exit 1; }
 
-log "Starting cron..."
-cron
+# Cron ishga tushadi
+service cron start
 
 log "Starting Gunicorn..."
 exec "$@"
