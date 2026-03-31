@@ -42,7 +42,7 @@ COPY . .
 RUN useradd --create-home --shell /bin/bash app
 
 # Papkalarni yaratish (build vaqtida)
-RUN mkdir -p /app/static /app/staticfiles /app/media \
+RUN mkdir -p /app/static /app/staticfiles /app/media /app/logs \
  && chown -R app:app /app
 
 #USER app
