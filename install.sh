@@ -32,7 +32,7 @@ read -p "Press ENTER when ready..."
 
 echo "[INSTALL] Checking license..."
 
-python core/check_license.py
+python core/check_licence.py
 
 if [ $? -ne 0 ]; then
   echo "❌ License invalid. Stopping install."
