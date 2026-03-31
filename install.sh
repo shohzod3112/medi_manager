@@ -30,15 +30,6 @@ read -p "Press ENTER when ready..."
 
 [ -f "$LICENCE_DIR/licence.json" ] || fail "licence.json missing"
 
-echo "[INSTALL] Checking license..."
-
-python core/check_licence.py
-
-if [ $? -ne 0 ]; then
-  echo "❌ License invalid. Stopping install."
-  exit 1
-fi
-
 log "Starting containers"
 sudo docker compose -f "$COMPOSE_FILE" up -d --build
 
