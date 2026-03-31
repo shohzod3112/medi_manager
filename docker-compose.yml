@@ -10,7 +10,7 @@ services:
       - POSTGRES_PASSWORD=${SUPERUSER_DB_PASSWORD}
       - POSTGRES_DB=${SUPERUSER_DB_NAME}
     ports:
-      - "5433:5432"
+      - "5434:5432"
     container_name: media_manager_db
     restart: always
 
