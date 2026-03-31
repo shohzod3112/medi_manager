@@ -42,9 +42,12 @@ services:
     container_name: media_manager_web
     restart: always
     healthcheck:
-      test: ["CMD-SHELL", "python3 manage.py check"]
-      interval: 5s
-      retries: 5
+      # 'check' o'rniga oddiyroq narsa ishlatsa ham bo'ladi
+      test: [ "CMD-SHELL", "python3 manage.py check" ]
+      interval: 10s       # 5s juda tez, biroz vaqt bering
+      timeout: 5s         # So'rov kutish vaqti
+      retries: 5          # 5 marta xato qilsa keyin 'unhealthy' bo'ladi
+      start_period: 20s   # <--- BU JUDA MUHIM!
 
   nginx:
     image: nginx:alpine
