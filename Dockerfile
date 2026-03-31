@@ -48,8 +48,15 @@ RUN mkdir -p /app/static /app/staticfiles /app/media \
 #USER app
 
 # Entrypoint script
+# Entrypoint script
 COPY entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
+
+# Cron job faylini qo‘shish
+COPY licence_cron /etc/cron.d/licence_cron
+RUN chmod 644 /etc/cron.d/licence_cron && crontab /etc/cron.d/licence_cron
+
+# Cron va gunicorn ishga tushadi
 ENTRYPOINT ["/app/entrypoint.sh"]
 
 CMD ["gunicorn", "core.wsgi:application", "--bind", "0.0.0.0:8000"]

@@ -1,9 +1,16 @@
 #!/bin/bash
 set -e
 
-log() {
-    echo "[ENTRYPOINT] $1"
-}
+log() { echo "[ENTRYPOINT] $1"; }
+
+log "Checking licence before starting..."
+python3 /app/core/check_licence.py || { log "Licence invalid, exiting"; exit 1; }
+
+log "Starting cron..."
+cron
+
+log "Starting Gunicorn..."
+exec "$@"
 
 # Agar root bo‘lsa — ruxsatlarni to‘g‘rilaymiz
 if [ "$(id -u)" = "0" ]; then
