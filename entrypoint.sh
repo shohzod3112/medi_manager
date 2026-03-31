@@ -107,8 +107,8 @@ run_migrations() {
     log "Collecting static files..."
     python manage.py collectstatic --noinput || log "Static collection failed (continuing)"
 
-    # Create superuser after migrations
-    create_superuser
+#    # Create superuser after migrations
+#    create_superuser
 }
 
 # Main execution
