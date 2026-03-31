@@ -10,7 +10,7 @@ services:
       - POSTGRES_PASSWORD=${SUPERUSER_DB_PASSWORD}
       - POSTGRES_DB=${SUPERUSER_DB_NAME}
     ports:
-      - "5434:5432"
+      - "5433:5432"
     container_name: media_manager_db
     restart: always
 
@@ -32,6 +32,9 @@ services:
       - DATABASE=postgres
       - DB_HOST=db
       - DB_PORT=5432
+      - DJANGO_SUPERUSER_USERNAME=shoh
+      - DJANGO_SUPERUSER_EMAIL=admin@example.com
+      - DJANGO_SUPERUSER_PASSWORD=SuperSecretP@ss123$
 #    ports:
 #      - "8000:8000"
     depends_on:
@@ -41,6 +44,10 @@ services:
         condition: service_started
     container_name: media_manager_web
     restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "python3 manage.py check"]
+      interval: 5s
+      retries: 5
 
   nginx:
     image: nginx:alpine
