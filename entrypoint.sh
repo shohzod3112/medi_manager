@@ -16,8 +16,8 @@ service cron start
 if [ "$(id -u)" = "0" ]; then
     log "Fixing permissions..."
 
-    mkdir -p /app/media /app/static /app/staticfiles /app/logs /tmp
-    chown -R app:app /app/media /app/static /app/staticfiles /app/logs /tmp
+    mkdir -p /app/media /app/static /app/staticfiles /tmp
+    chown -R app:app /app/media /app/static /app/staticfiles /tmp
 
 else
     log "Running as $(whoami)"

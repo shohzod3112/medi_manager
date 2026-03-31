@@ -49,7 +49,6 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "core.middlewares.RequestLoggingMiddleware",
 ]
 
 ROOT_URLCONF = "core.urls"
@@ -273,43 +272,3 @@ JAZZMIN_SETTINGS = {
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 500 * 1024 * 1024  # 500 MB
 FILE_UPLOAD_MAX_MEMORY_SIZE = 500 * 1024 * 1024
-
-BASE_DIR = Path(__file__).resolve().parent.parent
-LOG_DIR = os.path.join(BASE_DIR, 'logs')
-
-# Papka borligini tekshirish (Python darajasida)
-if not os.path.exists(LOG_DIR):
-    os.makedirs(LOG_DIR, exist_ok=True)
-
-# settings.py
-LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "formatters": {
-        "verbose": {
-            "format": "[{levelname}] {asctime} {name} {message}",
-            "style": "{",
-        },
-    },
-    "handlers": {
-        "app_file": {
-            "level": "INFO",
-            "class": "logging.FileHandler",
-            "filename": os.path.join(LOG_DIR, "app.log"),
-            "formatter": "verbose",
-        },
-        "error_file": {
-            "level": "ERROR",
-            "class": "logging.FileHandler",
-            "filename": os.path.join(LOG_DIR, "error.log"),
-            "formatter": "verbose",
-        },
-    },
-    "loggers": {
-        "app": {
-            "handlers": ["app_file", "error_file"],
-            "level": "INFO",
-            "propagate": False,
-        },
-    },
-}
