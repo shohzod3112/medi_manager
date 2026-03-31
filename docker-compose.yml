@@ -58,7 +58,7 @@ services:
       - ../frontend/dist:/frontend/dist
       - static_volume:/static
       - /opt/media-manager/media:/app/media
-      - /opt/media-manager/logs:/app/logs
+      - ./logs:/app/logs
     depends_on:
       - web
     restart: always
@@ -77,7 +77,7 @@ services:
       - ./static:/app/static
       - static_volume:/app/staticfiles
       - /opt/media-manager/media:/app/media
-      - /opt/media-manager/logs:/app/logs
+      - ./logs:/app/logs
       - /opt/media-manager/licence:/opt/media-manager/licence
       - /etc/machine-id:/etc/machine-id:ro
     env_file:
@@ -97,7 +97,7 @@ services:
       - ./static:/app/static
       - static_volume:/app/staticfiles
       - /opt/media-manager/media:/app/media
-      - /opt/media-manager/logs:/app/logs
+      - ./logs:/app/logs
       - /opt/media-manager/licence:/opt/media-manager/licence
       - /etc/machine-id:/etc/machine-id:ro
     env_file:
