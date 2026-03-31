@@ -58,3 +58,4 @@ RUN chmod 644 /etc/cron.d/licence_cron && crontab /etc/cron.d/licence_cron
 
 # Cron va gunicorn ishga tushadi
 ENTRYPOINT ["/app/entrypoint.sh"]
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
