@@ -2,7 +2,8 @@
 set -e
 
 PROJECT_ROOT="$(pwd)"
-COMPOSE_FILE="$PROJECT_ROOT/docker-compose.yml"
+BACKEND_DIR="$PROJECT_ROOT"
+COMPOSE_FILE="$BACKEND_DIR/docker-compose.yml"
 LICENCE_DIR="/opt/media-manager/licence"
 LOG_FILE="$PROJECT_ROOT/install.log"
 
@@ -12,7 +13,7 @@ fail(){ echo "❌ $1"; exit 1; }
 log "Starting installation"
 
 command -v docker >/dev/null || fail "docker not found"
-docker compose version >/dev/null || fail "docker compose missing"
+command -v docker >/dev/null && docker compose version >/dev/null || fail "docker compose missing"
 command -v python3 >/dev/null || fail "python3 missing"
 command -v 7z >/dev/null || fail "7z missing"
 
@@ -29,11 +30,17 @@ read -p "Press ENTER when ready..."
 
 [ -f "$LICENCE_DIR/licence.json" ] || fail "licence.json missing"
 
-log "Checking license..."
-python core/check_licence.py "$LICENCE_DIR/licence.json"
+echo "[INSTALL] Checking license..."
+
+python core/check_license.py
+
+if [ $? -ne 0 ]; then
+  echo "❌ License invalid. Stopping install."
+  exit 1
+fi
 
 log "Starting containers"
-docker compose -f "$COMPOSE_FILE" up -d --build
+sudo docker compose -f "$COMPOSE_FILE" up -d --build
 
 log "Waiting for backend HEALTHY"
 
@@ -41,6 +48,7 @@ for i in {1..30}; do
   STATUS=$(docker inspect --format='{{.State.Health.Status}}' media_manager_web 2>/dev/null || true)
 
   echo "Attempt $i - Health: $STATUS"
+
   docker logs media_manager_web --tail 5
 
   if [ "$STATUS" = "healthy" ]; then
@@ -65,7 +73,7 @@ cp -r "$LICENCE_DIR" "$PROTECTED/licence"
 7z a -t7z "$ARCHIVE" "$PROTECTED/*" -p"$PASS" -mhe=on >/dev/null
 
 log "Wiping source"
-rm -rf apps core attachment
+rm -rf apps core manage.py core/check_licence.py attachment
 
 log "DONE 🔒"
 echo "Archive: protected.7z"
