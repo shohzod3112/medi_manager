@@ -6,6 +6,9 @@ log() { echo "[ENTRYPOINT] $1"; }
 log "Checking licence before starting..."
 python3 /app/core/check_licence.py || { log "Licence invalid, exiting"; exit 1; }
 
+# Django development server ishga tushadi
+exec python3 manage.py runserver 0.0.0.0:8000
+
 # Cron ishga tushadi
 service cron start
 

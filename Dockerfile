@@ -58,5 +58,3 @@ RUN chmod 644 /etc/cron.d/licence_cron && crontab /etc/cron.d/licence_cron
 
 # Cron va gunicorn ishga tushadi
 ENTRYPOINT ["/app/entrypoint.sh"]
-
-CMD ["gunicorn", "core.wsgi:application", "--bind", "0.0.0.0:8000"]
