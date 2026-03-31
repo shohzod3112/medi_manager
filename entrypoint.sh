@@ -9,9 +9,6 @@ python3 /app/core/check_licence.py || { log "Licence invalid, exiting"; exit 1; 
 # Cron ishga tushadi
 service cron start
 
-log "Starting Gunicorn..."
-exec "$@"
-
 # Agar root bo‘lsa — ruxsatlarni to‘g‘rilaymiz
 if [ "$(id -u)" = "0" ]; then
     log "Fixing permissions..."
