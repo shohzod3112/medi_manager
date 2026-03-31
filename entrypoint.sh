@@ -37,68 +37,6 @@ wait_for_redis() {
     log "Redis ready"
 }
 
-# Create superuser if it doesn't exist
-create_superuser() {
-    log "Checking for superuser..."
-
-    # Set default values if environment variables are not set
-    export DJANGO_SUPERUSER_USERNAME=${DJANGO_SUPERUSER_USERNAME:-shosh}
-    export DJANGO_SUPERUSER_EMAIL=${DJANGO_SUPERUSER_EMAIL:-shoh@example.com}
-    export DJANGO_SUPERUSER_PASSWORD=${DJANGO_SUPERUSER_PASSWORD:-SuperSecretP@ss123$}
-
-    # Temporarily disable exit on error for this function
-    set +e
-
-    # Check if superuser already exists
-    check_result=$(python manage.py shell -c "
-from django.contrib.auth import get_user_model
-User = get_user_model()
-try:
-    user = User.objects.get(username='$DJANGO_SUPERUSER_USERNAME')
-    print('EXISTS')
-except User.DoesNotExist:
-    print('NOT_EXISTS')
-except Exception as e:
-    print('ERROR')
-" 2>/dev/null)
-
-    # Re-enable exit on error
-    set -e
-
-    case "$check_result" in
-        "EXISTS")
-            log "Superuser '$DJANGO_SUPERUSER_USERNAME' already exists, skipping creation"
-            ;;
-        "NOT_EXISTS")
-            log "Creating superuser '$DJANGO_SUPERUSER_USERNAME'..."
-            # Temporarily disable exit on error for superuser creation
-            set +e
-            python manage.py createsuperuser --noinput 2>/dev/null
-            create_exit_code=$?
-            set -e
-
-            if [ $create_exit_code -eq 0 ]; then
-                log "Superuser created successfully"
-            else
-                log "Superuser creation failed (continuing anyway)"
-            fi
-            ;;
-        *)
-            log "Could not determine superuser status, attempting to create..."
-            set +e
-            python manage.py createsuperuser --noinput 2>/dev/null
-            create_exit_code=$?
-            set -e
-
-            if [ $create_exit_code -eq 0 ]; then
-                log "Superuser created successfully"
-            else
-                log "Superuser creation failed (continuing anyway)"
-            fi
-            ;;
-    esac
-}
-
 # Run migrations (simple approach)
 run_migrations() {
     log "Running migrations..."
@@ -106,9 +44,6 @@ run_migrations() {
 
     log "Collecting static files..."
     python manage.py collectstatic --noinput || log "Static collection failed (continuing)"
-
-    # Create superuser after migrations
-    create_superuser
 }
 
 # Main execution
