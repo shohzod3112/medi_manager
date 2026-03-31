@@ -276,52 +276,35 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 500 * 1024 * 1024
 
 LOG_DIR = os.path.join(BASE_DIR, 'logs')
 
+# settings.py
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '[{levelname}] {asctime} {name}: {message}',
-            'style': '{',
-        },
-        'simple': {
-            'format': '[{levelname}] {message}',
-            'style': '{',
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "[{levelname}] {asctime} {name} {message}",
+            "style": "{",
         },
     },
-    'handlers': {
-        'django_file': {
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(LOG_DIR, 'django.log'),
-            'formatter': 'verbose',
+    "handlers": {
+        "app_file": {
+            "level": "INFO",
+            "class": "logging.FileHandler",
+            "filename": "/app/logs/app.log",
+            "formatter": "verbose",
         },
-        'errors_file': {
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(LOG_DIR, 'errors.log'),
-            'formatter': 'verbose',
-            'level': 'ERROR',
-        },
-        'app_file': {
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(LOG_DIR, 'app.log'),
-            'formatter': 'verbose',
-            'level': 'DEBUG',
-        },
-        'console': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'simple',
+        "error_file": {
+            "level": "ERROR",
+            "class": "logging.FileHandler",
+            "filename": "/app/logs/error.log",
+            "formatter": "verbose",
         },
     },
-    'loggers': {
-        'django': {
-            'handlers': ['console', 'django_file', 'errors_file'],
-            'level': 'INFO',
-            'propagate': True,
-        },
-        'myapp': {
-            'handlers': ['console', 'app_file', 'errors_file'],
-            'level': 'DEBUG',
-            'propagate': False,
+    "loggers": {
+        "app": {
+            "handlers": ["app_file", "error_file"],
+            "level": "INFO",
+            "propagate": False,
         },
     },
 }

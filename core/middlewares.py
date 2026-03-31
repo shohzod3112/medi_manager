@@ -12,26 +12,32 @@ SENSITIVE_HEADERS = {
 class RequestLoggingMiddleware(MiddlewareMixin):
     def process_response(self, request, response):
         user = request.user.id if request.user.is_authenticated else "anonymous"
-
         headers = {
             k: v for k, v in request.headers.items()
             if k.lower() not in SENSITIVE_HEADERS
         }
 
-        # status code ga qarab log level tanlaymiz
+        # status code-ga qarab alohida handler ishlaydi
         if response.status_code >= 500:
-            log_func = logger.error
+            logger.error(
+                "Request failed",
+                extra={
+                    "user": user,
+                    "method": request.method,
+                    "path": request.get_full_path(),
+                    "status": response.status_code,
+                    "headers": headers,
+                },
+            )
         else:
-            log_func = logger.info
-
-        log_func(
-            "request",
-            extra={
-                "user": user,
-                "method": request.method,
-                "path": request.get_full_path(),
-                "status": response.status_code,
-                "headers": headers,
-            },
-        )
+            logger.info(
+                "Request",
+                extra={
+                    "user": user,
+                    "method": request.method,
+                    "path": request.get_full_path(),
+                    "status": response.status_code,
+                    "headers": headers,
+                },
+            )
         return response
