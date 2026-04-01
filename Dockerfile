@@ -27,7 +27,7 @@ WORKDIR /app
 # Runtime paketlar
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
-    ffmpeg libpq5 libffi8 libssl3 libjpeg62-turbo libpng16-16 libwebp7 netcat-openbsd su-exec \
+    ffmpeg libpq5 libffi8 libssl3 libjpeg62-turbo libpng16-16 libwebp7 netcat-openbsd \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
@@ -43,12 +43,13 @@ RUN useradd --create-home --shell /bin/bash app
 
 # Papkalarni yaratish (build vaqtida)
 RUN mkdir -p /app/static /app/staticfiles /app/media \
- && chown -R app:app /app \
+ && chown -R app:app /app
+
+#USER app
 
 # Entrypoint script
 COPY entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
-USER app
 ENTRYPOINT ["/app/entrypoint.sh"]
 
 CMD ["gunicorn", "core.wsgi:application", "--bind", "0.0.0.0:8000"]
