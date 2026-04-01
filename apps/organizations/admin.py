@@ -226,6 +226,7 @@ class DeviceTypeAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "name",
+        "organization",
         "description",
         "device_count",
         "is_active",
@@ -242,6 +243,7 @@ class DeviceTypeAdmin(admin.ModelAdmin):
             {
                 "fields": (
                     "name",
+                    "organization",
                     "description",
                     "is_active",
                 ),
