@@ -18,7 +18,7 @@ services:
     build: .
 #    privileged: true
     image: media_manager:latest
-    command: python3 manage.py runserver 0.0.0.0:8000
+    command: gunicorn core.wsgi:application --bind 0.0.0.0:8000
     volumes:
       - ./static:/app/static
       - static_volume:/app/staticfiles
@@ -44,10 +44,10 @@ services:
         condition: service_started
     container_name: media_manager_web
     restart: always
-    healthcheck:
-      test: ["CMD-SHELL", "python3 manage.py check"]
-      interval: 5s
-      retries: 5
+#    healthcheck:
+#      test: ["CMD-SHELL", "python3 manage.py check"]
+#      interval: 5s
+#      retries: 5
 
   nginx:
     image: nginx:alpine
@@ -74,7 +74,7 @@ services:
 
   celery_worker:
     image:  media_manager:latest
-    command: celery -A core worker --loglevel=info
+    command: celery -A core worker -l info
     volumes:
       - ./static:/app/static
       - static_volume:/app/staticfiles
@@ -93,7 +93,7 @@ services:
 
   celery_beat:
     image: media_manager:latest
-    command: celery -A core beat --loglevel=info
+    command: celery -A core beat -l info
     volumes:
       - ./static:/app/static
       - static_volume:/app/staticfiles
