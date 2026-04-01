@@ -1,15 +1,6 @@
 #!/bin/bash
 set -e
 
-echo "🔍 Checking licence..."
-
-python core/check_licence.py
-
-if [ $? -ne 0 ]; then
-  echo "❌ Licence invalid. Build to‘xtatildi."
-  exit 1
-fi
-
 PROJECT_ROOT="$(pwd)"
 BACKEND_DIR="$PROJECT_ROOT"
 COMPOSE_FILE="$BACKEND_DIR/docker-compose.yml"
@@ -38,6 +29,15 @@ echo "👉 Copy to $LICENCE_DIR/licence.json"
 read -p "Press ENTER when ready..."
 
 [ -f "$LICENCE_DIR/licence.json" ] || fail "licence.json missing"
+
+echo "🔍 Checking licence..."
+
+python core/check_licence.py
+
+if [ $? -ne 0 ]; then
+  echo "❌ Licence invalid. Build to‘xtatildi."
+  exit 1
+fi
 
 log "Starting containers"
 sudo docker compose -f "$COMPOSE_FILE" up -d --build
