@@ -1,71 +1,49 @@
 #!/bin/bash
 set -e
 
-PROJECT_ROOT="$(pwd)"
-BACKEND_DIR="$PROJECT_ROOT"
-COMPOSE_FILE="$BACKEND_DIR/docker-compose.yml"
-LICENCE_DIR="/opt/media-manager/licence"
-LOG_FILE="$PROJECT_ROOT/install.log"
+log() { echo "[$(date +'%H:%M:%S')] $1"; }
+error() { echo "ERROR: $1" >&2; exit 1; }
 
-log(){ echo "[INSTALL] $1" | tee -a "$LOG_FILE"; }
-fail(){ echo "❌ $1"; exit 1; }
+# 1. Ruxsatlarni to'g'rilash (faqat root bo'lsak)
+if [ "$(id -u)" = "0" ]; then
+    log "Fixing permissions as root..."
+    mkdir -p /app/media /app/static /app/staticfiles /app/logs /tmp
+    chown -R app:app /app/media /app/static /app/staticfiles /app/logs /tmp
 
-log "Starting installation"
+    # Ruxsatlar to'g'rilangach, skriptni 'app' foydalanuvchisi sifatida qayta ishga tushiramiz
+    log "Switching to user app..."
+    exec app "$0" "$@"
+fi
 
-command -v docker >/dev/null || fail "docker not found"
-command -v docker >/dev/null && docker compose version >/dev/null || fail "docker compose missing"
-command -v python3 >/dev/null || fail "python3 missing"
-command -v 7z >/dev/null || fail "7z missing"
+# ---- BU YERDAN PASTI FAQAT 'APP' FOYDALANUVCHISI UCHUN ISHLAYDI ----
 
-mkdir -p "$LICENCE_DIR"
-chmod 755 "$LICENCE_DIR"
+# Wait for database
+wait_for_db() {
+    log "Waiting for database ($DB_HOST)..."
+    timeout 60 bash -c "until nc -z $DB_HOST $DB_PORT; do sleep 1; done" || error "Database timeout"
+}
 
-log "Generating HWID"
-HWID=$(tr -d '\n' < /etc/machine-id | sha256sum | awk '{print $1}')
-echo "HWID: $HWID"
+# Wait for Redis
+wait_for_redis() {
+    log "Waiting for Redis..."
+    timeout 30 bash -c "until nc -z redis 6379; do sleep 1; done" || error "Redis timeout"
+}
 
-echo "👉 Generate licence.json on DEV machine"
-echo "👉 Copy to $LICENCE_DIR/licence.json"
-read -p "Press ENTER when ready..."
+run_migrations() {
+    log "Running migrations..."
+    python manage.py migrate --noinput || error "Migration failed"
+    log "Collecting static files..."
+    python manage.py collectstatic --noinput || log "Static collection failed"
+}
 
-[ -f "$LICENCE_DIR/licence.json" ] || fail "licence.json missing"
+# Xizmatlarni kutish
+[ "$DATABASE" = "postgres" ] && wait_for_db
+wait_for_redis
 
-log "Starting containers"
-sudo docker compose -f "$COMPOSE_FILE" up -d --build
+# Migratsiyalar faqat web server uchun
+if [[ "$*" == *"gunicorn"* ]] || [[ "$*" == *"runserver"* ]] || [[ "$*" == *"manage.py"* ]]; then
+    run_migrations
+fi
 
-log "Waiting for backend HEALTHY"
-
-for i in {1..30}; do
-  STATUS=$(docker inspect --format='{{.State.Health.Status}}' media_manager_web 2>/dev/null || true)
-
-  echo "Attempt $i - Health: $STATUS"
-
-  docker logs media_manager_web --tail 5
-
-  if [ "$STATUS" = "healthy" ]; then
-    echo "Backend is healthy!"
-    break
-  fi
-
-  sleep 2
-done
-
-[ "$STATUS" = "healthy" ] || fail "Backend not healthy"
-
-log "Archiving source"
-PROTECTED="$PROJECT_ROOT/protected"
-ARCHIVE="$PROJECT_ROOT/protected.7z"
-PASS="MediaManager@123"
-
-mkdir -p "$PROTECTED"
-cp -r apps core manage.py core/check_licence.py "$PROTECTED/"
-cp -r "$LICENCE_DIR" "$PROTECTED/licence"
-
-7z a -t7z "$ARCHIVE" "$PROTECTED/*" -p"$PASS" -mhe=on >/dev/null
-
-#log "Wiping source"
-#rm -rf apps core manage.py core/check_licence.py attachment
-
-log "DONE 🔒"
-echo "Archive: protected.7z"
-echo "Password: $PASS"
+log "Starting command: $*"
+exec "$@"
