@@ -17,7 +17,7 @@ def get_hwid():
         mid = f.read().strip()
     return hashlib.sha256(mid.encode()).hexdigest()
 
-def check_licence():
+def check_licence(terminate_on_fail=False):
     try:
         with open(LICENCE_PATH) as f:
             lic = json.load(f)
@@ -26,22 +26,30 @@ def check_licence():
 
         if not verify_signature(lic, signature):
             print("❌ Invalid licence signature")
-            sys.exit(1)
+            if terminate_on_fail:
+                sys.exit(1)
+            return False
 
         if lic["hwid"] != get_hwid():
             print("❌ HWID mismatch")
-            sys.exit(1)
+            if terminate_on_fail:
+                sys.exit(1)
+            return False
 
         exp = datetime.strptime(lic["expires"], "%Y-%m-%d").date()
         if exp < datetime.now().date():
             print("❌ Licence expired")
-            sys.exit(1)
+            if terminate_on_fail:
+                sys.exit(1)
+            return False
 
         print("✅ Licence valid")
-        sys.exit(0)
+        return True
     except Exception as e:
         print(f"❌ Licence check failed: {e}")
-        sys.exit(1)
+        if terminate_on_fail:
+            sys.exit(1)
+        return False
 
 if __name__ == "__main__":
     check_licence()
