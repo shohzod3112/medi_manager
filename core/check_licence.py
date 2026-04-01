@@ -26,29 +26,25 @@ def check_licence(terminate_on_fail=False):
 
         if not verify_signature(lic, signature):
             print("❌ Invalid licence signature")
-            if terminate_on_fail:
-                sys.exit(1)
+            if terminate_on_fail: sys.exit(1)
             return False
 
         if lic["hwid"] != get_hwid():
             print("❌ HWID mismatch")
-            if terminate_on_fail:
-                sys.exit(1)
+            if terminate_on_fail: sys.exit(1)
             return False
 
         exp = datetime.strptime(lic["expires"], "%Y-%m-%d").date()
         if exp < datetime.now().date():
             print("❌ Licence expired")
-            if terminate_on_fail:
-                sys.exit(1)
+            if terminate_on_fail: sys.exit(1)
             return False
 
         print("✅ Licence valid")
         return True
     except Exception as e:
         print(f"❌ Licence check failed: {e}")
-        if terminate_on_fail:
-            sys.exit(1)
+        if terminate_on_fail: sys.exit(1)
         return False
 
 if __name__ == "__main__":

@@ -1,10 +1,10 @@
 from django.core.checks import register, Error
-from check_licence import check_or_exit
+from check_licence import check_licence
 
 @register()
 def licence_check(app_configs, **kwargs):
     try:
-        check_or_exit()
+        check_licence()
     except SystemExit:
         return [
             Error(
