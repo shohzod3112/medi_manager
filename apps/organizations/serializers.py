@@ -79,11 +79,22 @@ class DeviceTypeSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+class OrganizationOnlySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Organization
+        fields = [
+            'id',
+            'name',
+        ]
+
 class DeviceTypeListSerializer(serializers.ModelSerializer):
+    organization = OrganizationOnlySerializer(read_only=True, many=False)
+
     class Meta:
         model = DeviceType
         fields = [
             "id",
+            "organization",
             "name",
             "description",
             "is_active",

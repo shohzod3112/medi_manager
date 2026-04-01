@@ -171,7 +171,8 @@ class DeviceType(BaseModel):
     """Device type model for categorizing devices"""
     organization = models.ForeignKey(
         Organization,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
+        null=True,
         related_name="device_types",
     )
     name = models.CharField(max_length=100, unique=True)

@@ -311,7 +311,7 @@ class DeviceTypeListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         queryset = DeviceType.objects.all().order_by("-created_at")
         if not self.request.user.is_superuser:
-            queryset = queryset.filter(organization=self.user.organization, is_active=True)
+            queryset = queryset.filter(organization=self.request.user.organization, is_active=True)
         return queryset
 
     def get_serializer_class(self):
@@ -320,7 +320,7 @@ class DeviceTypeListCreateView(generics.ListCreateAPIView):
         return serializers.DeviceTypeListSerializer
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+        serializer.save(created_by=self.request.user, organization=self.request.user.organization)
 
 
 class DeviceTypeRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
@@ -330,7 +330,7 @@ class DeviceTypeRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIVi
     def get_queryset(self):
         queryset = DeviceType.objects.all()
         if not self.request.user.is_superuser:
-            queryset = queryset.filter(organization=self.user.organization, is_active=True)
+            queryset = queryset.filter(organization=self.request.user.organization, is_active=True)
         return queryset
 
     def get_serializer_class(self):
@@ -350,7 +350,7 @@ class DeviceTypeSelectListAPIView(generics.ListAPIView):
     def get_queryset(self):
         queryset = DeviceType.objects.all().order_by("-created_at")
         if not self.request.user.is_superuser:
-            queryset = queryset.filter(organization=self.user.organization, is_active=True)
+            queryset = queryset.filter(organization=self.request.user.organization, is_active=True)
         return queryset
 
 
