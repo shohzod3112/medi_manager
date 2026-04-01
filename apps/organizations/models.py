@@ -169,7 +169,11 @@ class PerOrgSequential(models.Model):
 
 class DeviceType(BaseModel):
     """Device type model for categorizing devices"""
-
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name="device_types",
+    )
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
