@@ -306,7 +306,13 @@ class DeviceSelectListAPIView(generics.ListAPIView):
 class DeviceTypeListCreateView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAdminUser]
     pagination_class = CustomPagination
-    queryset = DeviceType.objects.all().order_by("-created_at")
+    # queryset = DeviceType.objects.all().order_by("-created_at")
+
+    def get_queryset(self):
+        queryset = DeviceType.objects.all().order_by("-created_at")
+        if not self.request.user.is_superuser:
+            queryset = queryset.filter(organization=self.user.organization, is_active=True)
+        return queryset
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
@@ -319,7 +325,13 @@ class DeviceTypeListCreateView(generics.ListCreateAPIView):
 
 class DeviceTypeRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAdminUser]
-    queryset = DeviceType.objects.all()
+    # queryset = DeviceType.objects.all()
+
+    def get_queryset(self):
+        queryset = DeviceType.objects.all()
+        if not self.request.user.is_superuser:
+            queryset = queryset.filter(organization=self.user.organization, is_active=True)
+        return queryset
 
     def get_serializer_class(self):
         if self.request.method == 'PUT':
@@ -332,8 +344,14 @@ class DeviceTypeRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIVi
 
 class DeviceTypeSelectListAPIView(generics.ListAPIView):
     permission_classes = [OrganizationActivePermission]
-    queryset = DeviceType.objects.all()
+    # queryset = DeviceType.objects.all()
     serializer_class = serializers.DeviceTypeSelectListSerializer
+
+    def get_queryset(self):
+        queryset = DeviceType.objects.all().order_by("-created_at")
+        if not self.request.user.is_superuser:
+            queryset = queryset.filter(organization=self.user.organization, is_active=True)
+        return queryset
 
 
 # CRUD for Organization
