@@ -12,7 +12,7 @@ if [ "$(id -u)" = "0" ]; then
 
     # Ruxsatlar to'g'rilangach, skriptni 'app' foydalanuvchisi sifatida qayta ishga tushiramiz
     log "Switching to user app..."
-    exec app "$0" "$@"
+    exec su-exec app "$0" "$@"
 fi
 
 # ---- BU YERDAN PASTI FAQAT 'APP' FOYDALANUVCHISI UCHUN ISHLAYDI ----
