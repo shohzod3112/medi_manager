@@ -3,6 +3,9 @@ set -e
 
 log() { echo "[$(date +'%H:%M:%S')] $1"; }
 
+echo "🔐 Checking licence..."
+python core/check_licence.py || exit 1
+
 log "Waiting for database..."
 : "${DB_HOST:=db}"
 : "${DB_PORT:=5432}"
