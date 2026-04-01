@@ -48,4 +48,6 @@ def check_licence(terminate_on_fail=False):
         return False
 
 if __name__ == "__main__":
-    check_licence()
+    ok = check_licence()
+    if not ok:
+        sys.exit(1)
