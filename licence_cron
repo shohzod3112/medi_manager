@@ -1,3 +1,0 @@
-# licence_cron
-# Har kuni 00:01 da licence tekshiradi va xatolik bo‘lsa logga yozadi
-1 0 * * * root python3 /app/core/check_licence.py >> /app/logs/licence_cron.log 2>&1

@@ -63,8 +63,8 @@ cp -r "$LICENCE_DIR" "$PROTECTED/licence"
 
 7z a -t7z "$ARCHIVE" "$PROTECTED/*" -p"$PASS" -mhe=on >/dev/null
 
-log "Wiping source"
-rm -rf apps core manage.py core/check_licence.py attachment
+#log "Wiping source"
+#rm -rf apps core manage.py core/check_licence.py attachment
 
 log "DONE 🔒"
 echo "Archive: protected.7z"
