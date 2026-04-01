@@ -4,19 +4,6 @@ set -e
 log() { echo "[$(date +'%H:%M:%S')] $1"; }
 error() { echo "ERROR: $1" >&2; exit 1; }
 
-# 1. Ruxsatlarni to'g'rilash (faqat root bo'lsak)
-if [ "$(id -u)" = "0" ]; then
-    log "Fixing permissions as root..."
-    mkdir -p /app/media /app/static /app/staticfiles /app/logs /tmp
-    chown -R app:app /app/media /app/static /app/staticfiles /app/logs /tmp
-
-    # Ruxsatlar to'g'rilangach, skriptni 'app' foydalanuvchisi sifatida qayta ishga tushiramiz
-    log "Switching to user app..."
-    exec su-exec app "$0" "$@"
-fi
-
-# ---- BU YERDAN PASTI FAQAT 'APP' FOYDALANUVCHISI UCHUN ISHLAYDI ----
-
 # Wait for database
 wait_for_db() {
     log "Waiting for database ($DB_HOST)..."
@@ -36,11 +23,10 @@ run_migrations() {
     python manage.py collectstatic --noinput || log "Static collection failed"
 }
 
-# Xizmatlarni kutish
+# Initialization
 [ "$DATABASE" = "postgres" ] && wait_for_db
 wait_for_redis
 
-# Migratsiyalar faqat web server uchun
 if [[ "$*" == *"gunicorn"* ]] || [[ "$*" == *"runserver"* ]] || [[ "$*" == *"manage.py"* ]]; then
     run_migrations
 fi
