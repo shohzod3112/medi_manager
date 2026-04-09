@@ -628,6 +628,7 @@ class FileDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class DeviceGroupListCreateAPIView(generics.ListCreateAPIView):
+    pagination_class = CustomPagination
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
@@ -646,6 +647,14 @@ class DeviceGroupListCreateAPIView(generics.ListCreateAPIView):
         )
 
 
+class DeviceGroupListSelectAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = serializers.DeviceGroupListSelectSerializer
+
+    def get_queryset(self):
+        return DeviceGroup.objects.filter(organization=self.request.user.organization)
+
+
 class DeviceGroupRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
 
@@ -658,3 +667,32 @@ class DeviceGroupRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIV
         if self.request.method == "GET":
             return serializers.DeviceGroupListSerializer
         return serializers.DeviceGroupSerializer
+
+
+class DeviceGroupRemoveDevicesAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = serializers.DeviceGroupRemoveDevicesSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        group_id = serializer.validated_data["id"]
+        device_ids = serializer.validated_data["device_ids"]
+
+        # 🔐 faqat o‘z organizationidan oladi
+        group = get_object_or_404(
+            DeviceGroup,
+            id=group_id,
+            organization=request.user.organization
+        )
+
+        devices = Device.objects.filter(
+            id__in=device_ids,
+            organization=request.user.organization
+        )
+
+        group.devices.remove(*devices)
+
+        return Response({
+            "message": "Devices removed successfully"
+        }, status=status.HTTP_200_OK)

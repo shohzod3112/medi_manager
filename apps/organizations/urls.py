@@ -32,5 +32,7 @@ urlpatterns = [
     path(f"{app_name}/device-types/<int:pk>", views.DeviceTypeRetrieveUpdateDestroyAPIView.as_view()),
 
     path(f"{app_name}/device-groups/", views.DeviceGroupListCreateAPIView.as_view()),
+    path(f"{app_name}/device-groups/select/", views.DeviceGroupListSelectAPIView.as_view()),
     path(f"{app_name}/device-groups/<int:pk>/", views.DeviceGroupRetrieveUpdateDestroyAPIView.as_view()),
+    path(f"{app_name}/device-groups/remove-devices/", views.DeviceGroupRemoveDevicesAPIView.as_view()),
 ]

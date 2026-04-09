@@ -233,14 +233,21 @@ class PlaylistNowSerializer(serializers.ModelSerializer):
         ]
 
 
+class DeviceGroupList1Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = DeviceGroup
+        fields = ['id', 'name']
+
+
 class DeviceListSerializer(serializers.ModelSerializer):
     device_type = serializers.SerializerMethodField()
     username = serializers.SerializerMethodField()
     playlists = PlaylistNowSerializer(many=True, read_only=True)
+    groups = DeviceGroupList1Serializer(read_only=True, many=True)
 
     class Meta:
         model = Device
-        fields = ["id", "serial_number", "name", "device_type", "username", "playlists"]
+        fields = ["id", "serial_number", "name", "device_type", "username", "playlists", "groups"]
 
     def get_device_type(self, obj):
         if obj.device_type:
@@ -481,14 +488,19 @@ class PlaylistListSerializer(serializers.ModelSerializer):
 
 
 class OrganizationListSerializer(serializers.ModelSerializer):
+    user_count = serializers.SerializerMethodField()
     class Meta:
         model = Organization
-        fields = ["id", "name", "is_active", "device_limit", "current_device_count", 'expiration_date']
+        fields = ["id", "name", "is_active", "device_limit", "current_device_count", 'expiration_date', 'user_count']
+
+    def get_user_count(self, obj):
+        return obj.users.count()
 
 
 class OrganizationDetailSerializer(serializers.ModelSerializer):
     users = UserListSerializer(many=True, read_only=True)
     devices = DeviceListSerializer(many=True, read_only=True)
+    user_count = serializers.SerializerMethodField()
     class Meta:
         model = Organization
         fields = [
@@ -498,8 +510,12 @@ class OrganizationDetailSerializer(serializers.ModelSerializer):
             "expiration_date", "is_active",
             "created_by", "created_at",
             'updated_at', "devices",
-            "users"
+            "users",
+            "user_count",
         ]
+
+    def get_user_count(self, obj):
+        return obj.users.count()
 
 
 class OrganizationSerializer(serializers.ModelSerializer):
@@ -553,7 +569,7 @@ class OrganizationSelectSerializer(serializers.ModelSerializer):
 class Device1Serializer(serializers.ModelSerializer):
     class Meta:
         model = Device
-        fields = ["id", "name", "device_type"]
+        fields = ["id", "name", "device_type", "serial_number"]
 
 
 class DeviceGroupSerializer(serializers.ModelSerializer):
@@ -582,3 +598,26 @@ class DeviceGroupListSerializer(serializers.ModelSerializer):
     class Meta:
         model = DeviceGroup
         fields = ["id", "name", "devices"]
+
+
+class DeviceGroupListSelectSerializer(serializers.ModelSerializer):
+    value = serializers.SerializerMethodField()
+    label = serializers.SerializerMethodField()
+
+    class Meta:
+        model = DeviceGroup
+        fields = ["value", "label"]
+
+    def get_value(self, obj):
+        return obj.id
+
+    def get_label(self, obj):
+        return obj.name
+
+
+class DeviceGroupRemoveDevicesSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    device_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        allow_empty=False
+    )
