@@ -283,6 +283,19 @@ class Device(PerOrgSequential, BaseModel):
     #     return f"{self.organization.slug}-{self.organization_device_id}"
 
 
+class DeviceGroup(BaseModel):
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name="device_groups",
+    )
+    name = models.CharField(max_length=255)
+    devices = models.ManyToManyField(Device, related_name="groups")
+
+    def __str__(self):
+        return self.name
+
+
 class File(PerOrgSequential, BaseModel):
     """Media model for storing video and image files"""
 

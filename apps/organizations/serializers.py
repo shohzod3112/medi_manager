@@ -4,7 +4,7 @@ from django.core.files.base import ContentFile
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from apps.organizations.models import Device, File, Organization, Playlist, DeviceType
+from apps.organizations.models import Device, File, Organization, Playlist, DeviceType, DeviceGroup
 from apps.users.models import User
 from apps.users.serializers.user import UserListSerializer
 
@@ -548,3 +548,37 @@ class OrganizationSelectSerializer(serializers.ModelSerializer):
 
     def get_label(self, obj):
         return obj.name
+
+
+class Device1Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = Device
+        fields = ["id", "name", "device_type"]
+
+
+class DeviceGroupSerializer(serializers.ModelSerializer):
+    devices = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=Device.objects.all()
+    )
+
+    class Meta:
+        model = DeviceGroup
+        fields = ["id", "name", "devices"]
+
+    def validate_devices(self, value):
+        user_org = self.context["request"].user.organization
+
+        for device in value:
+            if device.organization != user_org:
+                raise serializers.ValidationError("Not allowed device")
+
+        return value
+
+
+class DeviceGroupListSerializer(serializers.ModelSerializer):
+    devices = Device1Serializer(many=True, read_only=True)
+
+    class Meta:
+        model = DeviceGroup
+        fields = ["id", "name", "devices"]

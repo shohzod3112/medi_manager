@@ -2,11 +2,11 @@ from django.db.models import Q, F
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework.authentication import TokenAuthentication
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from core.paginations import CustomPagination
 from ..users.models import User
-from .models import Device, File, Organization, Playlist, DeviceType
+from .models import Device, File, Organization, Playlist, DeviceType, DeviceGroup
 from .permissions import IsOrgAndProfileActive
 from core.permissions import OrganizationActivePermission
 from . import serializers
@@ -625,3 +625,36 @@ class FileDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
+
+
+class DeviceGroupListCreateAPIView(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return DeviceGroup.objects.filter(
+            organization=self.request.user.organization
+        ).prefetch_related("devices")
+
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return serializers.DeviceGroupListSerializer
+        return serializers.DeviceGroupSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(
+            organization=self.request.user.organization  # 🔥 asosiy joy
+        )
+
+
+class DeviceGroupRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return DeviceGroup.objects.filter(
+            organization=self.request.user.organization
+        ).prefetch_related("devices")
+
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return serializers.DeviceGroupListSerializer
+        return serializers.DeviceGroupSerializer
