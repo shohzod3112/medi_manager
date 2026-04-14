@@ -27,6 +27,7 @@ from drf_yasg.views import get_schema_view
 from rest_framework import permissions
 
 from apps.users import views as user_views
+from core import views
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -60,6 +61,7 @@ urlpatterns = [
     path("health/", health_check, name="health_check"),
     path("api/attachments/", include("attachment.urls")),
     path("api/", include("apps.urls")),  # Authentication APIs
+    path("api/", views.server_discovery_ping, name='check-ip-address'),  # Authentication APIs
 ]
 
 if settings.DEBUG:

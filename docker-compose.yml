@@ -16,7 +16,7 @@ services:
 
   web:
     build: .
-#    privileged: true
+    network_mode: "host" # MUHIM: Lokal tarmoqni ko'rishi uchun
     image: media_manager:latest
     command: gunicorn core.wsgi:application --bind 0.0.0.0:8000
     volumes:
