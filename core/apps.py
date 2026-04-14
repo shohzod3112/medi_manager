@@ -1,3 +1,5 @@
+import traceback
+
 from django.apps import AppConfig
 import socket
 from zeroconf import ServiceInfo, Zeroconf
@@ -39,6 +41,7 @@ class CoreConfig(AppConfig):
             print(f"✅ Zeroconf: Server ro'yxatga olindi: {ip_address}:8000")
         except Exception as e:
             print(f"❌ Zeroconf xatosi: {e}")
+            traceback.print_exc()
 
     def __del__(self):
         # Konteyner o'chganda xizmatni tozalash

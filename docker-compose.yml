@@ -16,6 +16,7 @@ services:
 
   web:
     build: .
+    network_mode: "host"
     image: media_manager:latest
     command: gunicorn core.wsgi:application --bind 0.0.0.0:8000
     volumes:
