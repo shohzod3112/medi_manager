@@ -3,6 +3,7 @@ import traceback
 from django.apps import AppConfig
 import socket
 from zeroconf import ServiceInfo, Zeroconf
+import os
 
 class CoreConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
@@ -11,6 +12,12 @@ class CoreConfig(AppConfig):
     def ready(self):
         from .check_licence import check_licence
         check_licence()
+
+        import sys
+        is_manage_py = any(arg in sys.argv for arg in ['runserver', 'gunicorn'])
+        # Celery-ni chetlab o'tamiz
+        if 'celery' in sys.argv or os.environ.get('RUN_MAIN') == 'true':
+            return
 
         # Server ishga tushayotganini tekshirish (Django autoreload bilan ikki marta ishga tushmasligi uchun)
         import os

@@ -16,7 +16,7 @@ services:
 
   web:
     build: .
-    network_mode: "host"
+#    network_mode: "host"
     image: media_manager:latest
     command: gunicorn core.wsgi:application --bind 0.0.0.0:8000
     volumes:
@@ -32,8 +32,9 @@ services:
       - DATABASE=postgres
       - DB_HOST=db
       - DB_PORT=5432
-#    ports:
-#      - "8000:8000"
+    ports:
+      - "8000:8000"
+      - "5353:5353/udp" # mDNS portini ochamiz
     depends_on:
       db:
         condition: service_started
