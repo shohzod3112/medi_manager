@@ -1,3 +1,6 @@
+import os
+from pathlib import Path
+
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
 
@@ -22,9 +25,49 @@ def generate_server_keys():
         format=serialization.PublicFormat.SubjectPublicKeyInfo
     )
 
-    print(priv_pem.decode())
-    print(pub_pem.decode())
-
     return priv_pem.decode(), pub_pem.decode()
-generate_server_keys()
-# Bu kalitlarni bir marta yaratib, .env yoki DBda saqlab qo'yish kerak.
+
+
+def set_key_to_env(key: str, value: str):
+    """ .env fayliga kalitni yozadi yoki bor bo'lsa yangilaydi """
+    env_path = Path('.env')
+
+    # Agar .env fayli bo'lmasa, yaratamiz
+    if not env_path.exists():
+        env_path.touch()
+
+    lines = env_path.read_text().splitlines()
+    key_found = False
+    new_lines = []
+
+    for line in lines:
+        if line.startswith(f"{key}="):
+            new_lines.append(f'{key}="{value}"')
+            key_found = True
+        else:
+            new_lines.append(line)
+
+    if not key_found:
+        new_lines.append(f'{key}="{value}"')
+
+    env_path.write_text("\n".join(new_lines) + "\n")
+
+
+def ensure_server_keys():
+    # settings'dan yoki os.environ'dan tekshiramiz
+    if not os.getenv("SERVER_PRIVATE_KEY") or not os.getenv("SERVER_PUBLIC_KEY"):
+        from .security import generate_server_keys  # o'zingiz yozgan funksiya
+
+        priv, pub = generate_server_keys()
+
+        # .env fayliga yozamiz
+        set_key_to_env("SERVER_PRIVATE_KEY", priv)
+        set_key_to_env("SERVER_PUBLIC_KEY", pub)
+
+        # Hozirgi ishlayotgan sessiyaga ham qo'shib qo'yamiz
+        os.environ["SERVER_PRIVATE_KEY"] = priv
+        os.environ["SERVER_PUBLIC_KEY"] = pub
+
+        print("🚀 Server uchun yangi kalitlar yaratildi va .env ga saqlandi!")
+    else:
+        print("✅ Server kalitlari allaqachon mavjud.")

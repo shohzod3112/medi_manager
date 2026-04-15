@@ -32,7 +32,7 @@ read -p "Press ENTER when ready..."
 
 echo "🔍 Checking licence..."
 
-python core/check_licence.py || {
+python3 core/check_licence.py || {
   echo "❌ Licence invalid. Build to‘xtatildi."
   exit 1
 }
