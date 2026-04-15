@@ -8,9 +8,13 @@ from django.utils import timezone
 from attachment.models import Attachment
 from .forms import AttachmentForm, PlaylistAdminForm, OrganizationAdminForm
 
-from .models import Device, DeviceType, File, Organization, Playlist
+from .models import Device, DeviceType, File, Organization, Playlist, IoTDevice
 
 User = get_user_model()
+
+@admin.register(IoTDevice)
+class IoTDeviceAdmin(admin.ModelAdmin):
+    list_display = ('id',)
 
 
 @admin.register(Organization)
