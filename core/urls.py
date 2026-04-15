@@ -61,7 +61,7 @@ urlpatterns = [
     path("health/", health_check, name="health_check"),
     path("api/attachments/", include("attachment.urls")),
     path("api/", include("apps.urls")),  # Authentication APIs
-    path("api/", views.server_discovery_ping, name='check-ip-address'),  # Authentication APIs
+    path("api/ping/", views.server_discovery_ping, name='check-ip-address'),  # Authentication APIs
 ]
 
 if settings.DEBUG:
