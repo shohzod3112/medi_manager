@@ -2,14 +2,6 @@ from rest_framework.permissions import BasePermission
 from rest_framework.exceptions import AuthenticationFailed
 from django.utils import timezone
 from rest_framework import permissions
-from .security import verify_request_security
-
-
-class IsSecureRequest(permissions.BasePermission):
-    def has_permission(self, request, view):
-        # Har bir so'rovni xavfsizlikka tekshiradi
-        verify_request_security(request)
-        return True
 
 class OrganizationActivePermission(BasePermission):
     message = "Sizning tashkilotingiz faol emas yoki obuna muddati tugagan!"
