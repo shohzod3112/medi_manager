@@ -11,6 +11,7 @@ urlpatterns = [
     # path(f"{app_name}/<int:pk>/unassign-user", views.UnassignUserFromOrganizationView.as_view(), name="organization-unassign-user"),
     path(f"{app_name}/select", views.OrganizationSelectListAPIView.as_view()),
 
+    path(f"{app_name}/device-handshake", views.DeviceHandshakeView.as_view()),
     path(f"{app_name}/device-select", views.DeviceSelectListAPIView.as_view()),
     path(f"{app_name}/devices", views.DeviceListCreateAPIView.as_view(), name="device-list-create"),
     path(f"{app_name}/devices/<int:pk>", views.DeviceRetrieveUpdateDestroyAPIView.as_view(), name="device-list-create"),
