@@ -14,6 +14,9 @@ sys.path.append(os.path.join(BASE_DIR, "apps"))
 SECRET_KEY = os.getenv("SECRET_KEY")
 DEBUG = os.getenv("DEBUG", "False") == "True"
 
+SERVER_PRIVATE_KEY = os.getenv("SERVER_PRIVATE_KEY")
+SERVER_PUBLIC_KEY = os.getenv("SERVER_PUBLIC_KEY")
+
 ALLOWED_HOSTS = ["*"]
 
 INSTALLED_APPS = [

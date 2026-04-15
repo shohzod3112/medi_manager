@@ -22,6 +22,9 @@ def generate_server_keys():
         format=serialization.PublicFormat.SubjectPublicKeyInfo
     )
 
-    return priv_pem.decode(), pub_pem.decode()
+    print(priv_pem.decode())
+    print(pub_pem.decode())
 
+    return priv_pem.decode(), pub_pem.decode()
+generate_server_keys()
 # Bu kalitlarni bir marta yaratib, .env yoki DBda saqlab qo'yish kerak.

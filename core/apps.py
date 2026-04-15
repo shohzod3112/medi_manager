@@ -1,7 +1,4 @@
-import traceback
 from django.apps import AppConfig
-import socket
-from zeroconf import ServiceInfo, Zeroconf
 
 class CoreConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
