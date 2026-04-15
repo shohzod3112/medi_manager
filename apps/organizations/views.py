@@ -702,6 +702,7 @@ class DeviceGroupRemoveDevicesAPIView(APIView):
 
 
 class DeviceHandshakeView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request):
         device_id = request.data.get("device_id")
         signature_base64 = request.data.get("signature")
