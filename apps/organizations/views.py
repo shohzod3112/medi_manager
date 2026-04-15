@@ -1,18 +1,21 @@
 from django.db.models import Q, F
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from core.paginations import CustomPagination
 from ..users.models import User
-from .models import Device, File, Organization, Playlist, DeviceType, DeviceGroup
-from .permissions import IsOrgAndProfileActive
+from .models import Device, File, Organization, Playlist, DeviceType, DeviceGroup, IoTDevice
 from core.permissions import OrganizationActivePermission
 from . import serializers
 from rest_framework import generics, permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
+import base64
+from rest_framework import status
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives import serialization
 
 
 class DeviceListCreateAPIView(generics.ListCreateAPIView):
@@ -696,3 +699,45 @@ class DeviceGroupRemoveDevicesAPIView(APIView):
         return Response({
             "message": "Devices removed successfully"
         }, status=status.HTTP_200_OK)
+
+
+class DeviceHandshakeView(APIView):
+    def post(self, request):
+        device_id = request.data.get("device_id")
+        signature_base64 = request.data.get("signature")
+
+        # 1. Qurilmani bazadan topish
+        try:
+            device = IoTDevice.objects.get(device_id=device_id, is_active=True)
+        except IoTDevice.DoesNotExist:
+            return Response({"error": "Device not registered"}, status=status.HTTP_403_FORBIDDEN)
+
+        # 2. Imzoni tekshirish
+        try:
+            # Qurilmaning public keyini yuklash
+            public_key = serialization.load_pem_public_key(
+                device.public_key.encode()
+            )
+
+            signature = base64.b64decode(signature_base64)
+            data_to_verify = device_id.encode()  # Haqiqiy loyihada buni Timestamp bilan qo'shish kerak
+
+            public_key.verify(
+                signature,
+                data_to_verify,
+                padding.PSS(
+                    mgf=padding.MGF1(hashes.SHA256()),
+                    salt_length=padding.PSS.MAX_LENGTH
+                ),
+                hashes.SHA256()
+            )
+
+            # 3. Muvaffaqiyatli handshake - ma'lumotlarni qaytarish
+            return Response({
+                "status": "ok",
+                "playlist": ["video1.mp4", "audio2.mp3"],  # Biznes logika
+                "config": {"volume": 80, "brightness": 100}
+            })
+
+        except Exception as e:
+            return Response({"error": "Invalid signature"}, status=status.HTTP_401_UNAUTHORIZED)

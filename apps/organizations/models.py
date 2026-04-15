@@ -296,6 +296,17 @@ class DeviceGroup(BaseModel):
         return self.name
 
 
+class IoTDevice(models.Model):
+    device_id = models.CharField(max_length=100, unique=True)
+    public_key = models.TextField()  # Qurilmaning ochiq kaliti
+    name = models.CharField(max_length=255, blank=True)
+    last_seen = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.device_id})"
+
+
 class File(PerOrgSequential, BaseModel):
     """Media model for storing video and image files"""
 

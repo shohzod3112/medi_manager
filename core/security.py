@@ -1,27 +1,27 @@
-import hmac
-import hashlib
-import os
-import time
-from rest_framework.exceptions import AuthenticationFailed
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives import serialization
 
-SECRET_KEY = os.getenv("SECRET_KEY")
 
-def verify_request_security(request):
-    timestamp = request.headers.get('X-Timestamp')
-    signature = request.headers.get('X-Signature')
+def generate_server_keys():
+    # Private key yaratish
+    private_key = rsa.generate_private_key(
+        public_exponent=65537,
+        key_size=2048
+    )
 
-    if not timestamp or not signature:
-        raise AuthenticationFailed("Xavfsizlik ma'lumotlari yetishmayapti")
+    # Private keyni string ko'rinishida saqlash (PEM)
+    priv_pem = private_key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption()
+    )
 
-    # 1. Replay Attack tekshiruvi
-    server_now = int(time.time())
-    if abs(server_now - int(timestamp)) > 30:
-        raise AuthenticationFailed("So'rov vaqti o'tib ketgan (Replay Attack)")
+    # Public keyni string ko'rinishida saqlash (PEM)
+    pub_pem = private_key.public_key().public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo
+    )
 
-    # 2. MITM (Imzo) tekshiruvi
-    # So'rov yo'li va vaqtni birlashtirib imzo yaratamiz
-    message = f"{request.path}{timestamp}".encode()
-    expected_signature = hmac.new(SECRET_KEY, message, hashlib.sha256).hexdigest()
+    return priv_pem.decode(), pub_pem.decode()
 
-    if not hmac.compare_digest(expected_signature, signature):
-        raise AuthenticationFailed("Imzo noto'g'ri (MITM Attack)")
+# Bu kalitlarni bir marta yaratib, .env yoki DBda saqlab qo'yish kerak.
