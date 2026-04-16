@@ -53,6 +53,7 @@ services:
     command: python manage.py discovery_service
     volumes:
       - .:/app  # Loyiha kodini konteyner ichidagi /app papkasiga bog'laydi
+      - /opt/media-manager/licence:/opt/media-manager/licence
     ports:
       - "9999:9999/udp"
     depends_on:
