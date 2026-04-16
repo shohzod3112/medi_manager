@@ -47,6 +47,13 @@ services:
       interval: 5s
       retries: 5
 
+  discovery:
+    build: .
+    command: python manage.py discovery_service
+    ports:
+      - "9999:9999/udp"
+    restart: always
+
   nginx:
     image: nginx:alpine
     container_name: nginx
