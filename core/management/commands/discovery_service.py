@@ -22,12 +22,14 @@ class Command(BaseCommand):
                 message = data.decode('utf-8')
 
                 if "DISCOVER" in message:
-                    # Server o'zini tanitadi (bu yerda ixtiyoriy ma'lumot yuborish mumkin)
+                    # Server o'z IP-sini aniqlaydi (ixtiyoriy, lekin foydali)
+                    server_ip = socket.gethostbyname(socket.gethostname())
+
                     response_data = {
                         "status": "online",
                         "server_name": "Media-Manager-Server",
-                        "version": "1.0.0",
-                        "port": 8000  # HTTPS ishlayotgan port
+                        "server_ip": server_ip,  # <-- IP-ni matn qilib qo'shdik
+                        "port": 8000
                     }
 
                     response = json.dumps(response_data).encode('utf-8')
