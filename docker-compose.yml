@@ -34,7 +34,7 @@ services:
       - DB_PORT=5432
     ports:
       - "8000:8000"
-      - "9999:9999/udp" # mDNS portini ochamiz
+#      - "9999:9999/udp" # mDNS portini ochamiz
     depends_on:
       db:
         condition: service_started
