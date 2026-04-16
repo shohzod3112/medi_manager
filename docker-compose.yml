@@ -49,10 +49,15 @@ services:
 
   discovery:
     build: .
+    restart: always
     command: python manage.py discovery_service
+    volumes:
+      - .:/app  # Loyiha kodini konteyner ichidagi /app papkasiga bog'laydi
     ports:
       - "9999:9999/udp"
-    restart: always
+    depends_on:
+      - db
+      - redis
 
   nginx:
     image: nginx:alpine
