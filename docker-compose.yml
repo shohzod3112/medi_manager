@@ -53,7 +53,11 @@ services:
     command: python manage.py discovery_service
     volumes:
       - .:/app  # Loyiha kodini konteyner ichidagi /app papkasiga bog'laydi
+      - ./static:/app/static
+      - static_volume:/app/staticfiles
+      - /opt/media-manager/media:/app/media
       - /opt/media-manager/licence:/opt/media-manager/licence
+      - /etc/machine-id:/etc/machine-id:ro
     ports:
       - "9999:9999/udp"
     depends_on:
