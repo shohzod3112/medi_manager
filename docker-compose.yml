@@ -61,9 +61,9 @@ services:
       - /etc/machine-id:/etc/machine-id:ro
 #    ports:
 #      - "9999:9999/udp"
-    depends_on:
-      - db
-      - redis
+#    depends_on:
+#      - db
+#      - redis
 
   nginx:
     image: nginx:alpine
