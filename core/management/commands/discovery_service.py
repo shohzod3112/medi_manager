@@ -62,4 +62,7 @@ class Command(BaseCommand):
 
                     self.stdout.write(f"🚀 Javob yuborildi: {real_ip}:8000")
                 else:
-                    self.stdout.write(f"⚠️ Noma'lum paket keldi: {message} | Kimdan: {addr
+                    self.stdout.write(f"⚠️ Noma'lum paket keldi: {message} | Kimdan: {addr}")
+
+            except Exception as e:
+                self.stdout.write(self.style.ERROR(f"❌ Xatolik yuz berdi: {str(e)}"))
