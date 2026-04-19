@@ -51,6 +51,7 @@ services:
     build: .
     network_mode: "host"
     restart: always
+    entrypoint: []
     command: python manage.py discovery_service
     volumes:
       - .:/app  # Loyiha kodini konteyner ichidagi /app papkasiga bog'laydi
