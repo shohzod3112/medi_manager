@@ -49,6 +49,7 @@ services:
 
   discovery:
     build: .
+    network_mode: "host"
     restart: always
     command: python manage.py discovery_service
     volumes:
@@ -58,8 +59,8 @@ services:
       - /opt/media-manager/media:/app/media
       - /opt/media-manager/licence:/opt/media-manager/licence
       - /etc/machine-id:/etc/machine-id:ro
-    ports:
-      - "9999:9999/udp"
+#    ports:
+#      - "9999:9999/udp"
     depends_on:
       - db
       - redis
