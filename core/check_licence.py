@@ -1,13 +1,12 @@
 import json
 import hmac
 import hashlib
-from datetime import datetime
+from datetime import datetime, timedelta
 import sys
 import os
 
 SECRET = b"LOCAL_MEDIA_MANAGER_SECRET"
 LICENCE_PATH = "/opt/media-manager/licence/licence.json"
-# Vaqtni saqlash uchun maxsus fayl (Volume ichida)
 TIME_TRACKER_PATH = "/opt/media-manager/licence/last_run.json"
 
 
@@ -18,27 +17,32 @@ def verify_signature(data, signature):
 
 
 def get_hwid():
-    with open("/etc/machine-id") as f:
-        mid = f.read().strip()
-    return hashlib.sha256(mid.encode()).hexdigest()
+    try:
+        with open("/etc/machine-id") as f:
+            mid = f.read().strip()
+        return hashlib.sha256(mid.encode()).hexdigest()
+    except:
+        return "unknown-hwid"
 
 
 def check_licence(terminate_on_fail=False):
     try:
         now = datetime.now()
 
-        # --- VAQTNI ORQAGA QAYTARISH TEKSHIRUVI --- [cite: 18, 19, 21]
+        # --- VAQTNI ORQAGA QAYTARISH TEKSHIRUVI (TOLERANCE BILAN) ---
         if os.path.exists(TIME_TRACKER_PATH):
             with open(TIME_TRACKER_PATH, "r") as tf:
                 time_data = json.load(tf)
                 last_run = datetime.fromisoformat(time_data["last_run"])
 
-                if now < last_run:
-                    print("❌ ERROR: Server time has been rolled back!")
+                # Agar joriy vaqt oxirgi vaqtdan 60 soniyadan ko'proq orqada bo'lsa xato beramiz
+                # Bu konteynerlar orasidagi millisekundlik farqlarni kechiradi
+                if now < (last_run - timedelta(seconds=60)):
+                    print(f"❌ ERROR: Server time rollback detected! Current: {now}, Last: {last_run}")
                     if terminate_on_fail: sys.exit(1)
                     return False
 
-        # --- LITSENZIYA TEKSHIRUVI --- [cite: 133]
+        # --- LITSENZIYA FAYLI TEKSHIRUVI ---
         if not os.path.exists(LICENCE_PATH):
             print("❌ Licence file missing")
             if terminate_on_fail: sys.exit(1)
@@ -47,8 +51,8 @@ def check_licence(terminate_on_fail=False):
         with open(LICENCE_PATH) as f:
             lic = json.load(f)
 
-        signature = lic.pop("signature")
-        if not verify_signature(lic, signature):
+        signature = lic.pop("signature", None)
+        if not signature or not verify_signature(lic, signature):
             print("❌ Invalid licence signature")
             if terminate_on_fail: sys.exit(1)
             return False
@@ -60,18 +64,20 @@ def check_licence(terminate_on_fail=False):
 
         exp = datetime.strptime(lic["expires"], "%Y-%m-%d")
         if exp < now:
-            print("❌ Licence expired")
+            print(f"❌ Licence expired on {lic['expires']}")
             if terminate_on_fail: sys.exit(1)
             return False
 
-        # --- VAQTNI YANGILASH --- [cite: 20, 48]
-        with open(TIME_TRACKER_PATH, "w") as tf:
-            json.dump({"last_run": now.isoformat()}, tf)
+        # --- VAQTNI YANGILASH ---
+        # Faqat joriy vaqt oldindagina yangilaymiz
+        if not os.path.exists(TIME_TRACKER_PATH) or now > last_run:
+            with open(TIME_TRACKER_PATH, "w") as tf:
+                json.dump({"last_run": now.isoformat()}, tf)
 
         print("✅ Licence and Time valid")
         return True
     except Exception as e:
-        print(f"❌ Licence check failed: {e}")
+        print(f"❌ Licence check error: {e}")
         if terminate_on_fail: sys.exit(1)
         return False
 
