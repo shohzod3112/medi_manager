@@ -73,7 +73,7 @@ rm -rf "$DIST_DIR"
 
 # 'gen' buyrug'i bilan butun loyihani shifrlaymiz
 # PyArmor avtomatik ravishda runtime papkasini ham 'dist' ichiga yaratadi
-poetry run python -m pyarmor.cli gen -O "$DIST_DIR" -r apps core manage.py || fail "Encryption failed"
+poetry run python -m pyarmor.cli gen -O "$DIST_DIR" -r apps core attachment manage.py || fail "Encryption failed"
 
 # Tekshiruv: Runtime papkasi yaratildimi?
 if ls "$DIST_DIR"/pyarmor_runtime_* 1> /dev/null 2>&1; then
