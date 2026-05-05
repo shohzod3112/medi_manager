@@ -14,9 +14,11 @@ fail(){ echo "❌ $1"; exit 1; }
 
 log "Starting installation"
 
+# 1. Kerakli papkalarni yaratish
 mkdir -p "$LICENCE_DIR"
 chmod 755 "$LICENCE_DIR"
 
+# 2. HWID generatsiyasi
 log "Generating HWID"
 HWID=$(tr -d '\n' < /etc/machine-id | sha256sum | awk '{print $1}')
 echo "HWID: $HWID"
@@ -25,13 +27,19 @@ echo "👉 Generate licence.json on DEV machine"
 echo "👉 Copy to $LICENCE_DIR/licence.json"
 read -p "Press ENTER when ready..."
 
+# 3. Litsenziyani tekshirish
 [ -f "$LICENCE_DIR/licence.json" ] || fail "licence.json missing"
 
-echo "🔍 Checking licence..."
+log "🔍 Checking licence..."
 python3 core/check_licence.py || {
   echo "❌ Licence invalid. Build to'xtatildi."
   exit 1
 }
+
+# 4. PyArmor va Poetry tekshiruvi (Tizim darajasida)
+log "Checking Poetry..."
+# Agar poetry buyrug'i topilmasa, uni o'rnatish haqida xabar beradi
+command -v poetry >/dev/null || fail "Poetry topilmadi. Uni o'rnating: curl -sSL https://install.python-poetry.org | python3 -"
 
 # --- SHIFRLASH BOSQICHI ---
 log "Encrypting source code with PyArmor via Poetry..."
@@ -42,9 +50,11 @@ poetry run pyarmor gen -O "$DIST_DIR" -r apps core manage.py || fail "Encryption
 [ -d "$DIST_DIR" ] || fail "dist directory was not created!"
 # --------------------------
 
+# 5. Konteynerlarni ishga tushirish
 log "Starting containers"
 sudo docker compose -f "$COMPOSE_FILE" up -d --build
 
+# 6. Nginx 502 xatosini bartaraf etish (Healthy holatni kutish)
 log "Waiting for backend HEALTHY"
 for i in {1..30}; do
   STATUS=$(docker inspect --format='{{.State.Health.Status}}' media_manager_web 2>/dev/null || true)
@@ -63,6 +73,7 @@ done
 
 [ "$STATUS" = "healthy" ] || fail "Backend not healthy"
 
+# 7. Manba kodini arxivlash va tozalash
 log "Archiving source"
 PROTECTED="$PROJECT_ROOT/protected"
 ARCHIVE="$PROJECT_ROOT/protected.7z"
@@ -75,6 +86,7 @@ cp -r "$LICENCE_DIR" "$PROTECTED/licence"
 7z a -t7z "$ARCHIVE" "$PROTECTED/*" -p"$PASS" -mhe=on >/dev/null
 
 log "Wiping source"
+# Host serverdan ochiq kodlarni va vaqtinchalik dist papkasini o'chirish
 rm -rf apps core manage.py core/check_licence.py attachment "$DIST_DIR"
 
 log "DONE 🔒"
