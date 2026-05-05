@@ -48,14 +48,12 @@ services:
       retries: 5
 
   discovery:
-    build: .
+    image: media_manager:latest # Build qilingan imagedan foydalanish kerak
     network_mode: "host"
     restart: always
-    entrypoint: []
-    command: python manage.py discovery_service
+    command: python3 manage.py discovery_service
     volumes:
-      - .:/app  # Loyiha kodini konteyner ichidagi /app papkasiga bog'laydi
-      - ./static:/app/static
+      # - .:/app  <-- BU QATORNI O'CHIRING (Kodni image ichidan olishi kerak)
       - static_volume:/app/staticfiles
       - /opt/media-manager/media:/app/media
       - /opt/media-manager/licence:/opt/media-manager/licence
@@ -79,7 +77,8 @@ services:
       - static_volume:/static
       - /opt/media-manager/media:/app/media
     depends_on:
-      - web
+      web:
+        condition: service_healthy # Shunchaki start bo'lishini emas, sog'lom (healthy) bo'lishini kutadi
     restart: always
 
   redis:
@@ -90,7 +89,7 @@ services:
     restart: always
 
   celery_worker:
-    image:  media_manager:latest
+    image: media_manager:latest
     command: celery -A core worker --loglevel=info
     volumes:
       - ./static:/app/static

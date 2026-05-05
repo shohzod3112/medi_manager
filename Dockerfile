@@ -24,30 +24,21 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Runtime paketlar
-RUN apt-get update \
- && apt-get install -y --no-install-recommends \
-    ffmpeg libpq5 libffi8 libssl3 libjpeg62-turbo libpng16-16 libwebp7 netcat-openbsd \
- && apt-get clean \
- && rm -rf /var/lib/apt/lists/*
+# ... (paketlarni o'rnatish qismi o'zgarishsiz qoladi)
 
 # Builder’dan python paketlarni ko‘chiramiz
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-# Loyiha fayllari
-COPY . .
+# LOYIHA FAYLLARI (O'zgarish: install.sh yaratgan dist/ papkasidan olamiz)
+# Bu yerda . (root) emas, shifrlangan kod nusxalanadi
+COPY dist/ .
 
-# App user
-RUN useradd --create-home --shell /bin/bash app
+# Static va media papkalarni yaratish
+RUN mkdir -p /app/static /app/staticfiles /app/media /app/core /app/apps \
+ && chown -R root:root /app
 
-# Papkalarni yaratish (build vaqtida)
-RUN mkdir -p /app/static /app/staticfiles /app/media \
- && chown -R app:app /app
-
-#USER app
-
-# Entrypoint script
+# Entrypoint script (shifrlangan kod ichida bo'ladi)
 COPY entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 ENTRYPOINT ["/app/entrypoint.sh"]
