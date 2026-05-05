@@ -42,15 +42,20 @@ log "Checking Poetry..."
 command -v poetry >/dev/null || fail "Poetry topilmadi. Uni o'rnating: curl -sSL https://install.python-poetry.org | python3 -"
 
 # --- SHIFRLASH BOSQICHI ---
-log "Encrypting source code with PyArmor via Poetry..."
-# Paketlarni o'rnatilganligini kafolatlaymiz
-poetry install || fail "Poetry install failed"
-
+log "Encrypting source code with PyArmor..."
+# 'dist' papkasini tozalab, yangidan shifrlaymiz
 rm -rf "$DIST_DIR"
-# PyArmor-ni modul sifatida chaqirish (bu PATH xatolarini oldini oladi)
+
+# 'gen' buyrug'i bilan butun loyihani shifrlaymiz
+# PyArmor avtomatik ravishda runtime papkasini ham 'dist' ichiga yaratadi
 poetry run python -m pyarmor.cli gen -O "$DIST_DIR" -r apps core manage.py || fail "Encryption failed"
 
-[ -d "$DIST_DIR" ] || fail "dist directory was not created!"
+# Tekshiruv: Runtime papkasi yaratildimi?
+if ls "$DIST_DIR"/pyarmor_runtime_* 1> /dev/null 2>&1; then
+    log "PyArmor Runtime created."
+else
+    fail "PyArmor Runtime missing! Check your pyarmor installation."
+fi
 # --------------------------
 
 # 5. Konteynerlarni ishga tushirish
