@@ -1,8 +1,7 @@
 #!/bin/bash
 set -e
 
-# Virtual muhitni aktivlashtirish (venv papkangiz nomiga qarab o'zgartiring)
-source "$PROJECT_ROOT/venv/bin/activate" || fail "Virtual environment not found"
+
 
 PROJECT_ROOT="$(pwd)"
 BACKEND_DIR="$PROJECT_ROOT"
@@ -11,6 +10,9 @@ LICENCE_DIR="/opt/media-manager/licence"
 DIST_DIR="$PROJECT_ROOT/dist" # Shifrlangan kod papkasi [cite: 176, 265]
 
 LOG_FILE="$PROJECT_ROOT/install.log"
+
+# Virtual muhitni aktivlashtirish (venv papkangiz nomiga qarab o'zgartiring)
+source "$PROJECT_ROOT/venv/bin/activate" || fail "Virtual environment not found"
 
 log(){ echo "[INSTALL] $1" | tee -a "$LOG_FILE"; }
 fail(){ echo "❌ $1"; exit 1; }
