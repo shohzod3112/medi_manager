@@ -4,7 +4,8 @@ set -e
 log() { echo "[$(date +'%H:%M:%S')] $1"; }
 
 echo "🔐 Checking licence..."
-python core/check_licence.py || exit 1
+# PYTHONPATH orqali /app papkasini modullar qidiruvi uchun majburiy ko'rsatamiz
+PYTHONPATH=/app python3 core/check_licence.py || exit 1
 
 log "Waiting for database..."
 : "${DB_HOST:=db}"
