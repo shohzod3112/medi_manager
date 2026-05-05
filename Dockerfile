@@ -24,23 +24,24 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# ... (paketlarni o'rnatish qismi o'zgarishsiz qoladi)
+# ... (paketlarni o'rnatish qismi o'zgarishsiz qoladi) [cite: 226]
 
 # Builder’dan python paketlarni ko‘chiramiz
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-# LOYIHA FAYLLARI (O'zgarish: install.sh yaratgan dist/ papkasidan olamiz)
-# Bu yerda . (root) emas, shifrlangan kod nusxalanadi
+# LOYIHA FAYLLARI: Hostdagi 'dist' papkasidan shifrlangan kodni olamiz
+# Bu bosqichda hostda 'dist' papkasi 'install.sh' tomonidan yaratilgan bo'lishi shart
 COPY dist/ .
 
-# Static va media papkalarni yaratish
-RUN mkdir -p /app/static /app/staticfiles /app/media /app/core /app/apps \
- && chown -R root:root /app
+# App user va papkalarni sozlash
+RUN useradd --create-home --shell /bin/bash app && \
+    mkdir -p /app/static /app/staticfiles /app/media /opt/media-manager/licence && \
+    chown -R app:app /app /opt/media-manager/licence [cite: 228]
 
-# Entrypoint script (shifrlangan kod ichida bo'ladi)
+# Entrypoint va litsenziya tekshiruvi
 COPY entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
-ENTRYPOINT ["/app/entrypoint.sh"]
+ENTRYPOINT ["/app/entrypoint.sh"] [cite: 228]
 
 CMD ["gunicorn", "core.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
