@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# Virtual muhitni aktivlashtirish (venv papkangiz nomiga qarab o'zgartiring)
+source "$PROJECT_ROOT/venv/bin/activate" || fail "Virtual environment not found"
+
 PROJECT_ROOT="$(pwd)"
 BACKEND_DIR="$PROJECT_ROOT"
 COMPOSE_FILE="$BACKEND_DIR/docker-compose.yml"

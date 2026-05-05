@@ -37,11 +37,11 @@ COPY dist/ .
 # App user va papkalarni sozlash
 RUN useradd --create-home --shell /bin/bash app && \
     mkdir -p /app/static /app/staticfiles /app/media /opt/media-manager/licence && \
-    chown -R app:app /app /opt/media-manager/licence [cite: 228]
+    chown -R app:app /app /opt/media-manager/licence
 
 # Entrypoint va litsenziya tekshiruvi
 COPY entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
-ENTRYPOINT ["/app/entrypoint.sh"] [cite: 228]
+ENTRYPOINT ["/app/entrypoint.sh"]
 
 CMD ["gunicorn", "core.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
