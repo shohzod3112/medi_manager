@@ -43,10 +43,13 @@ command -v poetry >/dev/null || fail "Poetry topilmadi. Uni o'rnating: curl -sSL
 
 # --- SHIFRLASH BOSQICHI ---
 log "Encrypting source code with PyArmor via Poetry..."
-# PyArmor-ni loyihaga qo'shish va shifrlangan 'dist' papkasini yaratish
-poetry add --group dev pyarmor || fail "Poetry failed to add PyArmor"
+# Paketlarni o'rnatilganligini kafolatlaymiz
+poetry install || fail "Poetry install failed"
+
 rm -rf "$DIST_DIR"
-poetry run pyarmor gen -O "$DIST_DIR" -r apps core manage.py || fail "Encryption failed"
+# PyArmor-ni modul sifatida chaqirish (bu PATH xatolarini oldini oladi)
+poetry run python -m pyarmor.cli gen -O "$DIST_DIR" -r apps core manage.py || fail "Encryption failed"
+
 [ -d "$DIST_DIR" ] || fail "dist directory was not created!"
 # --------------------------
 
