@@ -17,13 +17,6 @@ fail(){ echo "❌ $1"; exit 1; }
 
 log "Starting installation"
 
-# Kerakli dasturlarni tekshirish
-command -v docker >/dev/null || fail "docker not found"
-command -v docker >/dev/null && docker compose version >/dev/null || fail "docker compose missing"
-command -v python3 >/dev/null || fail "python3 missing"
-command -v 7z >/dev/null || fail "7z missing"
-command -v poetry >/dev/null || fail "poetry missing. Run: curl -sSL https://install.python-poetry.org | python3 -"
-
 mkdir -p "$LICENCE_DIR"
 chmod 755 "$LICENCE_DIR"
 
