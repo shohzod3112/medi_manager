@@ -36,6 +36,31 @@ python3 core/check_licence.py || {
   exit 1
 }
 
+# install.sh ichidagi Poetry qismini shunday o'zgartiring:
+log "Checking Poetry..."
+if ! command -v poetry &> /dev/null; then
+    log "Poetry topilmadi. O'rnatish boshlanmoqda..."
+    # Rasmiy o'rnatish skriptini yurgizamiz
+    curl -sSL https://install.python-poetry.org | python3 - || fail "Poetry o'rnatib bo'lmadi"
+
+    # PATH (yo'l)ni yangilaymiz, shunda terminal yangi buyruqni ko'radi
+    export PATH="$HOME/.local/bin:$PATH"
+
+    # Doimiy ishlashi uchun ~/.bashrc ga ham qo'shib qo'yamiz (ixtiyoriy)
+    if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+        echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+    fi
+    log "Poetry muvaffaqiyatli o'rnatildi."
+else
+    log "Poetry allaqachon mavjud."
+fi
+
+# Endi shifrlashni boshlasak bo'ladi
+log "Encrypting source code with PyArmor via Poetry..."
+# Shifrlashdan oldin bog'liqliklarni yangilaymiz
+poetry install || fail "Poetry install failed"
+# ... (qolgan pyarmor gen buyruqlari)
+
 # 4. PyArmor va Poetry tekshiruvi (Tizim darajasida)
 log "Checking Poetry..."
 # Agar poetry buyrug'i topilmasa, uni o'rnatish haqida xabar beradi
