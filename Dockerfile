@@ -24,22 +24,26 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# ... (paketlarni o'rnatish qismi o'zgarishsiz qoladi) [cite: 226]
+# SIZDA YO'Q BO'LGAN VA QO'SHISH KERAK BO'LGAN QISM:
+# Bu yerda 'netcat-openbsd' aynan 'nc' buyrug'ini ta'minlaydi
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg \
+    libpq5 \
+    netcat-openbsd \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Builder’dan python paketlarni ko‘chiramiz
+# Builder’dan python paketlarni ko‘chiramiz (3.12 versiya ekanligiga e'tibor bering)
 COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-# LOYIHA FAYLLARI: Hostdagi 'dist' papkasidan shifrlangan kodni olamiz
-# Bu bosqichda hostda 'dist' papkasi 'install.sh' tomonidan yaratilgan bo'lishi shart
+# LOYIHA FAYLLARI: Shifrlangan kodni /app/ papkasiga olamiz
 COPY dist/ /app/
 
-# App user va papkalarni sozlash
+# Qolgan foydalanuvchi va sozlash ishlari
 RUN useradd --create-home --shell /bin/bash app && \
     mkdir -p /app/static /app/staticfiles /app/media /opt/media-manager/licence && \
     chown -R app:app /app /opt/media-manager/licence
 
-# Entrypoint va litsenziya tekshiruvi
 COPY entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 ENTRYPOINT ["/app/entrypoint.sh"]
