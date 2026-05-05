@@ -32,7 +32,7 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 
 # LOYIHA FAYLLARI: Hostdagi 'dist' papkasidan shifrlangan kodni olamiz
 # Bu bosqichda hostda 'dist' papkasi 'install.sh' tomonidan yaratilgan bo'lishi shart
-COPY dist/ .
+COPY dist/ /app/
 
 # App user va papkalarni sozlash
 RUN useradd --create-home --shell /bin/bash app && \
