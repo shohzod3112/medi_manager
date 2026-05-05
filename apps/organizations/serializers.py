@@ -340,7 +340,7 @@ class FileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = File
-        fields = ["file_id", "name", "type", "attachment", "is_widget", "config", "duration", "owner"]
+        fields = ["file_id", "name", "type", "attachment", "attachment_widget", "is_widget", "config", "duration", "owner"]
         read_only_fields = ["owner", "duration", "type"]
 
     def create(self, validated_data):
