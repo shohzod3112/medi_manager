@@ -1,13 +1,11 @@
 #!/bin/bash
 set -e
 
-
-
 PROJECT_ROOT="$(pwd)"
 BACKEND_DIR="$PROJECT_ROOT"
 COMPOSE_FILE="$BACKEND_DIR/docker-compose.yml"
 LICENCE_DIR="/opt/media-manager/licence"
-DIST_DIR="$PROJECT_ROOT/dist" # Shifrlangan kod papkasi [cite: 176, 265]
+DIST_DIR="$PROJECT_ROOT/dist"
 
 LOG_FILE="$PROJECT_ROOT/install.log"
 
@@ -21,50 +19,49 @@ chmod 755 "$LICENCE_DIR"
 
 log "Generating HWID"
 HWID=$(tr -d '\n' < /etc/machine-id | sha256sum | awk '{print $1}')
-echo "HWID: $HWID" [cite: 57, 207, 387]
+echo "HWID: $HWID"
 
 echo "👉 Generate licence.json on DEV machine"
 echo "👉 Copy to $LICENCE_DIR/licence.json"
 read -p "Press ENTER when ready..."
 
-[ -f "$LICENCE_DIR/licence.json" ] || fail "licence.json missing" [cite: 58, 208]
+[ -f "$LICENCE_DIR/licence.json" ] || fail "licence.json missing"
 
 echo "🔍 Checking licence..."
 python3 core/check_licence.py || {
-  echo "❌ Licence invalid. Build to‘xtatildi."
+  echo "❌ Licence invalid. Build to'xtatildi."
   exit 1
-} [cite: 58, 194, 209]
+}
 
 # --- SHIFRLASH BOSQICHI ---
-log "Encrypting source code with PyArmor via Poetry..." [cite: 112, 180, 220, 283]
+log "Encrypting source code with PyArmor via Poetry..."
 # PyArmor-ni loyihaga qo'shish va shifrlangan 'dist' papkasini yaratish
-poetry add --group dev pyarmor || fail "Poetry failed to add PyArmor" [cite: 232, 410, 424]
+poetry add --group dev pyarmor || fail "Poetry failed to add PyArmor"
 rm -rf "$DIST_DIR"
-poetry run pyarmor gen -O "$DIST_DIR" -r apps core manage.py || fail "Encryption failed" [cite: 164, 357, 389, 416]
-[ -d "$DIST_DIR" ] || fail "dist directory was not created!" [cite: 422, 430]
+poetry run pyarmor gen -O "$DIST_DIR" -r apps core manage.py || fail "Encryption failed"
+[ -d "$DIST_DIR" ] || fail "dist directory was not created!"
 # --------------------------
 
 log "Starting containers"
-sudo docker compose -f "$COMPOSE_FILE" up -d --build [cite: 59, 167, 181, 285]
+sudo docker compose -f "$COMPOSE_FILE" up -d --build
 
 log "Waiting for backend HEALTHY"
 for i in {1..30}; do
   STATUS=$(docker inspect --format='{{.State.Health.Status}}' media_manager_web 2>/dev/null || true)
 
-  echo "Attempt $i - Health: $STATUS" [cite: 60, 211]
+  echo "Attempt $i - Health: $STATUS"
 
   if [ "$STATUS" = "healthy" ]; then
     echo "Backend is healthy!"
-    # Nginx 502 Bad Gateway xatosini bartaraf etish [cite: 315, 330, 347]
     log "Refreshing Nginx connections to fix 502 error..."
-    sudo docker compose restart nginx [cite: 322, 333, 408]
+    sudo docker compose restart nginx
     break
   fi
 
   sleep 2
 done
 
-[ "$STATUS" = "healthy" ] || fail "Backend not healthy" [cite: 61, 212]
+[ "$STATUS" = "healthy" ] || fail "Backend not healthy"
 
 log "Archiving source"
 PROTECTED="$PROJECT_ROOT/protected"
@@ -72,14 +69,13 @@ ARCHIVE="$PROJECT_ROOT/protected.7z"
 PASS="MediaManager@123"
 
 mkdir -p "$PROTECTED"
-cp -r apps core manage.py core/check_licence.py "$PROTECTED/" [cite: 62, 213]
+cp -r apps core manage.py core/check_licence.py "$PROTECTED/"
 cp -r "$LICENCE_DIR" "$PROTECTED/licence"
 
-7z a -t7z "$ARCHIVE" "$PROTECTED/*" -p"$PASS" -mhe=on >/dev/null [cite: 63, 213]
+7z a -t7z "$ARCHIVE" "$PROTECTED/*" -p"$PASS" -mhe=on >/dev/null
 
 log "Wiping source"
-# Asl kodlarni va vaqtinchalik 'dist' papkasini o'chirish [cite: 114, 156, 182, 447]
-rm -rf apps core manage.py core/check_licence.py attachment "$DIST_DIR" [cite: 63, 114, 156, 213, 286]
+rm -rf apps core manage.py core/check_licence.py attachment "$DIST_DIR"
 
 log "DONE 🔒"
 echo "Archive: protected.7z"
