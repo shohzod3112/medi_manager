@@ -12,6 +12,16 @@ LICENCE_DIR="/opt/media-manager/licence"
 LOG_FILE="$PROJECT_ROOT/install.log"
 DIST_DIR="$PROJECT_ROOT/dist"
 
+log "Encrypting code with PyArmor..."
+# PyArmor o'rnatilganligini tekshirish va o'rnatish
+python3 -m pip install --upgrade pyarmor || fail "PyArmor install failed"
+
+# Buyruqni modul sifatida ishga tushiramiz (bu PATH muammosini hal qiladi)
+python3 -m pyarmor.cli gen -O "$DIST_DIR" -r apps core manage.py || fail "Encryption failed"
+
+log "Encryption successful, starting Docker build..."
+# ... (docker compose buyruqlari)
+
 log "Starting installation"
 
 # ... (HWID generatsiyasi va litsenziya tekshiruvi) [cite: 57, 58]
