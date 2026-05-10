@@ -251,6 +251,10 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.organizations.tasks.disable_expired_staff",  # ⚠ to‘g‘ri nom
         "schedule": crontab(hour=0, minute=0),  # test uchun har 1 daqiqada
     },
+    'check-licence-every-midnight': {
+        'task': 'daily_security_check',
+        'schedule': 86400.0, # 24 soat (sekundlarda)
+    },
 }
 
 JAZZMIN_SETTINGS = {
