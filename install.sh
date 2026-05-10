@@ -31,7 +31,7 @@ read -p "Press ENTER when ready..."
 [ -f "$LICENCE_DIR/licence.json" ] || fail "licence.json missing"
 
 log "🔍 Checking licence..."
-poetry run python3 core/check_licence.py || {
+python3 core/check_licence.py || {
   echo "❌ Licence invalid. Build to'xtatildi."
   exit 1
 }

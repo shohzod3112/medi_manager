@@ -5,7 +5,13 @@ from datetime import datetime, timedelta
 import sys
 import os
 
-from django.utils import timezone
+try:
+    from django.utils import timezone
+    from django.conf import settings
+    HAS_DJANGO = True
+except ImportError:
+    HAS_DJANGO = False
+    import datetime
 
 from attachment.models import DeviceTimeReport
 
