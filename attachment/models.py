@@ -71,3 +71,12 @@ class Attachment(models.Model):
         db_table = 'attachments'
         verbose_name = "File"
         verbose_name_plural = "Files"
+
+
+class DeviceTimeReport(models.Model):
+    device_id = models.CharField(max_length=255, unique=True)
+    last_reported_time = models.DateTimeField()  # Qurilma yuborgan vaqt
+    updated_at = models.DateTimeField(auto_now=True) # Serverga kelgan vaqt
+
+    def __str__(self):
+        return f"{self.device_id} - {self.last_reported_time}"

@@ -5,6 +5,10 @@ from datetime import datetime, timedelta
 import sys
 import os
 
+from django.utils import timezone
+
+from attachment.models import DeviceTimeReport
+
 SECRET = b"LOCAL_MEDIA_MANAGER_SECRET"
 LICENCE_PATH = "/opt/media-manager/licence/licence.json"
 TIME_TRACKER_PATH = "/opt/media-manager/licence/last_run.json"
@@ -80,6 +84,31 @@ def check_licence(terminate_on_fail=False):
         print(f"❌ Licence check error: {e}")
         if terminate_on_fail: sys.exit(1)
         return False
+
+
+def check_consensus_time():
+    reports = DeviceTimeReport.objects.all()
+    total_devices = reports.count()
+
+    if total_devices < 5:  # Kamida 5 ta qurilma bo'lishi shart (ishonch uchun)
+        return True
+
+    now = timezone.now()
+    outdated_count = 0
+    # 24 soatlik "ancha eski" chegarasini belgilaymiz [cite: 2795]
+    threshold = timedelta(hours=24)
+
+    for report in reports:
+        # Agar qurilma vaqti server vaqtidan 24 soatdan ko'proq oldinda bo'lsa
+        if report.last_reported_time > (now + threshold):
+            outdated_count += 1
+
+    # 80 foizdan oshsa xavf tug'iladi
+    if (outdated_count / total_devices) >= 0.8:
+        print("❌ CRITICAL: 80% devices report that server time is fake (too old)!")
+        return False
+
+    return True
 
 
 if __name__ == "__main__":

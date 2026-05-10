@@ -1,7 +1,9 @@
 from django.urls import path
-from .views import AttachmentListCreateAPIView, AttachmentRetrieveUpdateDestroyAPIView
+from . import views
 
 urlpatterns = [
-    path('', AttachmentListCreateAPIView.as_view(), name='attachment-list-create'),
-    path('<int:pk>', AttachmentRetrieveUpdateDestroyAPIView.as_view(), name='attachment-detail'),
+    path('', views.AttachmentListCreateAPIView.as_view(), name='attachment-list-create'),
+    path('<int:pk>', views.AttachmentRetrieveUpdateDestroyAPIView.as_view(), name='attachment-detail'),
+
+    path('<int:pk>', views.ReportTimeAPI.as_view(), name='attachment-detail'),
 ]
