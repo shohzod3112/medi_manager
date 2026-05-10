@@ -1,19 +1,18 @@
 import json
 import hmac
 import hashlib
-from datetime import datetime, timedelta
 import sys
 import os
 
+from datetime import datetime, timedelta
+
+# Django muhitini tekshirish
 try:
     from django.utils import timezone
-    from django.conf import settings
+
     HAS_DJANGO = True
 except ImportError:
     HAS_DJANGO = False
-    import datetime
-
-from attachment.models import DeviceTimeReport
 
 SECRET = b"LOCAL_MEDIA_MANAGER_SECRET"
 LICENCE_PATH = "/opt/media-manager/licence/licence.json"
@@ -35,24 +34,57 @@ def get_hwid():
         return "unknown-hwid"
 
 
+def check_consensus_time():
+    """Qurilmalar konsensusini tekshirish - faqat Django ichida ishlaydi"""
+    if not HAS_DJANGO:
+        return True  # Build vaqtida (hostda) bu tekshiruv o'tkazib yuboriladi
+
+    try:
+        # DIQQAT: Importni funksiya ichiga ko'chirdik (Lazy Import)
+        from attachment.models import DeviceTimeReport
+
+        reports = DeviceTimeReport.objects.all()
+        total_devices = reports.count()
+
+        if total_devices < 5:
+            return True
+
+        now = timezone.now()
+        outdated_count = 0
+        threshold = timedelta(hours=24)
+
+        for report in reports:
+            # Agar qurilma vaqti serverdan 24 soatdan ko'p oldinda bo'lsa
+            if report.last_reported_time > (now + threshold):
+                outdated_count += 1
+
+        # 80% dan oshsa (ya'ni 20% gacha ruxsat bor)
+        if (outdated_count / total_devices) >= 0.8:
+            print("❌ CRITICAL: 80% devices report that server time is fake (too old)!")
+            return False
+
+        return True
+    except Exception as e:
+        # Bazaga ulanib bo'lmasa yoki model topilmasa ham build to'xtamasligi kerak
+        return True
+
+
 def check_licence(terminate_on_fail=False):
     try:
         now = datetime.now()
 
-        # --- VAQTNI ORQAGA QAYTARISH TEKSHIRUVI (TOLERANCE BILAN) ---
+        # 1. VAQTNI ORQAGA QAYTARISH TEKSHIRUVI
         if os.path.exists(TIME_TRACKER_PATH):
             with open(TIME_TRACKER_PATH, "r") as tf:
                 time_data = json.load(tf)
                 last_run = datetime.fromisoformat(time_data["last_run"])
 
-                # Agar joriy vaqt oxirgi vaqtdan 60 soniyadan ko'proq orqada bo'lsa xato beramiz
-                # Bu konteynerlar orasidagi millisekundlik farqlarni kechiradi
                 if now < (last_run - timedelta(seconds=60)):
-                    print(f"❌ ERROR: Server time rollback detected! Current: {now}, Last: {last_run}")
+                    print(f"❌ ERROR: Server time rollback! Current: {now}, Last: {last_run}")
                     if terminate_on_fail: sys.exit(1)
                     return False
 
-        # --- LITSENZIYA FAYLI TEKSHIRUVI ---
+        # 2. LITSENZIYA FAYLI VA HWID TEKSHIRUVI
         if not os.path.exists(LICENCE_PATH):
             print("❌ Licence file missing")
             if terminate_on_fail: sys.exit(1)
@@ -78,8 +110,12 @@ def check_licence(terminate_on_fail=False):
             if terminate_on_fail: sys.exit(1)
             return False
 
-        # --- VAQTNI YANGILASH ---
-        # Faqat joriy vaqt oldindagina yangilaymiz
+        # 3. QURILMALAR KONSENSUSINI TEKSHIRISH
+        if not check_consensus_time():
+            if terminate_on_fail: sys.exit(1)
+            return False
+
+        # 4. VAQT TREKKERINI YANGILASH
         if not os.path.exists(TIME_TRACKER_PATH) or now > last_run:
             with open(TIME_TRACKER_PATH, "w") as tf:
                 json.dump({"last_run": now.isoformat()}, tf)
@@ -90,31 +126,6 @@ def check_licence(terminate_on_fail=False):
         print(f"❌ Licence check error: {e}")
         if terminate_on_fail: sys.exit(1)
         return False
-
-
-def check_consensus_time():
-    reports = DeviceTimeReport.objects.all()
-    total_devices = reports.count()
-
-    if total_devices < 5:  # Kamida 5 ta qurilma bo'lishi shart (ishonch uchun)
-        return True
-
-    now = timezone.now()
-    outdated_count = 0
-    # 24 soatlik "ancha eski" chegarasini belgilaymiz [cite: 2795]
-    threshold = timedelta(hours=24)
-
-    for report in reports:
-        # Agar qurilma vaqti server vaqtidan 24 soatdan ko'proq oldinda bo'lsa
-        if report.last_reported_time > (now + threshold):
-            outdated_count += 1
-
-    # 80 foizdan oshsa xavf tug'iladi
-    if (outdated_count / total_devices) >= 0.8:
-        print("❌ CRITICAL: 80% devices report that server time is fake (too old)!")
-        return False
-
-    return True
 
 
 if __name__ == "__main__":
