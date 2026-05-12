@@ -320,10 +320,11 @@ class DeviceSerializer(serializers.ModelSerializer):
 
 class FileListSerializer(serializers.ModelSerializer):
     attachment = serializers.SerializerMethodField()
+    attachment_widget = serializers.SerializerMethodField()
 
     class Meta:
         model = File
-        fields = ["file_id", "name", "type", "attachment", "is_widget", "config", "duration", "owner", "organization"]
+        fields = ["file_id", "name", "type", "attachment", "attachment_widget", "is_widget", "config", "duration", "owner", "organization"]
 
     def get_attachment(self, obj):
         request = self.context.get("request")
@@ -332,6 +333,15 @@ class FileListSerializer(serializers.ModelSerializer):
                 "id": obj.attachment.id,
                 "name": obj.attachment.name,
                 "file": request.build_absolute_uri(obj.attachment.file.url) if request else None,
+            }
+
+    def get_attachment_widget(self, obj):
+        request = self.context.get("request")
+        if obj.attachment_widget:
+            return {
+                "id": obj.attachment_widget.id,
+                "name": obj.attachment_widget.name,
+                "file": request.build_absolute_uri(obj.attachment_widget.file.url) if request else None,
             }
 
 
