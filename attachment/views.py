@@ -25,6 +25,7 @@ class AttachmentRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIVi
 
 class ReportTimeAPI(APIView):
     permission_classes = [AllowAny]
+    authentication_classes = []
     def post(self, request):
         device_id = request.data.get('device_id')
         device_time_str = request.data.get('current_time')  # ISO formatda
