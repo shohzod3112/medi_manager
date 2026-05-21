@@ -1,4 +1,5 @@
 from rest_framework import generics, permissions
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -23,6 +24,7 @@ class AttachmentRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIVi
 
 
 class ReportTimeAPI(APIView):
+    permission_classes = [AllowAny]
     def post(self, request):
         device_id = request.data.get('device_id')
         device_time_str = request.data.get('current_time')  # ISO formatda
